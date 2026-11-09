@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="196" viewBox="0 0 384 196">
+  <view id="cone-search" viewBox="0 0 384 196"/>
+  <view id="epochs" viewBox="384 0 384 196"/>
+  <view id="bands" viewBox="768 0 384 196"/>
+  <view id="flux" viewBox="0 196 384 196"/>
+  <view id="sources" viewBox="384 196 384 196"/>
+  <view id="light-curve" viewBox="768 196 384 196"/>
+  <view id="cross-match" viewBox="0 392 384 196"/>
+  <view id="motion" viewBox="384 392 384 196"/>
+  <view id="difference" viewBox="768 392 384 196"/>
+  <view id="mosaic" viewBox="0 588 384 196"/>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0v24" fill="none" stroke="#242a33"/>
+    </pattern>
+    <g id="field">
+      <rect width="384" height="196" fill="#0d1015"/>
+      <rect x="21" y="13" width="342" height="150" rx="5" fill="url(#grid)" stroke="#2b323d"/>
+    </g>
+    <g id="stars" fill="#8e9bab">
+      <circle cx="14" cy="19" r="1.5"/><circle cx="29" cy="61" r="1"/>
+      <circle cx="39" cy="29" r="1.5"/><circle cx="49" cy="47" r="2"/>
+      <circle cx="69" cy="13" r="1"/><circle cx="74" cy="62" r="1.5"/>
+      <circle cx="93" cy="39" r="1.5"/><circle cx="88" cy="20" r="1"/>
+    </g>
+    <g id="target" fill="none" stroke="#cbd3e0" stroke-width="1.25">
+      <circle r="10"/><path d="M0-16v8M0 8v8M-16 0h8m8 0h8"/>
+      <circle r="1.5" fill="#cbd3e0"/>
+    </g>
+    <style>
+      text { fill: #aeb9c9; font: 12px system-ui, sans-serif; }
+      .wire { fill: none; stroke: #b4c0d1; stroke-width: 1.25; }
+      .soft { fill: none; stroke: #657183; stroke-width: 1; }
+      .panel { fill: #131922; stroke: #596575; }
+      .dot { fill: #d4dde9; }
+    </style>
+  </defs>
+
+  <g>
+    <use href="#field"/>
+    <use href="#stars" transform="translate(54 39) scale(2.75 1.45)"/>
+    <path class="soft" d="M192 24v128M102 88h180"/>
+    <circle class="wire" cx="192" cy="88" r="48" stroke-dasharray="4 4"/>
+    <use href="#target" x="192" y="88"/>
+    <path class="wire" d="m230 58 23-21h39"/>
+    <text x="257" y="30">Search region</text>
+  </g>
+
+  <g transform="translate(384)">
+    <use href="#field"/>
+    <rect class="panel" x="58" y="35" width="113" height="80" rx="3"/>
+    <rect class="panel" x="213" y="35" width="113" height="80" rx="3"/>
+    <use href="#stars" x="60" y="38"/><use href="#stars" x="215" y="38"/>
+    <circle class="wire" cx="119" cy="79" r="8"/>
+    <circle class="wire" cx="281" cy="71" r="8"/>
+    <path class="wire" d="M178 75h28m-6-5 6 5-6 5"/>
+    <text x="88" y="138">Epoch A</text><text x="246" y="138">Epoch B</text>
+  </g>
+
+  <g transform="translate(768)">
+    <use href="#field"/>
+    <path class="wire" d="M72 126h239m-7-5 7 5-7 5"/>
+    <rect x="88" y="52" width="34" height="58" fill="#242e3d" stroke="#576678"/>
+    <rect x="131" y="52" width="34" height="58" fill="#394556" stroke="#697789"/>
+    <rect x="174" y="52" width="34" height="58" fill="#566478" stroke="#8090a5"/>
+    <rect x="217" y="52" width="34" height="58" fill="#7d899a" stroke="#9ca9ba"/>
+    <rect x="260" y="52" width="34" height="58" fill="#a8b3c4" stroke="#c0cad9"/>
+    <text x="73" y="148">Shorter λ</text><text x="257" y="148">Longer λ</text>
+  </g>
+
+  <g transform="translate(0 196)">
+    <use href="#field"/>
+    <path class="soft" d="M91 31v103h225M108 69h189m-189 38h189" stroke-dasharray="3 4"/>
+    <rect x="171" y="37" width="39" height="96" fill="#354151" fill-opacity=".48"/>
+    <path class="wire" d="M190 59v44m-9-44h18m-18 44h18"/>
+    <circle class="dot" cx="190" cy="81" r="3.5"/>
+    <path class="wire" d="m213 70 21-15h41"/>
+    <text x="228" y="48">Flux ± uncertainty</text>
+    <text x="232" y="151">Wavelength</text>
+  </g>
+
+  <g transform="translate(384 196)">
+    <use href="#field"/>
+    <use href="#stars" transform="translate(50 24) scale(2.78 1.8)"/>
+    <use href="#target" x="120" y="67"/><use href="#target" x="219" y="99"/><use href="#target" x="283" y="61"/>
+    <path class="soft" d="m219 119 14 12h60"/>
+    <text x="242" y="148">Centroid</text>
+  </g>
+
+  <g transform="translate(768 196)">
+    <use href="#field"/>
+    <path class="soft" d="M78 42v92h235"/>
+    <path class="wire" d="M91 93c20 0 27-33 49-33s30 43 52 43 30-35 49-35 25 21 55 21" stroke-dasharray="4 4"/>
+    <circle class="dot" cx="99" cy="91" r="3"/><circle class="dot" cx="140" cy="60" r="3"/>
+    <circle class="dot" cx="192" cy="103" r="3"/><circle class="dot" cx="241" cy="68" r="3"/>
+    <circle class="dot" cx="285" cy="88" r="3"/>
+    <text x="78" y="31">Brightness</text><text x="277" y="151">Time</text>
+  </g>
+
+  <g transform="translate(0 392)">
+    <use href="#field"/>
+    <rect class="panel" x="62" y="41" width="103" height="83" rx="3"/>
+    <rect class="panel" x="218" y="41" width="103" height="83" rx="3"/>
+    <path class="soft" d="M72 61h81m-81 20h81m-81 20h81m77-40h80m-80 20h80m-80 20h80"/>
+    <path class="wire" d="m150 61 79 20m-79 20 79 0" stroke-dasharray="4 3"/>
+    <circle class="dot" cx="150" cy="61" r="3"/><circle class="dot" cx="229" cy="81" r="3"/>
+    <circle class="dot" cx="150" cy="101" r="3"/><circle class="dot" cx="229" cy="101" r="3"/>
+    <text x="83" y="146">SPHEREx</text><text x="233" y="146">Gaia · WISE</text>
+  </g>
+
+  <g transform="translate(384 392)">
+    <use href="#field"/>
+    <use href="#stars" transform="translate(46 22) scale(2.8 1.7)"/>
+    <path class="wire" d="M91 113c62-17 122-36 196-68m-9-4 9 4-4 9" stroke-dasharray="5 4"/>
+    <circle class="wire" cx="103" cy="110" r="11"/><circle class="wire" cx="170" cy="90" r="11"/>
+    <circle class="wire" cx="237" cy="66" r="11"/>
+    <text x="75" y="143">Earlier</text><text x="263" y="72">Later</text>
+  </g>
+
+  <g transform="translate(768 392)">
+    <use href="#field"/>
+    <rect class="panel" x="45" y="51" width="76" height="64" rx="3"/>
+    <rect class="panel" x="154" y="51" width="76" height="64" rx="3"/>
+    <rect class="panel" x="263" y="51" width="76" height="64" rx="3"/>
+    <use href="#stars" transform="translate(46 56) scale(.72 .75)"/>
+    <use href="#stars" transform="translate(155 56) scale(.72 .75)"/>
+    <path class="wire" d="M131 83h12m98-3h12m-12 6h12m35-8v13m-6-6h12m14-9h10"/>
+    <text x="77" y="138">A</text><text x="187" y="138">B</text><text x="284" y="138">A − B</text>
+  </g>
+
+  <g transform="translate(0 588)">
+    <use href="#field"/>
+    <use href="#stars" transform="translate(59 33) scale(2.65 1.4)"/>
+    <path class="panel" fill-opacity=".52" d="M88 37h120v63H88z"/>
+    <path class="panel" fill-opacity=".52" d="M162 37h120v63H162z"/>
+    <path class="panel" fill-opacity=".52" d="M111 77h120v63H111z"/>
+    <path class="panel" fill-opacity=".52" d="M185 77h120v63H185z"/>
+    <path class="wire" d="M88 37h194v40h23v63H111v-40H88z" stroke-dasharray="4 4"/>
+    <text x="232" y="154">Mosaic footprint</text>
+  </g>
+</svg>

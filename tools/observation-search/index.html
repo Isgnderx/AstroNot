@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Observation Search — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/observation.js" defer></script>
+  </head>
+  <body class="workspace-page">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Observation Search</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Observation</p>
+        <h1 data-workspace-title>Observation Search</h1>
+        <p class="workspace-description" data-workspace-description>Find SPHEREx observations by sky position, date, and wavelength coverage.</p>
+      </header>
+      <div class="observation-layout">
+        <form class="workspace-panel observation-form" data-observation-form>
+          <h2>Search parameters</h2>
+          <fieldset>
+            <legend>Sky position</legend>
+            <p class="workspace-help">ICRS coordinates and cone radius in decimal degrees.</p>
+            <div class="observation-fields observation-fields--position">
+              <label>RA (°)<input name="ra" type="number" inputmode="decimal" min="0" max="360" step="any" required></label>
+              <label>Dec (°)<input name="dec" type="number" inputmode="decimal" min="-90" max="90" step="any" required></label>
+              <label>Radius (°)<input name="radius" type="number" inputmode="decimal" min="0.0001" max="5" step="any" value="0.02" required></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Observation date <small>Optional · UTC</small></legend>
+            <div class="observation-fields">
+              <label>From<input name="dateStart" type="date"></label>
+              <label>Through<input name="dateEnd" type="date"></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Wavelength coverage <small>Optional · μm</small></legend>
+            <div class="observation-fields">
+              <label>Minimum<input name="bandStart" type="number" inputmode="decimal" min="0.0001" step="any"></label>
+              <label>Maximum<input name="bandEnd" type="number" inputmode="decimal" min="0.0001" step="any"></label>
+            </div>
+          </fieldset>
+          <div class="workspace-actions">
+            <button class="workspace-button workspace-button--primary" type="submit" disabled data-observation-submit>Prepare search</button>
+            <button class="workspace-button" type="button" disabled data-observation-example>Use SPHEREx example</button>
+          </div>
+          <p class="workspace-status" role="status" data-observation-status></p>
+        </form>
+        <aside class="workspace-panel observation-query" aria-labelledby="query-title">
+          <h2 id="query-title">IRSA query</h2>
+          <dl class="workspace-facts">
+            <div><dt>Collection</dt><dd>SPHEREx Quick Release 2</dd></div>
+            <div><dt>Service</dt><dd>Simple Image Access (SIA 2)</dd></div>
+            <div><dt>Result format</dt><dd>CSV · up to 100 records</dd></div>
+          </dl>
+          <p class="workspace-help" data-query-empty>Prepare a search to generate a link to the archive results.</p>
+          <div class="observation-query__result" data-query-result hidden>
+            <p class="workspace-help" data-query-summary></p>
+            <a class="workspace-button workspace-button--primary" data-query-link target="_blank" rel="noopener">
+              Open IRSA results (CSV)
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg>
+            </a>
+          </div>
+          <a class="workspace-source" href="https://irsa.ipac.caltech.edu/ibe/sia.html">IRSA SIA documentation</a>
+        </aside>
+      </div>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b0d10">
+    <meta name="description" content="The mission and team behind AstroNot.">
+    <title>Mission & Team — AstroNot</title>
+    <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../routes.js" defer></script>
+    <script src="../site.js" defer></script>
+  </head>
+  <body class="public-page">
+    <a class="skip-link" href="#page-content">Skip to content</a>
+
+    <div class="page-top" id="top">
+      <header class="site-header frame" data-header>
+        <a class="wordmark" href="../index.html" data-route="/" aria-label="AstroNot home">
+          <img src="../assets/mark.svg" width="40" height="40" alt="">
+          <span>AstroNot<span class="wordmark__period">.</span></span>
+        </a>
+        <button class="menu-toggle icon-button" type="button" aria-label="Menu" aria-controls="site-nav" aria-expanded="false" data-menu-toggle hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="menu-toggle__open" d="M4 8h16M4 16h16"/>
+            <path class="menu-toggle__close" d="m6 6 12 12M18 6 6 18"/>
+          </svg>
+        </button>
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="../explore/index.html" data-route="/explore">Explore</a>
+          <a href="../tools/index.html" data-route="/tools">Tools</a>
+          <a href="../learn/index.html" data-route="/learn">Learn</a>
+          <a href="../about/index.html" data-route="/about" aria-current="page">About</a>
+        </nav>
+      </header>
+    </div>
+
+    <main id="page-content" tabindex="-1">
+      <section class="frame about-page section-space" aria-labelledby="about-title">
+        <header class="about-page__heading">
+          <h1 class="section-title" id="about-title">About AstroNot</h1>
+          <p class="section-lede">Explore real telescope observations and learn what they reveal about the night sky.</p>
+        </header>
+        <div class="about-page__sections">
+          <section aria-labelledby="mission-title">
+            <h2 id="mission-title">Mission</h2>
+            <p>AstroNot brings public discovery, astronomy education, and scientific tools together. Start with a telescope image, learn how it was made, or work with observations in the archive.</p>
+            <a class="text-link" href="../explore/index.html" data-route="/explore">Explore the sky <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg></a>
+          </section>
+          <section aria-labelledby="team-title">
+            <h2 id="team-title">Team</h2>
+            <p>Team profiles are coming soon.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <div class="frame page-footer__inner">
+        <a class="wordmark" href="../index.html" data-route="/" aria-label="AstroNot home">
+          <img src="../assets/mark.svg" width="36" height="36" alt="">
+          <span>AstroNot<span class="wordmark__period">.</span></span>
+        </a>
+        <a class="text-link" href="#top">Back to the top <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4m-6 6 6-6 6 6"/></svg></a>
+      </div>
+    </footer>
+  </body>
+</html>

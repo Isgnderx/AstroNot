@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>FITS Viewer — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+  </head>
+  <body class="workspace-page">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>FITS Viewer</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Data Processing</p>
+        <h1 data-workspace-title>FITS Viewer</h1>
+        <p class="workspace-description" data-workspace-description>Inspect FITS images, header cards, and Header Data Units in your browser.</p>
+      </header>
+      <div class="fits-layout">
+        <section class="workspace-panel fits-controls">
+          <h2>Image file</h2>
+          <label class="fits-file">
+            <span>Choose a local FITS file</span>
+            <input type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-fits-file>
+          </label>
+          <button class="workspace-button" type="button" disabled data-fits-example>Load SPHEREx example</button>
+          <p class="workspace-help">Reads files on this device. Supports uncompressed two-dimensional image HDUs.</p>
+          <p class="workspace-status" role="status" data-fits-status></p>
+        </section>
+
+        <figure class="workspace-panel fits-display">
+          <div class="fits-display__bar">
+            <h2>Image preview</h2>
+            <label data-fits-zoom-label hidden>Zoom
+              <select data-fits-zoom>
+                <option value="fit">Fit</option>
+                <option value="1">100%</option>
+                <option value="2">200%</option>
+                <option value="4">400%</option>
+              </select>
+            </label>
+          </div>
+          <div class="fits-viewport" data-fits-viewport>
+            <div class="fits-empty" data-fits-empty>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="2"/><circle cx="24" cy="24" r="8"/><path d="M24 10v8m0 12v8M10 24h8m12 0h8"/></svg>
+              <p>Choose a file or load the SPHEREx example.</p>
+            </div>
+            <canvas role="img" aria-label="FITS image preview" data-fits-canvas hidden></canvas>
+          </div>
+          <figcaption class="fits-caption" data-fits-caption hidden></figcaption>
+        </figure>
+
+        <section class="workspace-panel fits-metadata" data-fits-metadata hidden>
+          <h2>File metadata</h2>
+          <p class="fits-filename" data-fits-filename></p>
+          <label>Header Data Unit<select data-fits-hdu></select></label>
+          <dl class="workspace-facts" data-fits-facts></dl>
+          <details>
+            <summary>FITS header cards</summary>
+            <pre tabindex="0" aria-label="FITS header cards" data-fits-header></pre>
+          </details>
+          <a class="workspace-source" data-fits-provenance hidden href="https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W21_2C/l2b-v20-2025-250/2/level2_2025W21_2C_0280_1D2_spx_l2b-v20-2025-250.fits?center=156.09328159,-41.64466331&amp;size=0.12">Original NASA/IPAC IRSA cutout</a>
+        </section>
+      </div>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

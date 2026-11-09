@@ -1,0 +1,143 @@
+function setupToolDirectory() {
+  const directory = document.querySelector("[data-tools-directory]");
+  const track = directory.querySelector("[data-tool-track]");
+  const filters = directory.querySelector("[data-tool-filters]");
+  const previous = directory.querySelector("[data-tool-previous]");
+  const next = directory.querySelector("[data-tool-next]");
+  const range = directory.querySelector("[data-tool-range]");
+  const availability = directory.querySelector("[data-tool-availability]");
+  const template = document.getElementById("tool-card");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  const cards = scientificTools.map((tool) => {
+    const item = template.content.firstElementChild.cloneNode(true);
+    const article = item.querySelector("article");
+    const image = item.querySelector("img");
+    const footer = item.querySelector(".tool-card__footer");
+    const ready = tool.available === true;
+    const action = document.createElement(ready ? "a" : "button");
+
+    item.dataset.tool = tool.id;
+    article.toggleAttribute("data-ready", ready);
+    image.src = toolImage(tool);
+    image.alt = tool.imageAlt ?? "";
+    if (tool.image) image.classList.add("tool-card__photo");
+    item.querySelector(".tool-card__caption").textContent = tool.caption ?? "Method diagram";
+    item.querySelector(".tool-card__category").textContent = toolCategories[tool.category];
+    item.querySelector("h2").textContent = tool.name;
+    item.querySelector(".tool-card__description").textContent = tool.description;
+    item.querySelector(".tool-card__status").textContent = ready ? "Available" : "Coming Soon";
+
+    action.className = "tool-card__launch";
+    action.append(footer.querySelector("svg"));
+    if (ready) {
+      action.href = workspaceHref(tool);
+      action.setAttribute("aria-label", "Open " + tool.name + " workspace");
+    } else {
+      action.type = "button";
+      action.disabled = true;
+      action.setAttribute("aria-label", tool.name + " is coming soon");
+      if (tool.preview) {
+        const link = document.createElement("a");
+        link.className = "tool-card__preview";
+        link.href = workspaceHref(tool);
+        link.textContent = "Workspace preview";
+        link.setAttribute("aria-label", "Preview " + tool.name + " workspace");
+        item.querySelector(".tool-card__state").append(link);
+      }
+    }
+    footer.append(action);
+    return item;
+  });
+
+  track.replaceChildren(...cards);
+  let shown = cards;
+
+  function updateScrollControls() {
+    const end = track.scrollWidth - track.clientWidth;
+    previous.setAttribute("aria-disabled", String(track.scrollLeft <= 2));
+    next.setAttribute("aria-disabled", String(track.scrollLeft >= end - 2));
+
+    const bounds = track.getBoundingClientRect();
+    const indexes = shown.flatMap((card, index) => {
+      const rect = card.getBoundingClientRect();
+      return rect.left >= bounds.left - 2 && rect.right <= bounds.right + 2 ? [index + 1] : [];
+    });
+    if (indexes.length) {
+      const first = indexes[0];
+      const last = indexes.at(-1);
+      range.textContent = (first === last ? first : first + "–" + last) + " of " + shown.length;
+    }
+  }
+
+  const groups = [["all", "All tools"], ...Object.entries(toolCategories)];
+  groups.forEach(([key, label]) => {
+    const button = document.createElement("button");
+    const count = scientificTools.filter((tool) => key === "all" || tool.category === key).length;
+    const badge = document.createElement("span");
+    button.type = "button";
+    button.className = "tools__filter";
+    button.setAttribute("aria-pressed", String(key === "all"));
+    button.append(label + " ", badge);
+    badge.textContent = count;
+    filters.append(button);
+
+    button.addEventListener("click", () => {
+      for (const filter of filters.children) filter.setAttribute("aria-pressed", String(filter === button));
+      shown = cards.filter((card, index) => {
+        card.hidden = key !== "all" && scientificTools[index].category !== key;
+        return !card.hidden;
+      });
+      announceGroup();
+      track.scrollTo({ left: 0, behavior: "instant" });
+      updateScrollControls();
+    });
+  });
+
+  function announceGroup() {
+    const ready = shown.filter((card) => card.querySelector("[data-ready]")).length;
+    availability.textContent = ready + " available · " + (shown.length - ready) + " coming soon";
+  }
+
+  function scrollCards(direction, page = false) {
+    const gap = parseFloat(getComputedStyle(track).columnGap);
+    const stride = shown[0].getBoundingClientRect().width + gap;
+    const count = page ? Math.max(1, Math.floor((track.clientWidth + gap + 1) / stride)) : 1;
+    track.scrollBy({ left: direction * stride * count, behavior: reducedMotion.matches ? "instant" : "smooth" });
+  }
+
+  previous.addEventListener("click", () => {
+    if (previous.getAttribute("aria-disabled") === "false") scrollCards(-1, true);
+  });
+  next.addEventListener("click", () => {
+    if (next.getAttribute("aria-disabled") === "false") scrollCards(1, true);
+  });
+  track.addEventListener("keydown", (event) => {
+    if (event.target !== track) return;
+    const behavior = reducedMotion.matches ? "instant" : "smooth";
+    switch (event.key) {
+      case "ArrowLeft": scrollCards(-1); break;
+      case "ArrowRight": scrollCards(1); break;
+      case "Home": track.scrollTo({ left: 0, behavior }); break;
+      case "End": track.scrollTo({ left: track.scrollWidth, behavior }); break;
+      default: return;
+    }
+    event.preventDefault();
+  });
+
+  let frame = 0;
+  track.addEventListener("scroll", () => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      updateScrollControls();
+    });
+  }, { passive: true });
+
+  announceGroup();
+  directory.hidden = false;
+  updateScrollControls();
+  new ResizeObserver(updateScrollControls).observe(track);
+}
+
+setupToolDirectory();
