@@ -4,7 +4,7 @@
 
 - [x] **Observation Search → FITS Viewer keçidini sadələşdir.** İstifadəçi axtarış nəticəsindən bir SPHEREx müşahidəsinin FITS faylını əldə edib görüntüləyicidə aça bilsin. Bir real nümunə ilə bu yolu əvvəldən sona yoxla.
 - [x] **Sky Explorer-in ilk işlək versiyasını qur.** Bir real SPHEREx görüntüsünü aç, yaxınlaşdırma və görüntü üzərində gəzmə imkanı ver. Görüntünün koordinat məlumatından RA/Dec və baxış sahəsini göstər.
-- [ ] Əsas alətləri telefonda və klaviatura ilə yoxla. Boş axtarış nəticəsi, açılmayan fayl və məlumat yüklənən zaman göstərilən mətnlər aydın olsun.
+- [x] Əsas alətləri telefonda və klaviatura ilə yoxla. Boş axtarış nəticəsi, açılmayan fayl və məlumat yüklənən zaman göstərilən mətnlər aydın olsun.
 
 ## İlk demo üçün
 
@@ -12,6 +12,7 @@
 - [ ] About bölməsində komanda profillərini hazır məlumatlarla tamamla.
   - Profil UI-ı hazırdır (`about/team.js`, `about/team.css`); `about/team-data.js` hələ boşdur və səhifə **Team profiles are coming soon** göstərir. Təsdiqlənmiş ad, rol, bio və foto/link icazəsi gözlənilir, məlumat gələndən sonra bu iş bağlanacaq.
 - [ ] Saytı paylaşmaq üçün önizləmə linki hazırla. Ana səhifə → **Show All** → Tools → iş sahəsi yolunu həmin linkdə yoxla.
+  - Paket hazırdır və lokal yoxlanıb (`node scripts/build-demo.mjs`, `/` və `/AstroNot/` altında Chrome ilə; bax: README → Demo package). Paylaşılan HTTPS linki yoxdur: hədəf (məsələn GitHub Pages `gh-pages` branch-i və ya Actions), URL yolu, görünmə (public/private) və push/yayım icazəsi istifadəçidən gözlənilir.
 
 ## Sonrakı alətlər
 

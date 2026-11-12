@@ -2,20 +2,9 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { contentTypes, isPublicPath, notFoundFile } from "./scripts/publish-rules.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const rootFiles = new Set(["index.html", "workspace.html", "routes.js", "site.js", "styles.css"]);
-const publicDirectories = new Set(["assets", "tools", "explore", "learn", "about"]);
-const contentTypes = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".jpg": "image/jpeg",
-  ".png": "image/png",
-  ".woff2": "font/woff2",
-  ".txt": "text/plain; charset=utf-8",
-};
 
 const server = createServer(async (request, response) => {
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -23,28 +12,49 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  let url;
   let parts;
   try {
-    const path = new URL(request.url, "http://127.0.0.1").pathname;
-    parts = decodeURIComponent(path).split("/").filter(Boolean);
+    url = new URL(request.url, "http://127.0.0.1");
+    parts = decodeURIComponent(url.pathname).split("/").filter(Boolean);
   } catch {
     response.writeHead(400).end("Invalid request path");
     return;
   }
 
-  const isPublic = parts.length === 0 || publicDirectories.has(parts[0]) ||
-    (parts.length === 1 && rootFiles.has(parts[0]));
-  if (!isPublic || parts.some((part) => !/^[a-z\d][a-z\d._-]*$/i.test(part))) {
-    response.writeHead(404).end("Page not found");
+  // The 404 page uses a <base> tag, so it renders correctly at any depth.
+  async function notFound() {
+    try {
+      const page = await readFile(join(root, notFoundFile));
+      response.writeHead(404, {
+        "Content-Type": contentTypes[".html"],
+        "Content-Length": page.byteLength,
+        "Cache-Control": "no-cache",
+      });
+      response.end(request.method === "HEAD" ? undefined : page);
+    } catch {
+      response.writeHead(404).end("Page not found");
+    }
+  }
+
+  if (!isPublicPath(parts)) {
+    await notFound();
     return;
   }
 
   try {
     let file = join(root, ...parts);
-    if ((await stat(file)).isDirectory()) file = join(file, "index.html");
+    if ((await stat(file)).isDirectory()) {
+      // Like GitHub Pages: a folder without a trailing slash redirects, so relative links resolve.
+      if (parts.length > 0 && !url.pathname.endsWith("/")) {
+        response.writeHead(301, { Location: url.pathname + "/" + url.search }).end();
+        return;
+      }
+      file = join(file, "index.html");
+    }
     const type = contentTypes[extname(file)];
     if (!type) {
-      response.writeHead(404).end("Page not found");
+      await notFound();
       return;
     }
 
@@ -57,7 +67,8 @@ const server = createServer(async (request, response) => {
     response.end(request.method === "HEAD" ? undefined : content);
   } catch (error) {
     const missing = ["ENOENT", "ENOTDIR", "EISDIR"].includes(error.code);
-    response.writeHead(missing ? 404 : 500).end(missing ? "Page not found" : "Could not load the page");
+    if (missing) await notFound();
+    else response.writeHead(500).end("Could not load the page");
   }
 });
 

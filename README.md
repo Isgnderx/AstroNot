@@ -8,6 +8,30 @@ Open `index.html` in a browser to browse the local files. To use the clean URLs,
 node serve.mjs
 ```
 
+## Demo package
+
+`node serve.mjs` is the local preview. To share the site, build a package that holds only the public files (the HTML pages, JS, CSS, Inter font, images and the bundled FITS examples) plus `404.html`, `.nojekyll` and `build-manifest.json`. `.git`, `tests/`, `scripts/`, `serve.mjs`, Markdown and Python files never enter it. The allowlist is `scripts/publish-rules.mjs`, and `serve.mjs` uses the same rules, so the preview serves only what ships.
+
+```sh
+node scripts/build-demo.mjs                       # dist/, for a site at the root of its host
+node scripts/build-demo.mjs --base /AstroNot/     # dist/, for a GitHub Pages project site
+node scripts/build-demo.mjs --out ../pages-out    # another output folder (must be empty or a previous build)
+node scripts/preview-dist.mjs dist --prefix /AstroNot/ --port 4181   # emulates a static host at a subpath
+```
+
+`--base` only changes the `<base>` tag of `404.html`, because a 404 page is served at whatever depth was requested; every other page finds its assets through relative links and `routes.js`. `build-manifest.json` records the git commit (short hash), whether the working tree had uncommitted changes and which public files were among them, plus a SHA-256 per file and for the whole package, so a published demo can be matched to its source. `dist/` is git-ignored.
+
+Checked locally with the package served at `/` and at `/AstroNot/` (as a static host would, with the folder redirect to a trailing slash) in Chrome: every route with and without a trailing slash, legacy `workspace.html?tool=…` links, reload, back and forward, a new tab, no failed or 4xx requests, Home → Show All → Tools → Sky Explorer example at 1280 px and 390 px (emulated), the FITS Viewer, Time Machine and Image Differencing examples, Observation Search preparing the IRSA link, and 404 pages at shallow and deep paths. `node --test` includes `tests/publish.test.mjs` (package contents, base validation, `serve.mjs` parity and 404).
+
+Status: **not published.** No hosting target, visibility or permission has been chosen, so there is no shared HTTPS link yet. To publish, decide:
+
+1. The host. GitHub Pages only publishes a branch root or `/docs`, not `/dist`, so either (a) build into a `gh-pages` branch worktree: `git worktree add ../AstroNot-pages gh-pages`, then `node scripts/build-demo.mjs --base /AstroNot/ --out ../AstroNot-pages`, commit and push there, and set Settings → Pages → Deploy from a branch → `gh-pages` / root; or (b) a GitHub Actions workflow that runs the build and uploads `dist/` as the Pages artifact. Another static host (Netlify, Cloudflare Pages, a bucket) works with the same `dist/` and `--base /`.
+2. The URL path: `/AstroNot/` for `https://<user>.github.io/AstroNot/`, or `/` for a custom domain or a user site.
+3. Visibility. GitHub Pages from a private repository needs a plan that allows it, and Pages sites are public to anyone with the link unless the organization restricts access.
+4. Permission to push and to enable the host.
+
+After publishing, repeat the route and Show All checks on the real HTTPS address (the Observation Search link opens IRSA, which the site cannot read from a browser, so only the prepared link is checked) and then tick the preview-link item in `TODO.md`.
+
 ## Site pages
 
 - `/` — Landing page
