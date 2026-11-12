@@ -8,11 +8,13 @@
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
     <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/sky.css">
     <script src="../../routes.js" defer></script>
-    <script src="../../tools/registry.js" defer></script>
-    <script src="../../tools/workspace.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/sky.js" defer></script>
   </head>
-  <body class="workspace-page" data-workspace-id="sky-survey-viewer">
+  <body class="workspace-page">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
     <header class="workspace-bar">
       <div class="workspace-frame workspace-bar__inner">
@@ -37,8 +39,93 @@
         <h1 data-workspace-title>Sky Explorer</h1>
         <p class="workspace-description" data-workspace-description>Navigate SPHEREx images by RA and Dec. Pan, zoom, and adjust the field of view.</p>
       </header>
-      <div data-workspace-content></div>
-      <noscript><p class="workspace-status">Coming Soon. Enable JavaScript to view the workspace preview.</p></noscript>
+
+      <section class="workspace-panel sky-source" aria-labelledby="sky-source-title">
+        <h2 id="sky-source-title">Image source</h2>
+        <div class="sky-source__row">
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-sky-example>Load SPHEREx example</button>
+          <label class="fits-file">
+            <span>Choose a local FITS file</span>
+            <input type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-sky-file>
+          </label>
+        </div>
+        <p class="workspace-help">Reads files on this device. Supports uncompressed two-dimensional image HDUs. RA and Dec need a TAN or TAN-SIP WCS in ICRS; other images still open as pixels.</p>
+        <p class="workspace-status" role="status" data-sky-status></p>
+      </section>
+
+      <div class="sky-main">
+        <figure class="workspace-panel sky-display">
+          <div class="sky-display__bar">
+            <h2>Sky view</h2>
+            <div class="sky-toolbar" role="group" aria-label="View controls">
+              <button class="workspace-button" type="button" aria-disabled="true" data-sky-zoom-in>Zoom in</button>
+              <button class="workspace-button" type="button" aria-disabled="true" data-sky-zoom-out>Zoom out</button>
+              <button class="workspace-button" type="button" aria-disabled="true" data-sky-fit>Fit image</button>
+            </div>
+          </div>
+          <div class="sky-viewport" tabindex="0" role="group" aria-label="Sky image view" aria-describedby="sky-keys" data-sky-viewport>
+            <div class="fits-empty" data-sky-empty>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="2"/><circle cx="24" cy="24" r="8"/><path d="M24 10v8m0 12v8M10 24h8m12 0h8"/></svg>
+              <p>Load the SPHEREx example or choose a FITS file.</p>
+            </div>
+            <canvas role="img" aria-label="Sky image" data-sky-canvas hidden></canvas>
+          </div>
+          <figcaption class="sky-caption" id="sky-keys">
+            <span data-sky-zoom-label>Zoom unavailable</span>
+            <span>Drag to pan. Focus the view, then use the arrow keys to pan and + or − to zoom; 0 fits the image. Ctrl + scroll zooms at the pointer; two fingers pinch on touch screens.</span>
+          </figcaption>
+          <p class="sky-live" role="status" aria-live="polite" data-sky-live></p>
+        </figure>
+
+        <div class="sky-side">
+          <section class="workspace-panel sky-readout" aria-labelledby="sky-coords-title">
+            <h2 id="sky-coords-title">Sky coordinates</h2>
+            <h3>View center <span>ICRS · degrees</span></h3>
+            <dl class="workspace-facts">
+              <div><dt>RA</dt><dd data-sky-out="centerRa">—</dd></div>
+              <div><dt>Dec</dt><dd data-sky-out="centerDec">—</dd></div>
+              <div><dt>Pixel (x, y)</dt><dd data-sky-out="centerPixel">—</dd></div>
+              <div><dt>Value</dt><dd data-sky-out="centerValue">—</dd></div>
+            </dl>
+            <h3>Pointer <span>ICRS · degrees</span></h3>
+            <dl class="workspace-facts">
+              <div><dt>RA</dt><dd data-sky-out="pointerRa">—</dd></div>
+              <div><dt>Dec</dt><dd data-sky-out="pointerDec">—</dd></div>
+              <div><dt>Pixel (x, y)</dt><dd data-sky-out="pointerPixel">—</dd></div>
+              <div><dt>Value</dt><dd data-sky-out="pointerValue">—</dd></div>
+            </dl>
+            <h3>Field of view <span>image area shown</span></h3>
+            <dl class="workspace-facts">
+              <div><dt>Horizontal</dt><dd data-sky-out="fovX">—</dd></div>
+              <div><dt>Vertical</dt><dd data-sky-out="fovY">—</dd></div>
+            </dl>
+            <p class="workspace-help" data-sky-out="fovNote"></p>
+            <p class="workspace-help" data-sky-out="wcsStatus"></p>
+          </section>
+
+          <section class="workspace-panel sky-info" aria-labelledby="sky-info-title">
+            <h2 id="sky-info-title">Image information</h2>
+            <label class="sky-hdu" data-sky-hdu-label hidden>Image HDU<select data-sky-hdu></select></label>
+            <dl class="workspace-facts">
+              <div><dt>Source</dt><dd data-sky-out="source">—</dd></div>
+              <div><dt>Observation ID</dt><dd data-sky-out="obsid">—</dd></div>
+              <div><dt>HDU</dt><dd data-sky-out="hdu">—</dd></div>
+              <div><dt>Image size</dt><dd data-sky-out="size">—</dd></div>
+              <div><dt>Units (BUNIT)</dt><dd data-sky-out="unit">—</dd></div>
+              <div><dt>Observed</dt><dd data-sky-out="date">—</dd></div>
+              <div><dt>WCS</dt><dd data-sky-out="wcs">—</dd></div>
+            </dl>
+            <a class="workspace-source" data-sky-provenance hidden href="https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W21_2C/l2b-v20-2025-250/2/level2_2025W21_2C_0280_1D2_spx_l2b-v20-2025-250.fits?center=156.09328159,-41.64466331&amp;size=0.12">Original NASA/IPAC IRSA cutout</a>
+          </section>
+        </div>
+      </div>
+
+      <section class="workspace-panel sky-note" aria-labelledby="sky-wcs-title">
+        <h2 id="sky-wcs-title">Supported coordinate systems</h2>
+        <p class="workspace-help">RA and Dec are computed from the image header, never from pixel counts. Supported: the primary WCS with <strong>RA---TAN</strong> and <strong>DEC--TAN</strong>, with or without <strong>-SIP</strong> distortion (order up to 9), in <strong>ICRS</strong> and degrees, using <strong>PCi_j</strong> with <strong>CDELTi</strong> or <strong>CDi_j</strong>. <strong>CRPIX</strong> may be negative or outside the image. Other projections, frames, legacy CROTA keywords and alternate WCS are reported as unavailable. Pixel values shown are calibrated values, independent of the display contrast.</p>
+        <p class="workspace-help">Pixel (x, y) uses the FITS convention: the center of the first pixel is (1, 1) and y increases upward.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
   </body>
 </html>

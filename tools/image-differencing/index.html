@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Image Differencing — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/image-differencing.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/difference.js" defer></script>
+    <script src="../../tools/image-differencing.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="image-differencing">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Image Differencing</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Data Processing</p>
+        <h1 data-workspace-title>Image Differencing</h1>
+        <p class="workspace-description" data-workspace-description>Subtract aligned astronomical images to locate changes between exposures.</p>
+      </header>
+
+      <section class="workspace-panel tm-source" aria-labelledby="id-source-title">
+        <h2 id="id-source-title">Reference and target</h2>
+        <p class="workspace-help">The result is <strong>Δ = target − reference</strong>. Choose a <strong>Reference</strong> and a <strong>Target</strong> image HDU below, or load the example pair. Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS, and both must use the same units. Pixels that are NaN, BLANK or outside the overlap stay invalid in the result.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-id-example>Load SPHEREx example pair</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-swap>Swap reference and target</button>
+          <a class="workspace-source" href="../../tools/time-machine/index.html" data-route="/tools/time-machine">Compare the same pair in Time Machine</a>
+        </div>
+        <p class="workspace-status" role="status" data-id-status></p>
+      </section>
+
+      <div class="tm-slots" data-id-slots></div>
+
+      <section class="workspace-panel id-settings" aria-labelledby="id-settings-title">
+        <h2 id="id-settings-title">Difference settings</h2>
+        <div class="tm-controls">
+          <label>If the pixel grids differ
+            <select data-id-alignment>
+              <option value="reproject">Reproject the target onto the reference grid (bilinear)</option>
+              <option value="require-same-grid">Require one identical pixel grid</option>
+            </select>
+          </label>
+          <label>Background
+            <select data-id-background>
+              <option value="none">No correction</option>
+              <option value="median">Remove the global median offset of Δ</option>
+            </select>
+          </label>
+          <label class="tm-check" data-id-assume-wrap hidden><input type="checkbox" data-id-assume> <span>BUNIT is missing: treat both images as the same unit (not verified)</span></label>
+        </div>
+        <p class="workspace-help" data-id-settings-note></p>
+      </section>
+
+      <section class="workspace-panel id-result" aria-labelledby="id-result-title" aria-live="polite">
+        <h2 id="id-result-title">Result</h2>
+        <p class="id-sign" data-id-sign>Δ = target − reference</p>
+        <p class="tm-pair__verdict" data-id-verdict>Load a reference and a target image to compute the difference.</p>
+        <ul class="tm-notes" data-id-notes hidden></ul>
+        <dl class="workspace-facts tm-checks" data-id-summary hidden>
+          <div><dt>Observations</dt><dd data-id-fact="observations">—</dd></div>
+          <div><dt>Method</dt><dd data-id-fact="method">—</dd></div>
+          <div><dt>Resampling</dt><dd data-id-fact="resampling">—</dd></div>
+          <div><dt>Valid pixels</dt><dd data-id-fact="valid">—</dd></div>
+          <div><dt>Unit of Δ</dt><dd data-id-fact="unit">—</dd></div>
+          <div><dt>Variance and SNR</dt><dd data-id-fact="variance">—</dd></div>
+          <div><dt>Background</dt><dd data-id-fact="background">—</dd></div>
+          <div><dt>PSF matching</dt><dd data-id-fact="psf">—</dd></div>
+        </dl>
+        <div class="tm-table-wrap" data-id-conditions hidden>
+          <table class="tm-table">
+            <caption>Observing conditions, reference and target</caption>
+            <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Target</th><th scope="col">Match</th></tr></thead>
+            <tbody data-id-conditions-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel tm-display" aria-labelledby="id-display-title">
+        <div class="tm-display__bar">
+          <h2 id="id-display-title">Images</h2>
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-fit>Fit all views</button>
+        </div>
+        <div class="tm-controls">
+          <label>Reference and target range
+            <select data-id-clip>
+              <option value="1-99">1st to 99th percentile (shared)</option>
+              <option value="0.1-99.9">0.1th to 99.9th percentile (shared)</option>
+              <option value="0-100">Minimum to maximum (shared)</option>
+            </select>
+          </label>
+          <label>Difference scale limit (±)
+            <select data-id-limit>
+              <option value="99">99th percentile of |Δ|</option>
+              <option value="95">95th percentile of |Δ|</option>
+              <option value="100">Maximum |Δ|</option>
+              <option value="custom">Custom value</option>
+            </select>
+          </label>
+          <label data-id-custom-wrap hidden>Custom limit (± in the unit of Δ)
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="5" data-id-custom>
+          </label>
+        </div>
+        <p class="workspace-help" data-id-display-note>The display range and the color scale change only how the images look. Values, masks and the difference are never altered by them.</p>
+
+        <div class="id-panels" data-id-panels></div>
+
+        <div class="id-legend" data-id-legend hidden>
+          <canvas width="256" height="16" role="img" aria-label="Color scale for the difference, from negative on the left through zero in the middle to positive on the right" data-id-legend-bar></canvas>
+          <div class="id-legend__ticks" aria-hidden="true"><span data-id-legend-low>−L</span><span>0</span><span data-id-legend-high>+L</span></div>
+          <p class="workspace-help" data-id-legend-text></p>
+          <p class="workspace-help id-legend__invalid"><span class="id-swatch" aria-hidden="true"></span> Hatched pixels have no valid value (outside the overlap, NaN, BLANK or masked).</p>
+        </div>
+
+        <p class="tm-keys" id="id-keys">Click or tap a pixel to read its values. With a view focused: arrow keys move the selected pixel by one (Shift: ten) and the view follows it, + and − zoom, 0 fits the image, Enter selects the center pixel. Drag to pan, Ctrl + scroll or a two-finger pinch zooms. All three views share one pan and zoom because they are on the reference grid.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-id-live></p>
+      </section>
+
+      <section class="workspace-panel tm-mark id-pixel" aria-labelledby="id-pixel-title">
+        <h2 id="id-pixel-title">Selected pixel</h2>
+        <p class="workspace-help" data-id-pixel-note>Select a pixel in any of the three images, or enter its position below. Pixel positions are FITS pixel numbers on the reference grid, where the first pixel is (1, 1).</p>
+        <div class="id-pixel__inputs">
+          <label>Pixel x
+            <input type="text" inputmode="numeric" autocomplete="off" data-id-pixel-x>
+          </label>
+          <label>Pixel y
+            <input type="text" inputmode="numeric" autocomplete="off" data-id-pixel-y>
+          </label>
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-pixel-go>Read this pixel</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-pixel-center>Center views on it</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-pixel-clear>Clear</button>
+        </div>
+        <div class="tm-table-wrap">
+          <table class="tm-table id-readout" data-id-readout hidden>
+            <caption>Values at the selected pixel; every value is read from the calibrated arrays, not from the picture</caption>
+            <thead><tr><th scope="col">Quantity</th><th scope="col">Value</th></tr></thead>
+            <tbody data-id-readout-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel id-export" aria-labelledby="id-export-title">
+        <h2 id="id-export-title">Hand-off</h2>
+        <p class="workspace-help">Download the result as a FITS file: a <strong>DIFFERENCE</strong> image on the reference grid with the reference WCS, <strong>BUNIT</strong> and the direction (<strong>DIFFDIR</strong>), both observation IDs, a <strong>MASK</strong> image (0 valid, 1 invalid) and, when both images have variance, a <strong>VARIANCE</strong> image. Invalid pixels are NaN. The same result (aligned images, difference, overlap mask, WCS, unit and both observation IDs) is what Motion Detector will reuse.</p>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" aria-disabled="true" data-id-download>Download difference FITS</button>
+        </div>
+        <p class="workspace-status" role="status" data-id-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="id-note-title">
+        <h2 id="id-note-title">How the difference is computed</h2>
+        <p class="workspace-help"><strong>Δ = target − reference</strong> for pixels that are valid in both images; a positive value means the target is brighter. Pixel values come from the calibrated data (<strong>BSCALE</strong> and <strong>BZERO</strong> applied once, <strong>BLANK</strong> and NaN invalid). A value of zero is valid.</p>
+        <p class="workspace-help"><strong>Same sky</strong> is decided from the WCS of each image; equal array sizes alone are never enough. On one verified pixel grid (every sample pixel at the same sky position within 0.01 pixel) the arrays are subtracted as they are, a <strong>pixel difference</strong>. On different grids the target is reprojected onto the reference grid by bilinear interpolation (the method of reproject_interp with order bilinear), and pixels the target does not cover, or whose interpolation touches an invalid pixel, are invalid. Real exposures taken on different dates sit about half a pixel apart, so this matters. Interpolation smooths the target and correlates its noise.</p>
+        <p class="workspace-help"><strong>Variance</strong> is combined as Var(Δ) = Var(target) + Var(reference) only when both files have a VARIANCE image in matching units, assuming independent errors; for a reprojected target the weights are squared and summed, and neighbouring pixels remain correlated. Otherwise the SNR stays empty. <strong>Units</strong> must match; only Jy prefixes such as kJy/sr and MJy/sr are converted. No PSF matching is applied, and background correction is off unless you choose it. Residuals from background, PSF and pixel-scale differences can look like real changes, and the scientific meaning of a difference depends on the band, the calibration and the alignment quality.</p>
+        <p class="workspace-help">FLAGS and other mask images are not interpreted; only NaN and BLANK pixels are excluded.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+
+    <template data-id-slot-template>
+      <section class="workspace-panel tm-slot" data-id-slot>
+        <div class="tm-slot__head">
+          <h2 data-id-slot-title></h2>
+          <span class="tm-slot__badge" data-id-slot-badge></span>
+        </div>
+        <div class="tm-slot__inputs">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-id-file>
+            <span class="workspace-button tm-file__button" data-id-file-label>Choose FITS file</span>
+          </label>
+          <label class="tm-hdu">Image HDU
+            <select data-id-hdu disabled></select>
+          </label>
+        </div>
+        <p class="workspace-status" role="status" data-id-slot-status></p>
+        <dl class="workspace-facts tm-facts">
+          <div><dt>File</dt><dd data-id-slot-fact="file">—</dd></div>
+          <div><dt>Observation ID</dt><dd data-id-slot-fact="obsId">—</dd></div>
+          <div><dt>HDU</dt><dd data-id-slot-fact="hdu">—</dd></div>
+          <div><dt>Image size</dt><dd data-id-slot-fact="size">—</dd></div>
+          <div><dt>Units (BUNIT)</dt><dd data-id-slot-fact="unit">—</dd></div>
+          <div><dt>Observed</dt><dd data-id-slot-fact="time">—</dd></div>
+          <div><dt>Wavelength</dt><dd data-id-slot-fact="wavelength">—</dd></div>
+          <div><dt>Detector</dt><dd data-id-slot-fact="detector">—</dd></div>
+          <div><dt>Variance</dt><dd data-id-slot-fact="variance">—</dd></div>
+          <div><dt>WCS</dt><dd data-id-slot-fact="wcs">—</dd></div>
+        </dl>
+      </section>
+    </template>
+
+    <template data-id-panel-template>
+      <figure class="tm-panel" data-id-panel>
+        <figcaption class="tm-panel__head">
+          <span class="tm-panel__role" data-id-panel-role></span>
+          <span class="tm-panel__title" data-id-panel-title></span>
+        </figcaption>
+        <div class="tm-viewport" tabindex="0" role="group" aria-describedby="id-keys" data-id-viewport>
+          <div class="fits-empty" data-id-empty><p>Load an observation to see it here.</p></div>
+          <canvas role="img" hidden data-id-canvas></canvas>
+        </div>
+        <p class="tm-panel__line" data-id-range></p>
+        <p class="tm-panel__line" data-id-zoom></p>
+        <p class="tm-panel__line tm-panel__pointer" data-id-pointer></p>
+      </figure>
+    </template>
+  </body>
+</html>

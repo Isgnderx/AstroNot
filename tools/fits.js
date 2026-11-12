@@ -211,14 +211,21 @@ function setupFitsViewer() {
     header.textContent = hdu.cards.join("\n");
   }
 
-  async function showHdu() {
+  function hduProblem(hdu) {
+    if (!hdu.image) return "This HDU is not an uncompressed 2D image, so no pixels are shown. The header is available in File metadata.";
+    if (hdu.bitpix === 64) return "This image uses 64-bit integers (BITPIX 64), which the preview does not read. The header is available in File metadata.";
+    return "This image exceeds the preview limits (" + fitsMaxPixels.toLocaleString("en-US") + " pixels, 4,096 per axis). The header is available in File metadata.";
+  }
+
+  // announce: the person changed the HDU, so say what is shown. The first HDU of a new file keeps the "loaded" status.
+  async function showHdu(announce = false) {
     const version = ++previewVersion;
     const hdu = hdus[Number(select.value)];
     renderFacts(hdu);
     if (!hdu.renderable) {
-      showEmpty(hdu.image
-        ? "This image exceeds the preview limits. The header is available in File metadata."
-        : "The header is available in File metadata. Choose an uncompressed 2D image HDU to display pixels.");
+      const problem = hduProblem(hdu);
+      showEmpty(problem);
+      setStatus("HDU " + select.value + " (" + hdu.name + ") cannot be displayed. " + problem, true);
       return;
     }
 
@@ -236,15 +243,21 @@ function setupFitsViewer() {
       caption.hidden = false;
       zoom.value = "fit";
       setZoom();
+      if (announce === true) setStatus("Showing HDU " + select.value + " (" + hdu.name + "), " + dimensions + " pixels.");
     } catch (error) {
-      if (version === previewVersion) showEmpty(error.message);
+      if (version === previewVersion) {
+        showEmpty(error.message);
+        setStatus("HDU " + select.value + " (" + hdu.name + ") cannot be displayed. " + error.message, true);
+      }
     }
   }
 
   async function openFits(source, isExample = false) {
     const version = ++fileVersion;
     previewVersion++;
+    const name = source instanceof File ? source.name : "The SPHEREx example";
     metadata.hidden = true;
+    document.dispatchEvent(new CustomEvent("fits-opening"));
     showEmpty("Reading FITS headers…");
     setStatus("Reading FITS headers…");
     try {
@@ -262,12 +275,13 @@ function setupFitsViewer() {
       provenance.hidden = !isExample;
       metadata.hidden = false;
       setStatus(isExample ? "SPHEREx QR2 example loaded." : "FITS headers loaded.");
+      document.dispatchEvent(new CustomEvent("fits-opened", { detail: { hdus, example: isExample } }));
       await showHdu();
     } catch (error) {
       if (version !== fileVersion) return;
       fileInput.value = "";
-      setStatus(error.message, true);
-      showEmpty("Choose a FITS file or load the SPHEREx example.");
+      setStatus(name + " could not be opened. " + error.message, true);
+      showEmpty("No image is shown. Choose another FITS file or load the SPHEREx example.");
     }
   }
 
@@ -301,10 +315,11 @@ function setupFitsViewer() {
     fileInput.value = "";
     openFits(loadExample(), true);
   });
-  select.addEventListener("change", showHdu);
+  select.addEventListener("change", () => showHdu(true));
   zoom.addEventListener("change", setZoom);
   fileInput.disabled = false;
   exampleButton.disabled = false;
 }
 
-setupFitsViewer();
+// Other pages (Sky Explorer, tests) load this file for the shared readers and have no Viewer controls.
+if (document.querySelector("[data-fits-file]")) setupFitsViewer();

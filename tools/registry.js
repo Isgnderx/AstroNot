@@ -14,6 +14,7 @@ const scientificTools = [
     image: "assets/tools/spherex-dust.jpg",
     imageAlt: "SPHEREx infrared image of a dust cloud in the Large Magellanic Cloud",
     caption: "SPHEREx · 3.29 μm",
+    available: true,
     preview: {
       title: "Survey image preview",
       steps: ["Choose a SPHEREx observation", "Set RA, Dec, and field of view", "Pan and zoom the image"],
@@ -28,6 +29,7 @@ const scientificTools = [
     category: "observation",
     description: "Compare observations from different dates with a timeline and blink view.",
     diagram: "epochs",
+    available: true,
     preview: {
       title: "Epoch comparison",
       alt: "Schematic of the same sky field in two epochs, with a region marked for comparison",
@@ -112,10 +114,12 @@ const scientificTools = [
   },
   {
     id: "image-differencing",
+    route: "image-differencing",
     name: "Image Differencing",
     category: "processing",
     description: "Subtract aligned astronomical images to locate changes between exposures.",
     diagram: "difference",
+    available: true,
   },
   {
     id: "mosaic-builder",

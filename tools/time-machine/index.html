@@ -8,9 +8,12 @@
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
     <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
     <script src="../../routes.js" defer></script>
-    <script src="../../tools/registry.js" defer></script>
-    <script src="../../tools/workspace.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/time-machine.js" defer></script>
   </head>
   <body class="workspace-page" data-workspace-id="multi-epoch-viewer">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
@@ -37,8 +40,175 @@
         <h1 data-workspace-title>Time Machine</h1>
         <p class="workspace-description" data-workspace-description>Compare observations from different dates with a timeline and blink view.</p>
       </header>
-      <div data-workspace-content></div>
-      <noscript><p class="workspace-status">Coming Soon. Enable JavaScript to view the workspace preview.</p></noscript>
+
+      <section class="workspace-panel tm-source" aria-labelledby="tm-source-title">
+        <h2 id="tm-source-title">Two observations of one field</h2>
+        <p class="workspace-help">Choose a <strong>Reference observation</strong> and a <strong>Comparison observation</strong> below, or load the example pair. Files are read on this device. Each must contain an uncompressed two-dimensional image HDU with a TAN or TAN-SIP WCS in ICRS to be placed on the sky; images without one still open, but cannot be linked.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-tm-example>Load SPHEREx example pair</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-tm-swap>Swap roles</button>
+          <a class="workspace-source" data-tm-search-link href="../../tools/observation-search/index.html">Find observations in Observation Search</a>
+        </div>
+        <p class="workspace-status" role="status" data-tm-status></p>
+      </section>
+
+      <div class="tm-slots" data-tm-slots></div>
+
+      <section class="workspace-panel tm-pair" aria-labelledby="tm-pair-title">
+        <h2 id="tm-pair-title">Comparison conditions</h2>
+        <p class="tm-pair__verdict" data-tm-verdict>Load a reference and a comparison observation to compare them.</p>
+        <ul class="tm-notes" data-tm-warnings hidden></ul>
+        <div class="tm-timeline" data-tm-timeline hidden>
+          <h3>Timeline</h3>
+          <div class="tm-timeline__track" aria-hidden="true" data-tm-track></div>
+          <ol class="tm-timeline__list" data-tm-timeline-list></ol>
+          <p class="workspace-help" data-tm-timeline-text></p>
+        </div>
+        <p class="workspace-help" data-tm-timeline-missing></p>
+        <dl class="workspace-facts tm-checks" data-tm-checks hidden>
+          <div><dt>Sky overlap</dt><dd data-tm-check="overlap">—</dd></div>
+          <div><dt>Pixel grid</dt><dd data-tm-check="grid">—</dd></div>
+          <div><dt>Linked pan and zoom, Blink</dt><dd data-tm-check="link">—</dd></div>
+        </dl>
+        <div class="tm-table-wrap" data-tm-conditions hidden>
+          <table class="tm-table">
+            <caption>Observing conditions, reference and comparison</caption>
+            <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Comparison</th><th scope="col">Match</th></tr></thead>
+            <tbody data-tm-conditions-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel tm-display" aria-labelledby="tm-display-title">
+        <div class="tm-display__bar">
+          <h2 id="tm-display-title">Compare</h2>
+          <div class="tm-segment" role="group" aria-label="View mode">
+            <button class="workspace-button" type="button" aria-pressed="true" data-tm-mode="side">Side by side</button>
+            <button class="workspace-button" type="button" aria-pressed="false" aria-disabled="true" data-tm-mode="blink">Blink</button>
+          </div>
+        </div>
+
+        <div class="tm-controls">
+          <label>Contrast range
+            <select data-tm-contrast>
+              <option value="shared">Shared range (same units)</option>
+              <option value="separate">Separate ranges</option>
+            </select>
+          </label>
+          <label>Range clipping
+            <select data-tm-clip>
+              <option value="1-99">1st to 99th percentile</option>
+              <option value="0.1-99.9">0.1th to 99.9th percentile</option>
+              <option value="0-100">Minimum to maximum</option>
+            </select>
+          </label>
+          <label class="tm-check"><input type="checkbox" checked disabled data-tm-link> <span>Link pan and zoom</span></label>
+          <label class="tm-check"><input type="checkbox" disabled data-tm-align> <span>Align comparison to the reference grid (display only)</span></label>
+        </div>
+        <p class="workspace-help" data-tm-control-note></p>
+
+        <div class="tm-blink" data-tm-blink-controls hidden>
+          <div class="tm-segment" role="group" aria-label="Frame shown">
+            <button class="workspace-button" type="button" aria-pressed="true" data-tm-frame="reference">Reference</button>
+            <button class="workspace-button" type="button" aria-pressed="false" data-tm-frame="comparison">Comparison</button>
+          </div>
+          <button class="workspace-button workspace-button--primary" type="button" aria-pressed="false" data-tm-blink-toggle>Start blinking</button>
+          <label>Speed
+            <select data-tm-speed></select>
+          </label>
+        </div>
+        <p class="workspace-help" data-tm-blink-note></p>
+
+        <div class="tm-panels" data-tm-panels></div>
+        <p class="tm-keys" id="tm-keys">Drag to pan, tap or click to mark a point. With a view focused: arrow keys pan, + and − zoom, 0 fits the image, Enter marks the view center. In Blink, Space or B starts and stops, and 1 or 2 shows the reference or the comparison. Ctrl + scroll zooms at the pointer; two fingers pinch on touch screens.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-tm-live></p>
+      </section>
+
+      <section class="workspace-panel tm-mark" aria-labelledby="tm-mark-title">
+        <h2 id="tm-mark-title">Marked point</h2>
+        <p class="workspace-help" data-tm-mark-note>Click or tap an image, or press Enter in a focused view, to mark a point. The same sky position is shown in both images when both have a WCS.</p>
+        <div class="tm-table-wrap">
+          <table class="tm-table" data-tm-mark-table hidden>
+            <caption>Values at the marked point, each read from its own source file</caption>
+            <thead><tr><th scope="col">Quantity</th><th scope="col">Reference</th><th scope="col">Comparison</th></tr></thead>
+            <tbody data-tm-mark-body></tbody>
+          </table>
+        </div>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" aria-disabled="true" data-tm-center-mark>Center both on the mark</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-tm-clear-mark>Clear mark</button>
+        </div>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="tm-note-title">
+        <h2 id="tm-note-title">How comparisons are checked</h2>
+        <p class="workspace-help"><strong>Time</strong> comes from <strong>DATE-OBS</strong> and <strong>MJD-OBS</strong> with <strong>TIMESYS</strong> (UTC when absent). If both are present and disagree by more than a second, neither is trusted. <strong>DATE</strong> is the time the file was written and is shown separately. A time you type is marked as entered manually. Times on different time scales are not ordered.</p>
+        <p class="workspace-help"><strong>Same sky</strong> is decided from the WCS of each image, not from file names. <strong>Linked pan and zoom</strong> and <strong>Blink</strong> need one verified pixel grid: equal array sizes and the same sky position for sample pixels in both images. Real exposures taken on different dates usually sit on slightly different grids; the optional alignment copies the nearest comparison pixel onto the reference grid for viewing and does not interpolate or change any value. Pixel values are read from the calibrated data and do not depend on contrast.</p>
+        <p class="workspace-help">The same file cannot be used as two epochs: identical pixel data are rejected as the same observation. Mask, variance and other HDUs are not applied. Blink shows at most two frames per second.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
+
+    <template data-tm-slot-template>
+      <section class="workspace-panel tm-slot" data-tm-slot>
+        <div class="tm-slot__head">
+          <h2 data-tm-slot-title></h2>
+          <span class="tm-slot__badge" data-tm-slot-badge></span>
+        </div>
+        <div class="tm-slot__inputs">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-tm-file>
+            <span class="workspace-button tm-file__button" data-tm-file-label>Choose FITS file</span>
+          </label>
+          <label class="tm-hdu">Image HDU
+            <select data-tm-hdu disabled></select>
+          </label>
+        </div>
+        <p class="workspace-status" role="status" data-tm-slot-status></p>
+        <dl class="workspace-facts tm-facts" data-tm-facts>
+          <div><dt>File</dt><dd data-tm-fact="file">—</dd></div>
+          <div><dt>Observation ID</dt><dd data-tm-fact="obsId">—</dd></div>
+          <div><dt>HDU</dt><dd data-tm-fact="hdu">—</dd></div>
+          <div><dt>Image size</dt><dd data-tm-fact="size">—</dd></div>
+          <div><dt>Units (BUNIT)</dt><dd data-tm-fact="unit">—</dd></div>
+          <div><dt>Coordinate frame</dt><dd data-tm-fact="frame">—</dd></div>
+          <div><dt>Observed</dt><dd data-tm-fact="time">—</dd></div>
+          <div><dt>Time source</dt><dd data-tm-fact="timeSource">—</dd></div>
+          <div><dt>File written (DATE)</dt><dd data-tm-fact="processed">—</dd></div>
+          <div><dt>Wavelength</dt><dd data-tm-fact="wavelength">—</dd></div>
+          <div><dt>Exposure</dt><dd data-tm-fact="exposure">—</dd></div>
+          <div><dt>Detector</dt><dd data-tm-fact="detector">—</dd></div>
+          <div><dt>WCS</dt><dd data-tm-fact="wcs">—</dd></div>
+        </dl>
+        <p class="workspace-help" data-tm-time-issues></p>
+        <div class="tm-manual" data-tm-manual hidden>
+          <label>Observation time, UTC
+            <input type="text" inputmode="numeric" autocomplete="off" placeholder="2025-05-24T04:24:53" data-tm-manual-input>
+          </label>
+          <div class="tm-actions">
+            <button class="workspace-button" type="button" data-tm-manual-apply>Use this time</button>
+            <button class="workspace-button" type="button" hidden data-tm-manual-clear>Remove manual time</button>
+          </div>
+          <p class="workspace-help">Use this only when the header has no usable time. The time is labeled as entered manually.</p>
+        </div>
+      </section>
+    </template>
+
+    <template data-tm-panel-template>
+      <figure class="tm-panel" data-tm-panel>
+        <figcaption class="tm-panel__head">
+          <span class="tm-panel__role" data-tm-panel-role></span>
+          <span class="tm-panel__title" data-tm-panel-title></span>
+        </figcaption>
+        <div class="tm-viewport" tabindex="0" role="group" aria-describedby="tm-keys" data-tm-viewport>
+          <div class="fits-empty" data-tm-empty><p>Load an observation to see it here.</p></div>
+          <canvas role="img" hidden data-tm-canvas></canvas>
+          <span class="tm-viewport__badge" hidden data-tm-badge></span>
+        </div>
+        <p class="tm-panel__line" data-tm-range></p>
+        <p class="tm-panel__line" data-tm-zoom></p>
+        <p class="tm-panel__line tm-panel__pointer" data-tm-pointer></p>
+      </figure>
+    </template>
   </body>
 </html>

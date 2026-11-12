@@ -1,54 +1,78 @@
-function setupToolDirectory() {
-  const directory = document.querySelector("[data-tools-directory]");
+const toolCardTemplate = document.createElement("template");
+toolCardTemplate.innerHTML = `
+  <li class="tools__item">
+    <article class="tool-card">
+      <div class="tool-card__visual">
+        <img alt="" width="384" height="196" loading="lazy" decoding="async">
+        <span class="tool-card__caption"></span>
+      </div>
+      <div class="tool-card__body">
+        <p class="tool-card__category"></p>
+        <p class="tool-card__description"></p>
+        <div class="tool-card__footer">
+          <div class="tool-card__state">
+            <span class="tool-card__status"></span>
+          </div>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>
+        </div>
+      </div>
+    </article>
+  </li>`;
+
+function createToolCard(tool, headingTag) {
+  const item = toolCardTemplate.content.firstElementChild.cloneNode(true);
+  const article = item.querySelector("article");
+  const image = item.querySelector("img");
+  const category = item.querySelector(".tool-card__category");
+  const heading = document.createElement(headingTag);
+  const footer = item.querySelector(".tool-card__footer");
+  const ready = tool.available === true;
+  const action = document.createElement(ready ? "a" : "button");
+
+  item.dataset.tool = tool.id;
+  article.toggleAttribute("data-ready", ready);
+  image.src = toolImage(tool);
+  image.alt = tool.imageAlt ?? "";
+  if (tool.image) image.classList.add("tool-card__photo");
+  item.querySelector(".tool-card__caption").textContent = tool.caption ?? "Method diagram";
+  category.textContent = toolCategories[tool.category];
+  heading.className = "tool-card__title";
+  heading.textContent = tool.name;
+  category.after(heading);
+  item.querySelector(".tool-card__description").textContent = tool.description;
+  item.querySelector(".tool-card__status").textContent = ready ? "Available" : "Coming Soon";
+
+  action.className = "tool-card__launch";
+  action.append(footer.querySelector("svg"));
+  if (ready) {
+    action.href = workspaceHref(tool);
+    action.setAttribute("aria-label", "Open " + tool.name + " workspace");
+  } else {
+    action.type = "button";
+    action.disabled = true;
+    action.setAttribute("aria-label", tool.name + " is coming soon");
+    if (tool.preview) {
+      const link = document.createElement("a");
+      link.className = "tool-card__preview";
+      link.href = workspaceHref(tool);
+      link.textContent = "Workspace preview";
+      link.setAttribute("aria-label", "Preview " + tool.name + " workspace");
+      item.querySelector(".tool-card__state").append(link);
+    }
+  }
+  footer.append(action);
+  return item;
+}
+
+function setupToolDirectory(directory) {
   const track = directory.querySelector("[data-tool-track]");
   const filters = directory.querySelector("[data-tool-filters]");
   const previous = directory.querySelector("[data-tool-previous]");
   const next = directory.querySelector("[data-tool-next]");
   const range = directory.querySelector("[data-tool-range]");
   const availability = directory.querySelector("[data-tool-availability]");
-  const template = document.getElementById("tool-card");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-  const cards = scientificTools.map((tool) => {
-    const item = template.content.firstElementChild.cloneNode(true);
-    const article = item.querySelector("article");
-    const image = item.querySelector("img");
-    const footer = item.querySelector(".tool-card__footer");
-    const ready = tool.available === true;
-    const action = document.createElement(ready ? "a" : "button");
-
-    item.dataset.tool = tool.id;
-    article.toggleAttribute("data-ready", ready);
-    image.src = toolImage(tool);
-    image.alt = tool.imageAlt ?? "";
-    if (tool.image) image.classList.add("tool-card__photo");
-    item.querySelector(".tool-card__caption").textContent = tool.caption ?? "Method diagram";
-    item.querySelector(".tool-card__category").textContent = toolCategories[tool.category];
-    item.querySelector("h2").textContent = tool.name;
-    item.querySelector(".tool-card__description").textContent = tool.description;
-    item.querySelector(".tool-card__status").textContent = ready ? "Available" : "Coming Soon";
-
-    action.className = "tool-card__launch";
-    action.append(footer.querySelector("svg"));
-    if (ready) {
-      action.href = workspaceHref(tool);
-      action.setAttribute("aria-label", "Open " + tool.name + " workspace");
-    } else {
-      action.type = "button";
-      action.disabled = true;
-      action.setAttribute("aria-label", tool.name + " is coming soon");
-      if (tool.preview) {
-        const link = document.createElement("a");
-        link.className = "tool-card__preview";
-        link.href = workspaceHref(tool);
-        link.textContent = "Workspace preview";
-        link.setAttribute("aria-label", "Preview " + tool.name + " workspace");
-        item.querySelector(".tool-card__state").append(link);
-      }
-    }
-    footer.append(action);
-    return item;
-  });
+  const cards = scientificTools.map((tool) => createToolCard(tool, "h2"));
 
   track.replaceChildren(...cards);
   let shown = cards;
@@ -140,4 +164,14 @@ function setupToolDirectory() {
   new ResizeObserver(updateScrollControls).observe(track);
 }
 
-setupToolDirectory();
+const toolDirectory = document.querySelector("[data-tools-directory]");
+if (toolDirectory) setupToolDirectory(toolDirectory);
+
+const toolPreview = document.querySelector("[data-tool-preview]");
+if (toolPreview) {
+  const featured = ["sky-survey-viewer", "observation-search", "fits-viewer", "multi-epoch-viewer"]
+    .map((id) => scientificTools.find((tool) => tool.id === id))
+    .filter(Boolean);
+  toolPreview.replaceChildren(...featured.map((tool) => createToolCard(tool, "h3")));
+  toolPreview.hidden = featured.length === 0;
+}

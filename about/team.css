@@ -1,0 +1,97 @@
+/* Team profiles on /about. Rendered by team.js from team-data.js. */
+
+.team-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-member { min-inline-size: 0; }
+
+.team-member__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  min-inline-size: 0;
+}
+
+.team-member__photo {
+  flex: none;
+  inline-size: 5.5rem;
+  block-size: 5.5rem;
+  border-radius: 0.5rem;
+  background: var(--raised);
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.team-member__copy { min-inline-size: 0; }
+
+.about-page__sections .team-member__name {
+  margin: 0;
+  font-size: clamp(1.125rem, 1.6vw, 1.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.about-page__sections .team-member__role {
+  margin-block: 0.25rem 0;
+  color: var(--blue);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.about-page__sections .team-member__bio {
+  margin-block: 0.6rem 0;
+  overflow-wrap: anywhere;
+}
+
+.team-member__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-inline-size: 100%;
+  margin-block-start: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.team-member__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Several members: a full-width block of dark cards below the Mission text. */
+.team--group { grid-column: 1 / -1; }
+
+.team--group .team-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+}
+
+.team--group .team-member__body {
+  block-size: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--raised);
+}
+
+@media (max-width: 680px) {
+  .team--group .team-list { grid-template-columns: minmax(0, 1fr); }
+  .team-member__photo {
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+  }
+  .team--group .team-member__body { padding: 1rem; }
+}

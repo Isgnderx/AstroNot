@@ -171,6 +171,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.workspace input[type="date"]::-webkit-calendar-picker-indicator:focus-visible {
+  outline: 2px solid #f2f4f8;
+  outline-offset: 2px;
+}
+
 .workspace-facts {
   display: grid;
   margin-block: 0.95rem;
@@ -427,4 +432,13 @@
 
 @media (pointer: coarse) {
   .fits-file input { font-size: 1rem; }
+}
+
+/* Coordinates such as 156.09328159 need about 7.5rem of text width; three columns on a phone cut them off. */
+@media (max-width: 560px) {
+  .observation-fields--position { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 380px) {
+  .observation-fields { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,0 +1,34 @@
+# AstroNot — görüləcək işlər
+
+## İndi
+
+- [x] **Observation Search → FITS Viewer keçidini sadələşdir.** İstifadəçi axtarış nəticəsindən bir SPHEREx müşahidəsinin FITS faylını əldə edib görüntüləyicidə aça bilsin. Bir real nümunə ilə bu yolu əvvəldən sona yoxla.
+- [x] **Sky Explorer-in ilk işlək versiyasını qur.** Bir real SPHEREx görüntüsünü aç, yaxınlaşdırma və görüntü üzərində gəzmə imkanı ver. Görüntünün koordinat məlumatından RA/Dec və baxış sahəsini göstər.
+- [ ] Əsas alətləri telefonda və klaviatura ilə yoxla. Boş axtarış nəticəsi, açılmayan fayl və məlumat yüklənən zaman göstərilən mətnlər aydın olsun.
+
+## İlk demo üçün
+
+- [x] Learn bölməsinə real nümunə ilə qısa FITS təlimatı əlavə et və onu Observation Search ilə FITS Viewer-ə bağla.
+- [ ] About bölməsində komanda profillərini hazır məlumatlarla tamamla.
+  - Profil UI-ı hazırdır (`about/team.js`, `about/team.css`); `about/team-data.js` hələ boşdur və səhifə **Team profiles are coming soon** göstərir. Təsdiqlənmiş ad, rol, bio və foto/link icazəsi gözlənilir, məlumat gələndən sonra bu iş bağlanacaq.
+- [ ] Saytı paylaşmaq üçün önizləmə linki hazırla. Ana səhifə → **Show All** → Tools → iş sahəsi yolunu həmin linkdə yoxla.
+
+## Sonrakı alətlər
+
+- [x] **Time Machine** — eyni göy sahəsinin müxtəlif tarixlərdə çəkilmiş görüntülərini yan-yana müqayisə et.
+- [x] **Image Differencing** — eyni koordinat sisteminə uyğunlaşdırılmış iki görüntünün fərqini göstər.
+- [ ] **Motion Detector** — bir neçə müşahidədə görünən hərəkət namizədlərini qeyd et və ilkin görüntülərlə yoxla.
+- [ ] **Spectrum Lab** — real dalğa uzunluğu və axın ölçmələrini vahidlər və qeyri-müəyyənliklə birlikdə göstər.
+- [ ] Spectrophotometry
+- [ ] Source Detection
+- [ ] Light Curve Analysis
+- [ ] Catalog Cross-Match
+- [ ] Mosaic Builder
+
+## Hazırdır
+
+- [x] Hərəkətli qalaktikası olan ana səhifə, dörd seçilmiş alət və **Show All** keçidi.
+- [x] 12 alətin yer aldığı ayrıca Tools səhifəsi və hazırlanmaqda olan iş sahələrinin önizləmələri.
+- [x] SPHEREx arxivində axtarış üçün Observation Search.
+- [x] Yerli FITS fayllarını açan FITS Viewer və real SPHEREx nümunəsi.
+- [x] Explore, Learn və About üçün ayrıca səhifələr.

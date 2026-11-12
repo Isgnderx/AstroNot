@@ -8,8 +8,11 @@
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
     <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/observation.css">
     <script src="../../routes.js" defer></script>
+    <script src="../../tools/observation-csv.js" defer></script>
     <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/observation-handoff.js" defer></script>
   </head>
   <body class="workspace-page">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
@@ -39,12 +42,20 @@
       <div class="fits-layout">
         <section class="workspace-panel fits-controls">
           <h2>Image file</h2>
+          <div class="fits-handoff" data-fits-handoff hidden>
+            <h3>Selected observation</h3>
+            <p class="workspace-help" data-handoff-note></p>
+            <dl class="workspace-facts" data-handoff-facts></dl>
+            <div class="observation-handoff__actions" data-handoff-actions></div>
+            <p class="workspace-status" role="status" data-handoff-result></p>
+          </div>
           <label class="fits-file">
             <span>Choose a local FITS file</span>
             <input type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-fits-file>
           </label>
           <button class="workspace-button" type="button" disabled data-fits-example>Load SPHEREx example</button>
           <p class="workspace-help">Reads files on this device. Supports uncompressed two-dimensional image HDUs.</p>
+          <a class="workspace-source" href="../../learn/index.html" data-route="/learn#fits-guide">FITS guide</a>
           <p class="workspace-status" role="status" data-fits-status></p>
         </section>
 

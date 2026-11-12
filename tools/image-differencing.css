@@ -1,0 +1,86 @@
+/* Image Differencing workspace. Builds on workspace.css and the Time Machine panel, table and note styles. */
+.id-settings, .id-result, .id-export { margin-block-start: var(--workspace-gap); }
+.id-settings .workspace-help { max-inline-size: 75ch; }
+
+.id-sign {
+  margin-block-start: 0.6rem;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.id-result .tm-pair__verdict { max-inline-size: 80ch; }
+.id-result .tm-checks dd { max-inline-size: 80ch; }
+
+.id-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--workspace-gap);
+  margin-block-start: 0.9rem;
+}
+
+.id-panels .tm-viewport { block-size: clamp(15rem, 42svh, 30rem); }
+.id-panels .tm-panel__line:empty { display: none; }
+
+.id-legend { margin-block-start: 1rem; max-inline-size: 34rem; }
+.id-legend [hidden], .id-legend[hidden] { display: none; }
+
+.id-legend canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 1rem;
+  border: 1px solid #4a505a;
+  image-rendering: auto;
+}
+
+.id-legend__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 0.3rem;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.id-swatch {
+  display: inline-block;
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin-inline-end: 0.35rem;
+  border: 1px solid #6b7280;
+  background: repeating-linear-gradient(45deg, #14171c 0 3px, #5b6270 3px 4px);
+  vertical-align: -0.2rem;
+}
+
+.id-pixel__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.6rem 0.9rem;
+  margin-block: 0.75rem 0.5rem;
+}
+
+.id-pixel__inputs label { min-inline-size: 7rem; max-inline-size: 9rem; }
+.id-pixel__inputs .workspace-button[aria-disabled="true"], .tm-display__bar .workspace-button[aria-disabled="true"], .id-export .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+.id-readout, .tm-table.id-readout { min-inline-size: 0; max-inline-size: 52rem; table-layout: fixed; }
+.id-readout th[scope="row"] { inline-size: 45%; }
+.id-readout caption { overflow-wrap: anywhere; }
+.id-readout td[data-state="invalid"] { color: #f3d98f; }
+.id-readout td:first-child, .id-readout th[scope="row"] { overflow-wrap: anywhere; }
+
+.tm-viewport[data-selected]:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+@media (max-width: 1000px) {
+  .id-panels { grid-template-columns: minmax(0, 1fr); }
+  .id-panels .tm-viewport { block-size: clamp(14rem, 44svh, 26rem); }
+}
+
+@media (max-width: 750px) {
+  .id-pixel__inputs label { flex: 1 1 6rem; max-inline-size: none; }
+  .id-pixel__inputs .workspace-button { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .id-pixel__inputs input, .id-settings input { font-size: 1rem; }
+}

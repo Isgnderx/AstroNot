@@ -1,0 +1,108 @@
+/* Sky Explorer workspace. Builds on workspace.css panels, buttons and facts. */
+.sky-source { margin-block-end: var(--workspace-gap); }
+
+.sky-source__row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 24rem);
+  align-items: end;
+  gap: 0.75rem 1.25rem;
+  margin-block-start: 0.75rem;
+}
+
+.sky-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 22.5rem);
+  align-items: start;
+  gap: var(--workspace-gap);
+}
+
+.sky-side { display: grid; gap: var(--workspace-gap); min-inline-size: 0; }
+.sky-note { margin-block-start: var(--workspace-gap); }
+.sky-note .workspace-help:first-of-type { margin-block-start: 0.5rem; max-inline-size: 75ch; }
+
+.sky-display__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-block-end: 0.65rem;
+}
+
+.sky-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sky-toolbar .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.sky-viewport {
+  position: relative;
+  display: flex;
+  block-size: clamp(16rem, 58svh, 44rem);
+  overflow: hidden;
+  border: 1px solid #2c3139;
+  background: #060709;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Touch panning is handled by the page, so vertical scrolling still works while the whole image is in view.
+   When zoomed in, a finger drag moves the image, so the view takes over touch gestures. */
+.sky-viewport[data-pannable] { touch-action: none; }
+.sky-viewport[data-dragging] { cursor: grabbing; }
+.sky-viewport:not([data-loaded]) { cursor: default; }
+
+.sky-viewport canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.sky-viewport .fits-empty { position: relative; z-index: 1; }
+
+.sky-caption {
+  display: grid;
+  gap: 0.25rem;
+  margin-block-start: 0.6rem;
+  color: var(--workspace-muted);
+  font-size: 0.875rem;
+  text-wrap: pretty;
+}
+
+.sky-caption [data-sky-zoom-label] { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.sky-live {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sky-readout h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 0.75rem;
+  margin-block-start: 1rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.sky-readout h3 span { color: var(--workspace-muted); font-size: 0.8125rem; font-weight: 400; }
+.sky-readout .workspace-facts { margin-block: 0.25rem 0; }
+.sky-readout .workspace-help:empty { display: none; }
+.sky-hdu { margin-block-start: 0.75rem; }
+
+@media (max-width: 750px) {
+  .sky-source__row, .sky-main { grid-template-columns: minmax(0, 1fr); }
+  .sky-viewport { block-size: clamp(15rem, 52svh, 30rem); }
+  .sky-toolbar .workspace-button { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .sky-source input { font-size: 1rem; }
+}

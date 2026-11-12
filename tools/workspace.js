@@ -8,8 +8,6 @@ function renderWorkspacePreview(content, tool) {
         <ol></ol>
         <div class="workspace-preview__links">
           <h3>Available tools</h3>
-          <a class="workspace-source" data-preview-search>Observation Search</a>
-          <a class="workspace-source" data-preview-fits>FITS Viewer</a>
         </div>
       </aside>
       <figure class="workspace-panel workspace-preview__figure">
@@ -28,8 +26,15 @@ function renderWorkspacePreview(content, tool) {
     item.textContent = step;
     list.append(item);
   }
-  content.querySelector("[data-preview-search]").href = sitePage("/tools/observation-search");
-  content.querySelector("[data-preview-fits]").href = sitePage("/tools/fits-viewer");
+  // Every tool the registry marks as available, so this list cannot fall behind the catalog.
+  const links = content.querySelector(".workspace-preview__links");
+  for (const ready of scientificTools.filter((entry) => entry.available === true && entry.route)) {
+    const anchor = document.createElement("a");
+    anchor.className = "workspace-source";
+    anchor.href = sitePage("/tools/" + ready.route);
+    anchor.textContent = ready.name;
+    links.append(anchor);
+  }
   content.querySelector(".workspace-preview__bar h2").textContent = preview.title;
   const image = content.querySelector("img");
   image.src = toolImage(tool, preview.diagram);
