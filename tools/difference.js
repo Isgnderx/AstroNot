@@ -101,6 +101,8 @@
       // MJy^2/sr^2 style
       const prefix = u.slice(0, u.indexOf("Jy"));
       candidates.add(prefix + "Jy^2" + (parts.per ? "/" + parts.per + "^2" : ""));
+      // SPHEREx cutouts write the variance unit without the caret: "MJy2 / sr2".
+      candidates.add(prefix + "Jy2" + (parts.per ? "/" + parts.per + "2" : ""));
     }
     return candidates.has(v)
       ? { ok: true, assumed: false, reason: "" }
@@ -114,7 +116,19 @@
   // Returns { values, variance, status } with status 0 (ok), 1 (centre outside the source: a bilinear value needs all four
   // neighbours inside, so the usable footprint ends at the outermost pixel centres) or 3 (a neighbour with non-zero weight
   // is NaN or masked).
+  // Dispatches to the Rust/WebAssembly kernel (see useKernel) when one is installed, the image is big enough to win and both
+  // WCS can be handed over; otherwise, and whenever the kernel fails, the JavaScript implementation below runs. Same results.
   function reprojectBilinear(source, grid) {
+    const fast = kernel.module && kernelEligible(source, grid) ? reprojectWithKernel(source, grid) : null;
+    if (fast) {
+      kernel.calls.wasm++;
+      return fast;
+    }
+    kernel.calls.js++;
+    return reprojectBilinearJs(source, grid);
+  }
+
+  function reprojectBilinearJs(source, grid) {
     const { width: nx, height: ny } = source;
     const count = grid.width * grid.height;
     const values = new Float64Array(count).fill(NaN);
@@ -167,6 +181,143 @@
       }
     }
     return { values, variance, status: state };
+  }
+
+  // ---- Optional WebAssembly accelerator (rust/crates/reproject) ---------------------------------------------------------------
+  // useKernel(await AstroNotWasm.load("reproject")) installs it; useKernel(null) removes it. Nothing else changes: every
+  // function stays synchronous and works without it. A call goes to wasm only when the output window has at least
+  // `minPixels` pixels (below that the copy into wasm memory costs more than the loop saves; see tests/reproject-wasm.test.mjs
+  // for the measured crossover) and both WCS carry `params` (wcs.js objects do; hand-made wcs objects stay in JS).
+  const kernelChunkPixels = 1 << 20; // Output rows go through wasm memory in pieces of about this many pixels.
+  const defaultMinPixels = 64; // Measured crossover: wasm is already faster at 8 x 8 output pixels (scripts/bench-reproject.mjs).
+  const kernel = { module: null, minPixels: defaultMinPixels, uploadRatio: 128, exact: false, cache: null, calls: { wasm: 0, js: 0 } };
+
+  function useKernel(module, options = {}) {
+    releaseKernelCache();
+    const usable = module && module.exports && typeof module.exports.reproject_bilinear === "function" && module.exports.memory;
+    kernel.module = usable ? module : null;
+    kernel.minPixels = options.minPixels ?? defaultMinPixels;
+    // exact: true repeats the trigonometric sky round trip of wcs.js per pixel (slower); the default maps the pixel by one
+    // rotation (same map, equal to rounding). See rust/crates/reproject.
+    kernel.exact = options.exact === true;
+    return Boolean(usable);
+  }
+
+  function kernelStatus() {
+    return { active: Boolean(kernel.module), minPixels: kernel.minPixels, calls: { wasm: kernel.calls.wasm, js: kernel.calls.js } };
+  }
+
+  function kernelRegion(array) {
+    const exports = kernel.module.exports;
+    const bytes = array.byteLength;
+    const ptr = exports.an_alloc(bytes);
+    if (!ptr) throw new Error("WebAssembly memory is exhausted.");
+    new Uint8Array(exports.memory.buffer, ptr, bytes).set(new Uint8Array(array.buffer, array.byteOffset, bytes));
+    return { ptr, bytes };
+  }
+
+  function kernelFree(...regions) {
+    for (const region of regions) if (region) kernel.module.exports.an_free(region.ptr, region.bytes);
+  }
+
+  // A mosaic reprojects many windows of one source: with `source.keepInKernel` the uploaded arrays are kept (one source at
+  // a time) until releaseKernelCache() or another source arrives.
+  function releaseKernelCache() {
+    const cache = kernel.cache;
+    kernel.cache = null;
+    if (cache && kernel.module) kernelFree(...cache.regions);
+  }
+
+  function kernelGrid(grid) {
+    return grid.kernelBase || { wcs: grid.wcs, x: 0, y: 0, dx: 0, dy: 0 };
+  }
+
+  function kernelEligible(source, grid) {
+    const base = kernelGrid(grid);
+    const count = grid.width * grid.height;
+    const nx = source.width;
+    const ny = source.height;
+    const sized = (array, type) => array instanceof type && array.length === nx * ny;
+    if (!(count >= kernel.minPixels && count > 0 && grid.width <= 0xffffffff)) return false;
+    if (!(Number.isInteger(nx) && Number.isInteger(ny) && nx > 0 && ny > 0 && nx <= 0xffffffff && ny <= 0xffffffff)) return false;
+    // The source is copied into wasm memory (4 GB limit for the whole module): refuse sources above about 1.5 GB, and a small
+    // window of a large source, where copying the source costs more than the loop saves (measured, see scripts/bench-reproject.mjs).
+    const sourceBytes = nx * ny * (8 + (source.variance ? 8 : 0) + (source.mask ? 1 : 0));
+    if (sourceBytes >= 0x60000000) return false;
+    const reused = source.keepInKernel === true || (kernel.cache && kernel.cache.source === source);
+    if (!reused && count * kernel.uploadRatio < nx * ny * (source.variance ? 2 : 1)) return false;
+    return source.wcs && source.wcs.params instanceof Float64Array && base.wcs && base.wcs.params instanceof Float64Array
+      && Number.isInteger(base.x) && Number.isInteger(base.y)
+      && sized(source.values, Float64Array)
+      && (!source.variance || sized(source.variance, Float64Array))
+      && (!source.mask || sized(source.mask, Uint8Array));
+  }
+
+  function reprojectWithKernel(source, grid) {
+    const exports = kernel.module.exports;
+    const base = kernelGrid(grid);
+    const { width, height } = grid;
+    const count = width * height;
+    const values = new Float64Array(count);
+    const variance = source.variance ? new Float64Array(count) : null;
+    const state = new Uint8Array(count);
+    const keep = source.keepInKernel === true;
+    let cache = kernel.cache;
+    if (cache && !(cache.source === source && cache.values === source.values && cache.variance === (source.variance || null) && cache.mask === (source.mask || null))) {
+      releaseKernelCache();
+      cache = null;
+    }
+    const temporary = []; // Everything allocated in wasm memory for this call is freed in `finally` (except a kept source).
+    const take = (bytes) => {
+      const region = { ptr: exports.an_alloc(bytes), bytes };
+      if (!region.ptr) throw new Error("WebAssembly memory is exhausted.");
+      temporary.push(region);
+      return region;
+    };
+    try {
+      if (!cache) {
+        const pointers = [kernelRegion(source.values)];
+        temporary.push(pointers[0]);
+        pointers.push(source.variance ? kernelRegion(source.variance) : null);
+        temporary.push(pointers[1]);
+        pointers.push(source.mask ? kernelRegion(source.mask) : null);
+        temporary.push(pointers[2]);
+        cache = { pointers };
+        if (keep) {
+          // Hand the regions over to the cache so `finally` does not free them.
+          kernel.cache = { source, values: source.values, variance: source.variance || null, mask: source.mask || null, regions: pointers.filter(Boolean), pointers };
+          temporary.length = 0;
+        }
+      }
+      const [valueRegion, varianceRegion, maskRegion] = cache.pointers;
+      const chunkRows = Math.max(1, Math.min(height, Math.floor(kernelChunkPixels / width)));
+      const chunkPixels = chunkRows * width;
+      const params = [kernelRegion(source.wcs.params), kernelRegion(base.wcs.params)];
+      temporary.push(...params);
+      const outValues = take(chunkPixels * 8);
+      const outVariance = variance ? take(chunkPixels * 8) : null;
+      const outState = take(chunkPixels);
+      for (let row = 0; row < height; row += chunkRows) {
+        const rows = Math.min(chunkRows, height - row);
+        const code = exports.reproject_bilinear(
+          params[0].ptr, source.wcs.params.length, params[1].ptr, base.wcs.params.length,
+          source.width, source.height, valueRegion.ptr, varianceRegion ? varianceRegion.ptr : 0, maskRegion ? maskRegion.ptr : 0,
+          width, rows, base.x, base.dx, base.y + row, base.dy,
+          outValues.ptr, outVariance ? outVariance.ptr : 0, outState.ptr, kernel.exact ? 1 : 0,
+        );
+        if (code !== 0) return null;
+        const n = rows * width;
+        const memory = exports.memory.buffer; // Re-read: memory may have grown.
+        values.set(new Float64Array(memory, outValues.ptr, n), row * width);
+        if (variance) variance.set(new Float64Array(memory, outVariance.ptr, n), row * width);
+        state.set(new Uint8Array(memory, outState.ptr, n), row * width);
+      }
+      return { values, variance, status: state };
+    } catch (error) {
+      return null; // Any wasm failure (for example out of memory) falls back to the JavaScript loop.
+    } finally {
+      kernelFree(...temporary);
+    }
   }
 
   // ---- Alignment decision --------------------------------------------------------------------------------------------
@@ -554,7 +705,7 @@
   const api = {
     status, statusText, direction, gridTolerancePixels,
     canonicalUnit, unitConversion, varianceUnitCheck,
-    reprojectBilinear, planAlignment, computeDifference, pixelAt,
+    reprojectBilinear, reprojectBilinearJs, useKernel, kernelStatus, releaseKernelCache, planAlignment, computeDifference, pixelAt,
     divergingColor, symmetricLimit, buildDifferenceFits,
   };
   root.AstroNotDifference = api;

@@ -87,25 +87,148 @@ async function readFitsHdus(file) {
   return hdus;
 }
 
-function fitsPixelReader(bytes, hdu) {
+// ---- Optional WebAssembly accelerator (rust/crates/fitsdata, loaded by tools/wasm.js) -----------------------------------------
+// Every function below stays synchronous and gives the same numbers with or without the kernel. The kernel is installed by
+// AstroNotFits.useKernel() once tools/wasm/fitsdata.wasm(.js) has loaded; images read before that, images smaller than
+// minPixels (the copy into wasm memory would cost more than it saves) and BITPIX 64 simply use the JavaScript loops.
+const fitsEngine = { kernel: null, minPixels: 1 << 16, chunkPixels: 1 << 18, decode: true, shade: true, scratch: { input: null, output: null }, counters: { decode: 0, draw: 0 } };
+
+function fitsSetEngineMarker() {
+  // A data attribute (no visible change) so a page or a test can tell which engine is installed.
+  if (typeof document === "object" && document.body && document.body.setAttribute) document.body.setAttribute("data-engine", fitsEngine.kernel ? "wasm" : "js");
+}
+
+function fitsUseKernel(kernel) {
+  fitsEngine.scratch = { input: null, output: null };
+  fitsEngine.kernel = null;
+  if (kernel && kernel.exports && kernel.exports.fd_decode_f64 && kernel.exports.fd_shade_raw) {
+    // Sanity check on a known value (-2.5 as a big-endian float32 with scale 2 and zero 1 gives -4) before trusting the module.
+    fitsEngine.kernel = kernel;
+    try {
+      const bytes = new Uint8Array([0xC0, 0x20, 0, 0]);
+      const out = new Float64Array(1);
+      fitsKernelDecode(bytes.buffer, -32, 2, 1, undefined, 1, out);
+      if (out[0] !== -4) fitsEngine.kernel = null;
+    } catch {
+      fitsEngine.kernel = null;
+    }
+  }
+  fitsSetEngineMarker();
+  return Boolean(fitsEngine.kernel);
+}
+
+// A scratch region in wasm memory that is reused by every call (and grows when needed): returns its address.
+function fitsScratch(slot, bytes) {
+  const current = fitsEngine.scratch[slot];
+  if (current && current.bytes >= bytes) return current.ptr;
+  if (current) fitsEngine.kernel.exports.an_free(current.ptr, current.bytes);
+  const ptr = fitsEngine.kernel.exports.an_alloc(bytes);
+  fitsEngine.scratch[slot] = { ptr, bytes };
+  return ptr;
+}
+
+function fitsCalibration(hdu) {
+  const scale = hdu.fields.BSCALE ?? 1;
+  const zero = hdu.fields.BZERO ?? 0;
+  const blank = hdu.bitpix > 0 ? hdu.fields.BLANK : undefined;
+  if (!Number.isFinite(scale) || !Number.isFinite(zero)) throw new Error("The image has invalid FITS scaling metadata.");
+  return { scale, zero, blank };
+}
+
+function fitsKernelUsable(bytes, hdu) {
+  const bitpix = hdu.bitpix;
+  return Boolean(fitsEngine.kernel) && fitsEngine.decode && hdu.pixels >= fitsEngine.minPixels &&
+    (bitpix === 8 || bitpix === 16 || bitpix === 32 || bitpix === -32 || bitpix === -64) &&
+    bytes.byteLength >= hdu.pixels * Math.abs(bitpix) / 8;
+}
+
+// Decodes `out.length` pixels (Float64Array or Float32Array) from `bytes` (the data of one HDU) through the kernel, in chunks
+// so wasm memory stays small however large the image is.
+function fitsKernelDecode(bytes, bitpix, scale, zero, blank, count, out) {
+  const { exports } = fitsEngine.kernel;
+  const width = Math.abs(bitpix) / 8;
+  const chunk = Math.min(count, fitsEngine.chunkPixels);
+  const input = fitsScratch("input", chunk * width);
+  const output = fitsScratch("output", chunk * out.BYTES_PER_ELEMENT);
+  const decode = out.BYTES_PER_ELEMENT === 4 ? exports.fd_decode_f32 : exports.fd_decode_f64;
+  const source = new Uint8Array(bytes, 0, count * width);
+  const hasBlank = typeof blank === "number" ? 1 : 0;
+  for (let start = 0; start < count; start += chunk) {
+    const length = Math.min(chunk, count - start);
+    new Uint8Array(exports.memory.buffer, input, length * width).set(source.subarray(start * width, (start + length) * width));
+    decode(input, length, bitpix, scale, zero, hasBlank, hasBlank ? blank : 0, output);
+    out.set(new out.constructor(exports.memory.buffer, output, length), start);
+  }
+  fitsEngine.counters.decode += count;
+}
+
+// The one-pixel reader: BSCALE and BZERO are applied here, BLANK becomes NaN. This is the reference implementation.
+function fitsScalarReader(bytes, hdu) {
   const view = new DataView(bytes);
   const bitpix = hdu.bitpix;
   const byteCount = Math.abs(bitpix) / 8;
   const getters = { 8: "getUint8", 16: "getInt16", 32: "getInt32", "-32": "getFloat32", "-64": "getFloat64" };
   const getter = getters[bitpix];
-  const scale = hdu.fields.BSCALE ?? 1;
-  const zero = hdu.fields.BZERO ?? 0;
-  const blank = bitpix > 0 ? hdu.fields.BLANK : undefined;
-  if (!Number.isFinite(scale) || !Number.isFinite(zero)) throw new Error("The image has invalid FITS scaling metadata.");
+  const { scale, zero, blank } = fitsCalibration(hdu);
   return (index) => {
     const raw = view[getter](index * byteCount, false);
     return raw === blank ? NaN : raw * scale + zero;
   };
 }
 
+function fitsPixelReader(bytes, hdu) {
+  const read = fitsScalarReader(bytes, hdu);
+  if (!fitsKernelUsable(bytes, hdu)) return read;
+  // A large image: the first read decodes the whole array through the kernel, later reads are plain array lookups.
+  const { scale, zero, blank } = fitsCalibration(hdu);
+  let decoded = null;
+  return (index) => {
+    if (!decoded) {
+      decoded = new Float64Array(hdu.pixels);
+      fitsKernelDecode(bytes, hdu.bitpix, scale, zero, blank, hdu.pixels, decoded);
+    }
+    return index >= 0 && index < decoded.length ? decoded[index] : read(index);
+  };
+}
+
+// All pixels of an image HDU as a Float64Array (or Float32Array), calibrated like fitsPixelReader: the loop
+// `for (i...) values[i] = read(i)` that every tool runs, done by the kernel when it is installed and the image is large.
+function fitsReadValues(bytes, hdu, Type = Float64Array) {
+  const values = new Type(hdu.pixels);
+  if (fitsKernelUsable(bytes, hdu) && (Type === Float64Array || Type === Float32Array)) {
+    const { scale, zero, blank } = fitsCalibration(hdu);
+    fitsKernelDecode(bytes, hdu.bitpix, scale, zero, blank, hdu.pixels, values);
+    return values;
+  }
+  const read = fitsScalarReader(bytes, hdu);
+  for (let index = 0; index < values.length; index++) values[index] = read(index);
+  return values;
+}
+
+// Shades the whole image into `data` (the RGBA bytes of an ImageData) with the kernel, in bands of rows.
+function fitsKernelShade(bytes, hdu, data, divisor, lowOverDivisor, span) {
+  const { exports } = fitsEngine.kernel;
+  const [width, height] = hdu.axes;
+  const bytesPer = Math.abs(hdu.bitpix) / 8;
+  const { scale, zero, blank } = fitsCalibration(hdu);
+  const hasBlank = typeof blank === "number" ? 1 : 0;
+  const bandRows = Math.max(1, Math.min(height, Math.floor(fitsEngine.chunkPixels / width)));
+  const input = fitsScratch("input", bandRows * width * bytesPer);
+  const output = fitsScratch("output", bandRows * width * 4);
+  const source = new Uint8Array(bytes, 0, width * height * bytesPer);
+  for (let first = 0; first < height; first += bandRows) {
+    const rows = Math.min(bandRows, height - first);
+    new Uint8Array(exports.memory.buffer, input, rows * width * bytesPer).set(source.subarray(first * width * bytesPer, (first + rows) * width * bytesPer));
+    exports.fd_shade_raw(input, width, rows, hdu.bitpix, scale, zero, hasBlank, hasBlank ? blank : 0, divisor, lowOverDivisor, span, output);
+    // Band rows first..first+rows-1 of the FITS array land on canvas rows height-first-rows .. height-first-1.
+    data.set(new Uint8ClampedArray(exports.memory.buffer, output, rows * width * 4), (height - first - rows) * width * 4);
+  }
+  fitsEngine.counters.draw += width * height;
+}
+
 function drawFitsImage(canvas, bytes, hdu) {
   const [width, height] = hdu.axes;
-  const read = fitsPixelReader(bytes, hdu);
+  const read = fitsScalarReader(bytes, hdu); // Only ~16,000 samples are read here, so no whole-image decode.
   const samples = [];
   const stride = Math.max(1, Math.ceil(hdu.pixels / 16384));
   for (let index = 0; index < hdu.pixels; index += stride) {
@@ -135,15 +258,19 @@ function drawFitsImage(canvas, bytes, hdu) {
   const image = context.createImageData(width, height);
   const divisor = Number.isFinite(high - low) ? 1 : 2;
   const span = high / divisor - low / divisor;
-  for (let y = 0; y < height; y++) {
-    // FITS axis 2 begins at the bottom of the displayed image.
-    const sourceRow = (height - y - 1) * width;
-    for (let x = 0; x < width; x++) {
-      const value = read(sourceRow + x);
-      const shade = Number.isFinite(value) ? (span === 0 ? 128 : 255 * (value / divisor - low / divisor) / span) : 0;
-      const output = (y * width + x) * 4;
-      image.data[output] = image.data[output + 1] = image.data[output + 2] = shade;
-      image.data[output + 3] = 255;
+  if (fitsKernelUsable(bytes, hdu) && fitsEngine.shade) {
+    fitsKernelShade(bytes, hdu, image.data, divisor, low / divisor, span);
+  } else {
+    for (let y = 0; y < height; y++) {
+      // FITS axis 2 begins at the bottom of the displayed image.
+      const sourceRow = (height - y - 1) * width;
+      for (let x = 0; x < width; x++) {
+        const value = read(sourceRow + x);
+        const shade = Number.isFinite(value) ? (span === 0 ? 128 : 255 * (value / divisor - low / divisor) / span) : 0;
+        const output = (y * width + x) * 4;
+        image.data[output] = image.data[output + 1] = image.data[output + 2] = shade;
+        image.data[output + 3] = 255;
+      }
     }
   }
   context.putImageData(image, 0, 0);
@@ -323,3 +450,20 @@ function setupFitsViewer() {
 
 // Other pages (Sky Explorer, tests) load this file for the shared readers and have no Viewer controls.
 if (document.querySelector("[data-fits-file]")) setupFitsViewer();
+
+// Public hook for the Rust/WebAssembly kernel and for tests: AstroNotFits.useKernel(kernel | null), .kernel(), .engine(), .ready.
+// The kernel is requested here, once, so every page that includes this file also loads it (tools/wasm.js and
+// tools/wasm/fitsdata.wasm.js before this file; without them the pages simply keep using the JavaScript loops).
+const fitsApi = {
+  useKernel: fitsUseKernel,
+  kernel: () => fitsEngine.kernel,
+  engine: () => (fitsEngine.kernel ? "wasm" : "js"),
+  settings: fitsEngine,
+  readValues: fitsReadValues,
+  ready: Promise.resolve(false),
+};
+if (typeof AstroNotWasm === "object" && AstroNotWasm) {
+  fitsApi.ready = AstroNotWasm.load("fitsdata").then((kernel) => fitsUseKernel(kernel), () => false);
+}
+globalThis.AstroNotFits = fitsApi;
+fitsSetEngineMarker();

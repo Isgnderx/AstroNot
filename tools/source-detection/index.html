@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Source Detection — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/source-detection.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/detect.js" defer></script>
+    <script src="../../tools/source-detection.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="source-detection">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Source Detection</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Analysis</p>
+        <h1 data-workspace-title>Source Detection</h1>
+        <p class="workspace-description" data-workspace-description>Identify sources in astronomical images and measure their positions.</p>
+      </header>
+
+      <section class="workspace-panel tm-source" aria-labelledby="sd-source-title">
+        <h2 id="sd-source-title">Image</h2>
+        <p class="workspace-help">Choose a calibrated, uncompressed two-dimensional FITS image HDU (a local file read on this device, up to 4,194,304 pixels and 4,096 pixels per axis), or load the bundled SPHEREx cutout. The tool lists <strong>detected candidates</strong>: groups of connected pixels that stand out from the background. A candidate is <strong>not</strong> a catalog identification, and it can be a star, a galaxy, a blend, a ghost or a noise peak. Pixels that are NaN or BLANK are never used; zero is a valid value.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-sd-file>
+            <span class="workspace-button tm-file__button" data-sd-file-label>Choose FITS file</span>
+          </label>
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-sd-example>Load SPHEREx example</button>
+          <label class="sd-hdu">Image HDU
+            <select data-sd-hdu disabled></select>
+          </label>
+        </div>
+        <p class="workspace-status" role="status" data-sd-status></p>
+        <dl class="workspace-facts tm-checks sd-facts" data-sd-image-facts>
+          <div><dt>File</dt><dd data-sd-fact="file">—</dd></div>
+          <div><dt>Observation ID</dt><dd data-sd-fact="obsId">—</dd></div>
+          <div><dt>HDU</dt><dd data-sd-fact="hdu">—</dd></div>
+          <div><dt>Image size</dt><dd data-sd-fact="size">—</dd></div>
+          <div><dt>Units (BUNIT)</dt><dd data-sd-fact="unit">—</dd></div>
+          <div><dt>Valid pixels</dt><dd data-sd-fact="valid">—</dd></div>
+          <div><dt>Sky coordinates (WCS)</dt><dd data-sd-fact="wcs">—</dd></div>
+          <div><dt>VARIANCE image</dt><dd data-sd-fact="variance">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="workspace-panel sd-settings" aria-labelledby="sd-settings-title">
+        <h2 id="sd-settings-title">Detection settings</h2>
+        <p class="workspace-help">Changing a setting recomputes the candidates and replaces the earlier list. <strong>Run detection</strong> repeats the computation with the current settings.</p>
+        <form class="sd-form" novalidate data-sd-form>
+          <div class="tm-controls">
+            <label>Background
+              <select data-sd-param="background">
+                <option value="global">One value for the whole image (sigma-clipped median)</option>
+                <option value="mesh">Mesh of boxes (follows gradients)</option>
+              </select>
+            </label>
+            <label data-sd-mesh-wrap hidden>Mesh box size (pixels)
+              <input type="text" inputmode="numeric" autocomplete="off" value="32" data-sd-param="meshSize">
+            </label>
+            <label>Noise
+              <select data-sd-param="noise">
+                <option value="measured">Measured from the image (1.4826 × MAD)</option>
+                <option value="variance" disabled>From the VARIANCE image (unavailable)</option>
+              </select>
+            </label>
+            <label>Threshold type
+              <select data-sd-param="thresholdMode">
+                <option value="sigma">Multiple of the noise σ above the background</option>
+                <option value="absolute">Absolute level above the background</option>
+              </select>
+            </label>
+            <label><span data-sd-threshold-label>Threshold (× σ)</span>
+              <input type="text" inputmode="decimal" autocomplete="off" value="3" data-sd-param="threshold">
+            </label>
+            <label>Minimum connected pixels
+              <input type="text" inputmode="numeric" autocomplete="off" value="5" data-sd-param="minPixels">
+            </label>
+            <label>Smoothing FWHM (pixels, 0 = none)
+              <input type="text" inputmode="decimal" autocomplete="off" value="0" data-sd-param="smoothFwhm">
+            </label>
+            <label class="tm-check"><input type="checkbox" checked data-sd-param="deblend"> <span>Split close pairs (deblend)</span></label>
+            <label data-sd-valley-wrap>Valley depth for a split (× σ)
+              <input type="text" inputmode="decimal" autocomplete="off" value="3" data-sd-param="valleySigma">
+            </label>
+            <label>Saturation level (image units, optional)
+              <input type="text" inputmode="decimal" autocomplete="off" placeholder="none" data-sd-param="saturation">
+            </label>
+          </div>
+          <p class="workspace-help" data-sd-threshold-note></p>
+          <div class="tm-actions">
+            <button class="workspace-button workspace-button--primary" type="submit" aria-disabled="true" data-sd-run>Run detection</button>
+          </div>
+        </form>
+        <p class="workspace-status" role="status" data-sd-run-status></p>
+      </section>
+
+      <section class="workspace-panel sd-result" aria-labelledby="sd-result-title" aria-live="polite">
+        <h2 id="sd-result-title">Result</h2>
+        <p class="tm-pair__verdict" data-sd-verdict>Load an image to detect sources.</p>
+        <ul class="tm-notes" data-sd-notes hidden></ul>
+        <dl class="workspace-facts tm-checks" data-sd-summary hidden>
+          <div><dt>Method</dt><dd data-sd-sum="method">—</dd></div>
+          <div><dt>Background</dt><dd data-sd-sum="background">—</dd></div>
+          <div><dt>Noise</dt><dd data-sd-sum="noise">—</dd></div>
+          <div><dt>What the threshold means here</dt><dd data-sd-sum="threshold">—</dd></div>
+          <div><dt>Smoothing</dt><dd data-sd-sum="smoothing">—</dd></div>
+          <div><dt>Pixels</dt><dd data-sd-sum="pixels">—</dd></div>
+          <div><dt>Segments</dt><dd data-sd-sum="segments">—</dd></div>
+          <div><dt>Candidates</dt><dd data-sd-sum="candidates">—</dd></div>
+          <div><dt>Run time</dt><dd data-sd-sum="time">—</dd></div>
+        </dl>
+      </section>
+
+      <div class="sd-layout">
+        <section class="workspace-panel sd-display" aria-labelledby="sd-display-title">
+          <div class="tm-display__bar">
+            <h2 id="sd-display-title">Image and candidates</h2>
+            <div class="sd-zoom">
+              <button class="workspace-button" type="button" aria-disabled="true" aria-label="Zoom out" data-sd-zoom-out>−</button>
+              <button class="workspace-button" type="button" aria-disabled="true" aria-label="Zoom in" data-sd-zoom-in>+</button>
+              <button class="workspace-button" type="button" aria-disabled="true" data-sd-fit>Fit image</button>
+            </div>
+          </div>
+          <div class="tm-controls sd-display-controls">
+            <label>Display range
+              <select data-sd-display="range">
+                <option value="1-99">1st to 99th percentile</option>
+                <option value="0.5-99.5" selected>0.5th to 99.5th percentile</option>
+                <option value="0.1-99.9">0.1th to 99.9th percentile</option>
+                <option value="0-100">Minimum to maximum</option>
+              </select>
+            </label>
+            <label>Stretch
+              <select data-sd-display="stretch">
+                <option value="asinh" selected>Asinh (shows faint and bright sources)</option>
+                <option value="linear">Linear</option>
+              </select>
+            </label>
+            <label class="tm-check"><input type="checkbox" checked data-sd-display="markers"> <span>Show candidate markers</span></label>
+            <label class="tm-check"><input type="checkbox" data-sd-display="segments"> <span>Show candidate pixels</span></label>
+          </div>
+          <p class="workspace-help" data-sd-display-note>The display range, stretch, zoom and pan change only how the picture looks. Detection and every measurement read the calibrated array.</p>
+          <div class="tm-viewport sd-viewport" tabindex="0" role="group" aria-label="Image with candidate markers" aria-describedby="sd-keys" data-sd-viewport>
+            <div class="fits-empty" data-sd-empty><p>Load an image to see it here.</p></div>
+            <canvas role="img" hidden data-sd-canvas></canvas>
+          </div>
+          <p class="tm-panel__line" data-sd-zoom-line></p>
+          <p class="tm-panel__line tm-panel__pointer" data-sd-pointer></p>
+          <p class="sd-legend"><span class="sd-legend__ring" aria-hidden="true"></span> Candidate <span class="sd-legend__ring sd-legend__ring--dashed" aria-hidden="true"></span> Candidate with a quality flag <span class="sd-legend__ring sd-legend__ring--selected" aria-hidden="true"></span> Selected candidate</p>
+          <p class="tm-keys" id="sd-keys">Click or tap a marker to select it. With the image focused: N or ] selects the next candidate and P or [ the previous one, arrow keys pan a zoomed image, + and − zoom, 0 fits the image, Enter centers the selected candidate, Escape clears the selection. Drag to pan, Ctrl + scroll or a two-finger pinch zooms.</p>
+          <p class="tm-live" role="status" aria-live="polite" data-sd-live></p>
+        </section>
+
+        <section class="workspace-panel sd-candidates" aria-labelledby="sd-table-title">
+          <div class="tm-display__bar">
+            <h2 id="sd-table-title">Detected candidates</h2>
+            <label class="sd-sort">Sort by
+              <select data-sd-sort>
+                <option value="id">Candidate ID (brightest S/N first)</option>
+                <option value="peak">Peak (highest first)</option>
+                <option value="flux">Flux sum (highest first)</option>
+                <option value="area">Area (largest first)</option>
+                <option value="position">Position (bottom to top, left to right)</option>
+              </select>
+            </label>
+          </div>
+          <p class="workspace-help" data-sd-table-note>Run detection to list candidates.</p>
+          <div class="tm-table-wrap sd-table-wrap" data-sd-table-wrap hidden>
+            <table class="tm-table sd-table" data-sd-table>
+              <caption data-sd-caption></caption>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">x (px)</th>
+                  <th scope="col">y (px)</th>
+                  <th scope="col">RA (°)</th>
+                  <th scope="col">Dec (°)</th>
+                  <th scope="col">Area (px)</th>
+                  <th scope="col">Peak</th>
+                  <th scope="col">Flux sum</th>
+                  <th scope="col">S/N</th>
+                  <th scope="col">Flags</th>
+                </tr>
+              </thead>
+              <tbody data-sd-body></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="workspace-panel tm-mark sd-detail" aria-labelledby="sd-detail-title">
+        <h2 id="sd-detail-title">Selected candidate</h2>
+        <p class="workspace-help" data-sd-detail-note>Select a marker or a table row to see its measurements and the calibrated pixel values around its peak.</p>
+        <div class="tm-table-wrap" data-sd-detail-wrap hidden>
+          <table class="tm-table sd-readout">
+            <caption data-sd-detail-caption>Measurements of the selected candidate</caption>
+            <thead><tr><th scope="col">Quantity</th><th scope="col">Value</th></tr></thead>
+            <tbody data-sd-detail-body></tbody>
+          </table>
+        </div>
+        <div class="tm-table-wrap sd-grid-wrap" data-sd-grid-wrap hidden>
+          <table class="tm-table sd-grid" data-sd-grid>
+            <caption data-sd-grid-caption></caption>
+            <tbody data-sd-grid-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel sd-export" aria-labelledby="sd-export-title">
+        <h2 id="sd-export-title">Hand-off</h2>
+        <p class="workspace-help">Download the candidates as a CSV for Catalog Cross-Match with the columns <strong>source_id, x_pixel, y_pixel, ra, dec, area_pixels, peak, flux_sum, flags, source_file, obs_id, hdu, pixel_origin</strong>. <strong>x_pixel</strong> and <strong>y_pixel</strong> are FITS pixel numbers (<strong>pixel_origin = 1</strong>: the center of the first pixel is (1, 1)). <strong>ra</strong> and <strong>dec</strong> are degrees in ICRS from the centroid, empty when the image has no usable WCS. <strong>hdu</strong> counts from 0 (the primary HDU). The same-named parameters file records the method, threshold and its unit, and every setting. Source IDs belong to one run and change when the settings change.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-sd-download-csv>Download candidates (CSV)</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-sd-download-json>Download parameters (JSON)</button>
+          <label class="tm-check"><input type="checkbox" data-sd-only-sky> <span>Only candidates with sky coordinates</span></label>
+        </div>
+        <p class="workspace-status" role="status" data-sd-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="sd-note-title">
+        <h2 id="sd-note-title">How candidates are found</h2>
+        <p class="workspace-help">Valid pixels are the finite values after <strong>BSCALE</strong>, <strong>BZERO</strong> and <strong>BLANK</strong> are applied. The <strong>background</strong> is a sigma-clipped median (3 σ, up to 10 passes), either one value or a mesh of boxes whose medians are median-filtered and interpolated. The <strong>noise</strong> σ is 1.4826 × the median absolute deviation of the same clipped sample, or √variance from a VARIANCE image when the file has one in the square of the image unit. A threshold of 3 σ is therefore a different brightness in a noisier image, or in a noisier part of a mesh or VARIANCE image; the result shows the level in image units.</p>
+        <p class="workspace-help">Pixels above the threshold are grouped into 8-connected segments, and segments with fewer than the minimum number of pixels are dropped. Optional Gaussian smoothing is a normalized convolution over valid pixels, with the noise propagated for independent pixels (real noise is often correlated, so the S/N of a smoothed image is approximate). A segment is split where two peaks are separated by a valley at least the chosen number of σ and at least 10% of the lower peak deep, with at least the minimum number of pixels on each side. A shared segment is flagged <strong>blended</strong>.</p>
+        <p class="workspace-help">The <strong>centroid</strong> is flux-weighted over the segment pixels of the unsmoothed background-subtracted values (negative values count as zero). <strong>Peak</strong> and <strong>flux sum</strong> are in the image unit; for surface brightness such as MJy/sr the flux sum is not a flux density. <strong>Flags</strong> mean: edge (touches the image border), masked neighbour (next to NaN, BLANK or unusable pixels), saturated (reaches the saturation level, tested only when you or the header give one) and blended. FLAGS and other mask images are not interpreted. No photometry, PSF fitting, star-galaxy separation or catalog matching is done here.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

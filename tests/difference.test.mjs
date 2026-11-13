@@ -593,3 +593,9 @@ test("export: astropy reads the DIFFERENCE, MASK and WCS back", { skip: skipRepr
   near(difference.centre_sky[1], centre.dec, 1e-9);
   assert.equal(difference.values.filter((value) => value !== null).length, r.counts.valid);
 });
+
+test("SPHEREx variance unit spelling 'MJy2 / sr2' is accepted for MJy / sr images", () => {
+  assert.equal(Diff.varianceUnitCheck("MJy2 / sr2", "MJy / sr").ok, true);
+  assert.equal(Diff.varianceUnitCheck("MJy2/sr2", "MJy/sr").ok, true);
+  assert.equal(Diff.varianceUnitCheck("MJy / sr", "MJy / sr").ok, false);
+});

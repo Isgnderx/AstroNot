@@ -10,8 +10,10 @@ function buildObservationQuery(fields) {
   const ra = read("ra", "an RA in degrees", 0, 360) % 360;
   const dec = read("dec", "a Dec in degrees", -90, 90);
   const radius = read("radius", "a radius in degrees", 0.0001, 5);
+  const release = fields.release === undefined || fields.release === "" ? irsaDefaultRelease : String(fields.release);
+  if (!irsaIsRelease(release)) throw new Error("Choose a data release: SPHEREx DR1, QR3, or QR2.");
   const url = new URL("https://irsa.ipac.caltech.edu/SIA");
-  url.searchParams.set("COLLECTION", "spherex_qr2");
+  url.searchParams.set("COLLECTION", irsaReleases[release].collection);
   url.searchParams.set("POS", "CIRCLE " + ra + " " + dec + " " + radius);
   url.searchParams.set("MAXREC", String(irsaMaxRecords));
   url.searchParams.set("RESPONSEFORMAT", "CSV");
@@ -39,7 +41,7 @@ function buildObservationQuery(fields) {
     url.searchParams.set("BAND", (fields.bandStart ? metres(start) : "-Inf") + " " + (fields.bandEnd ? metres(end) : "+Inf"));
   }
 
-  return { url, ra, dec, radius };
+  return { url, ra, dec, radius, release };
 }
 
 function observationViewerUrl(row, center) {
@@ -64,6 +66,8 @@ function setupObservationSearch() {
   const result = document.querySelector("[data-query-result]");
   const summary = result.querySelector("[data-query-summary]");
   const link = result.querySelector("[data-query-link]");
+  const releaseSelect = form.elements.release;
+  const collectionLabel = document.querySelector("[data-query-collection]");
   const importInput = document.querySelector("[data-observation-import]");
   const importStatus = document.querySelector("[data-import-status]");
   const results = document.querySelector("[data-results]");
@@ -81,6 +85,7 @@ function setupObservationSearch() {
   const maxImportBytes = 20 * 1024 * 1024;
   let importVersion = 0;
   let rowViews = [];
+  let preparedRelease = null;
 
   function setImportStatus(message, error = false) {
     importStatus.toggleAttribute("data-error", error);
@@ -90,6 +95,7 @@ function setupObservationSearch() {
   function clearResults() {
     importVersion++;
     rowViews = [];
+    preparedRelease = null;
     results.hidden = true;
     list.replaceChildren();
     resultsNotes.replaceChildren();
@@ -101,7 +107,13 @@ function setupObservationSearch() {
     cutout.size.value = "0.12";
   }
 
+  function showCollection() {
+    const release = irsaIsRelease(releaseSelect.value) ? releaseSelect.value : irsaDefaultRelease;
+    collectionLabel.textContent = irsaReleases[release].label + " (" + irsaReleases[release].collection + ")";
+  }
+
   function resetQuery() {
+    showCollection();
     result.hidden = true;
     empty.hidden = false;
     link.removeAttribute("href");
@@ -172,11 +184,13 @@ function setupObservationSearch() {
     const facts = document.createElement("dl");
     facts.className = "workspace-facts";
     const size = row.sizeKilobytes ? (row.sizeKilobytes / 1000).toFixed(1) + " MB" : "";
+    const releaseLabel = row.release ? irsaReleases[row.release].label : "";
     const footprint = text("dd", "");
     const footprintRow = document.createElement("div");
     footprintRow.append(text("dt", "Cutout footprint check"), footprint);
     facts.append(
       fact("Observation ID", row.obsId),
+      fact("Data release", releaseLabel),
       fact("Detector", row.detector ? String(row.detector) : ""),
       fact("Start", start),
       fact("End", irsaMjdToUtc(row.end)),
@@ -205,7 +219,7 @@ function setupObservationSearch() {
         return;
       }
       const { ra, dec, size: width } = cutoutParameters();
-      rowStatus.textContent = "Cutout of " + row.obsId + " requested from IRSA (center " + ra + "°, " + dec + "°, size " + width +
+      rowStatus.textContent = "Cutout of " + row.obsId + (row.release ? " (" + irsaReleases[row.release].label + ")" : "") + " requested from IRSA (center " + ra + "°, " + dec + "°, size " + width +
         "°). Your browser saves the file. Then choose it in FITS Viewer.";
     });
     full.addEventListener("click", () => {
@@ -233,11 +247,12 @@ function setupObservationSearch() {
 
     if (rows.length === 0) {
       resultsStatus.textContent = total === 0
-        ? "No SPHEREx QR2 observations matched this search. Widen the radius, dates, or wavelength range."
+        ? irsaEmptyMessage(preparedRelease)
         : "No usable observations in " + fileName + ". Every row was skipped.";
     } else {
+      const releases = [...new Set(rows.map((row) => row.release))].map((key) => irsaReleases[key].label).join(", ");
       resultsStatus.textContent = rows.length + (rows.length === 1 ? " observation" : " observations") + " from " + fileName +
-        ". Open a row to download its FITS file.";
+        " (" + releases + "). Open a row to download its FITS file.";
     }
     if (total >= irsaMaxRecords) {
       resultsNotes.append(text("p", "The generated search asks IRSA for at most " + irsaMaxRecords +
@@ -279,8 +294,9 @@ function setupObservationSearch() {
     resetQuery();
     try {
       const fields = Object.fromEntries(new FormData(form));
-      const { url, ra, dec, radius } = buildObservationQuery(fields);
-      summary.textContent = "ICRS " + ra + "°, " + dec + "° · " + radius + "° search radius";
+      const { url, ra, dec, radius, release } = buildObservationQuery(fields);
+      preparedRelease = release;
+      summary.textContent = irsaReleases[release].label + " · ICRS " + ra + "°, " + dec + "° · " + radius + "° search radius";
       link.href = url.href;
       cutout.ra.value = ra;
       cutout.dec.value = dec;
@@ -300,6 +316,8 @@ function setupObservationSearch() {
 
   example.addEventListener("click", () => {
     form.reset();
+    // DR1 holds this observation (2025W21_2C_0280_1) and returns rows for the example filters. QR3 returns none for that date.
+    releaseSelect.value = irsaDefaultRelease;
     form.elements.ra.value = "156.09328159";
     form.elements.dec.value = "-41.64466331";
     form.elements.dateStart.value = "2025-05-24";
@@ -307,9 +325,10 @@ function setupObservationSearch() {
     form.elements.bandStart.value = "1.2";
     form.elements.bandEnd.value = "1.4";
     resetQuery();
-    status.textContent = "Example coordinates and filters loaded.";
+    status.textContent = "Example coordinates, filters, and " + irsaReleases[irsaDefaultRelease].label + " loaded.";
   });
 
+  showCollection();
   submit.disabled = false;
   example.disabled = false;
   importInput.disabled = false;

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Mosaic Builder — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/mosaic.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/wasm.js" defer></script>
+    <script src="../../tools/wasm/reproject.wasm.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/difference.js" defer></script>
+    <script src="../../tools/mosaic-model.js" defer></script>
+    <script src="../../tools/mosaic.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="mosaic-builder">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Mosaic Builder</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Data Processing</p>
+        <h1 data-workspace-title>Mosaic Builder</h1>
+        <p class="workspace-description" data-workspace-description>Combine overlapping observations into a single image of a larger sky field.</p>
+      </header>
+
+      <section class="workspace-panel tm-source" aria-labelledby="mb-source-title">
+        <h2 id="mb-source-title">Input images</h2>
+        <p class="workspace-help">Choose <strong>two or more</strong> FITS files, or load the example pair. Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS and a surface-brightness unit such as <strong>MJy/sr</strong>; all must be in the same unit (Jy prefixes such as kJy/sr are converted) and the same band. Choosing the same file and HDU again does not add it a second time; images with identical pixel values are refused as duplicates.</p>
+        <div class="tm-actions">
+          <label class="tm-file mb-add">
+            <input class="tm-file__input" type="file" multiple accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-mb-file>
+            <span class="workspace-button workspace-button--primary tm-file__button" data-mb-file-label>Add FITS files</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-mb-example>Load SPHEREx example pair</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-clear>Remove all inputs</button>
+        </div>
+        <p class="workspace-status" role="status" data-mb-status></p>
+      </section>
+
+      <section class="workspace-panel mb-inputs" aria-labelledby="mb-inputs-title">
+        <h2 id="mb-inputs-title">Selected inputs</h2>
+        <p class="workspace-help" data-mb-inputs-empty>No input yet. Add at least two overlapping or adjacent images.</p>
+        <div class="tm-table-wrap" data-mb-inputs-wrap hidden>
+          <table class="tm-table mb-table">
+            <caption>Every selected image HDU with its observation, unit, band, variance and WCS status. A row stays here until you remove it.</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th><th scope="col">File and observation</th><th scope="col">Image HDU</th><th scope="col">Size</th><th scope="col">Unit (BUNIT)</th>
+                <th scope="col">Band</th><th scope="col">Variance</th><th scope="col">WCS</th><th scope="col"><span class="mb-sr">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody data-mb-inputs-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel mb-settings" aria-labelledby="mb-settings-title">
+        <h2 id="mb-settings-title">Mosaic settings</h2>
+        <div class="tm-controls">
+          <label>Combination
+            <select data-mb-mode>
+              <option value="mean">Mean, equal weights</option>
+              <option value="inverse-variance">Inverse-variance weighted mean</option>
+            </select>
+          </label>
+          <label>Output grid
+            <select data-mb-grid>
+              <option value="auto">Automatic: north-up TAN grid on the footprints</option>
+            </select>
+          </label>
+          <label>Output pixel scale (arcsec)
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="finest input scale" data-mb-scale>
+          </label>
+          <label>Output width (pixels)
+            <input type="text" inputmode="numeric" autocomplete="off" placeholder="automatic" data-mb-width>
+          </label>
+          <label>Output height (pixels)
+            <input type="text" inputmode="numeric" autocomplete="off" placeholder="automatic" data-mb-height>
+          </label>
+        </div>
+        <p class="workspace-help" data-mb-settings-note></p>
+      </section>
+
+      <section class="workspace-panel mb-plan" aria-labelledby="mb-plan-title" aria-live="polite">
+        <h2 id="mb-plan-title">Output grid and checks</h2>
+        <p class="tm-pair__verdict" data-mb-verdict>Add two or more input images to plan the mosaic.</p>
+        <ul class="tm-notes" data-mb-notes hidden></ul>
+        <div class="tm-actions" data-mb-suggest hidden></div>
+        <dl class="workspace-facts tm-checks" data-mb-plan-facts hidden>
+          <div><dt>Output grid</dt><dd data-mb-fact="grid">—</dd></div>
+          <div><dt>Pixel scale</dt><dd data-mb-fact="scale">—</dd></div>
+          <div><dt>Centre (ICRS)</dt><dd data-mb-fact="center">—</dd></div>
+          <div><dt>Unit</dt><dd data-mb-fact="unit">—</dd></div>
+          <div><dt>Spectral band</dt><dd data-mb-fact="band">—</dd></div>
+          <div><dt>Combination</dt><dd data-mb-fact="combine">—</dd></div>
+          <div><dt>Resampling</dt><dd data-mb-fact="resampling">—</dd></div>
+          <div><dt>Memory estimate</dt><dd data-mb-fact="memory">—</dd></div>
+        </dl>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-mb-build>Build mosaic</button>
+          <button class="workspace-button" type="button" hidden data-mb-cancel>Cancel</button>
+        </div>
+        <progress class="mb-progress" max="1" value="0" hidden data-mb-progress aria-label="Mosaic progress"></progress>
+        <p class="workspace-status" role="status" data-mb-build-status></p>
+      </section>
+
+      <section class="workspace-panel mb-footprints" aria-labelledby="mb-foot-title">
+        <h2 id="mb-foot-title">Footprints on the sky</h2>
+        <p class="workspace-help" data-mb-foot-empty>The footprint of every input is listed here once it has a usable WCS.</p>
+        <div class="tm-table-wrap" data-mb-foot-wrap hidden>
+          <table class="tm-table mb-table">
+            <caption>Sky footprint of each input. Rotation is the position angle of the image +y axis, east of north. After a mosaic is built the last two columns show how much each input contributes.</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th><th scope="col">Input</th><th scope="col">Centre RA, Dec (ICRS)</th><th scope="col">Size (arcmin)</th><th scope="col">Rotation</th>
+                <th scope="col">Pixel scale</th><th scope="col">Valid pixels in mosaic</th><th scope="col">Share of valid mosaic</th>
+              </tr>
+            </thead>
+            <tbody data-mb-foot-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel tm-display" aria-labelledby="mb-display-title">
+        <div class="tm-display__bar">
+          <h2 id="mb-display-title">Mosaic and coverage</h2>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-fit>Fit all views</button>
+        </div>
+        <div class="tm-controls">
+          <label>Mosaic display range
+            <select data-mb-clip>
+              <option value="1-99">1st to 99th percentile</option>
+              <option value="0.1-99.9">0.1th to 99.9th percentile</option>
+              <option value="0-100">Minimum to maximum</option>
+            </select>
+          </label>
+          <label class="tm-check"><input type="checkbox" checked data-mb-outlines> <span>Draw the input footprints</span></label>
+        </div>
+        <p class="workspace-help">The display range and the colors change only how the pictures look. Values, masks, coverage and the exported file never depend on them.</p>
+
+        <div class="mb-panels" data-mb-panels></div>
+
+        <div class="mb-legend" data-mb-legend hidden>
+          <h3>Coverage: number of inputs with a valid value</h3>
+          <ul class="mb-legend__list" data-mb-legend-list></ul>
+          <p class="workspace-help mb-legend__invalid"><span class="mb-swatch mb-swatch--hatch" aria-hidden="true"></span> Hatched pixels have no valid value: no input covers them, or every covering input is NaN or masked there.</p>
+        </div>
+
+        <p class="tm-keys" id="mb-keys">Click or tap a pixel to read its values. With a view focused: arrow keys move the selected pixel by one (Shift: ten) and the view follows it, + and − zoom, 0 fits the image, Enter selects the center pixel. Drag to pan, Ctrl + scroll or a two-finger pinch zooms. Both views share one pan and zoom because they are on the same grid.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-mb-live></p>
+      </section>
+
+      <section class="workspace-panel tm-mark mb-pixel" aria-labelledby="mb-pixel-title">
+        <h2 id="mb-pixel-title">Selected pixel</h2>
+        <p class="workspace-help" data-mb-pixel-note>Build a mosaic first. Then select a pixel in either view, or enter its position below.</p>
+        <div class="mb-pixel__inputs">
+          <label>Pixel x
+            <input type="text" inputmode="numeric" autocomplete="off" data-mb-pixel-x>
+          </label>
+          <label>Pixel y
+            <input type="text" inputmode="numeric" autocomplete="off" data-mb-pixel-y>
+          </label>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-pixel-go>Read this pixel</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-pixel-center>Center views on it</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-pixel-clear>Clear</button>
+        </div>
+        <div class="tm-table-wrap">
+          <table class="tm-table mb-readout" data-mb-readout hidden>
+            <caption>Values at the selected pixel; every value is read from the calibrated arrays, not from the picture</caption>
+            <thead><tr><th scope="col">Quantity</th><th scope="col">Value</th></tr></thead>
+            <tbody data-mb-readout-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel mb-result" aria-labelledby="mb-result-title" aria-live="polite">
+        <h2 id="mb-result-title">Result</h2>
+        <p class="tm-pair__verdict" data-mb-result-verdict>No mosaic has been built yet.</p>
+        <ul class="tm-notes" data-mb-result-notes hidden></ul>
+        <dl class="workspace-facts tm-checks" data-mb-result-facts hidden>
+          <div><dt>Valid pixels</dt><dd data-mb-result="valid">—</dd></div>
+          <div><dt>Coverage</dt><dd data-mb-result="coverage">—</dd></div>
+          <div><dt>Unit</dt><dd data-mb-result="unit">—</dd></div>
+          <div><dt>Weights</dt><dd data-mb-result="weights">—</dd></div>
+          <div><dt>Variance of the mosaic</dt><dd data-mb-result="variance">—</dd></div>
+          <div><dt>Wavelength range of the inputs</dt><dd data-mb-result="wavelength">—</dd></div>
+          <div><dt>Sources</dt><dd data-mb-result="sources">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="workspace-panel mb-export" aria-labelledby="mb-export-title">
+        <h2 id="mb-export-title">Hand-off</h2>
+        <p class="workspace-help">Download the mosaic as a FITS file: the primary HDU is the <strong>MOSAIC</strong> image (float64, NaN where invalid) with the output WCS, <strong>BUNIT</strong>, the combination mode, the resampling and every source file, observation ID and HDU (keywords and HISTORY). Extensions: <strong>MASK</strong> (0 valid, 1 invalid), <strong>COVERAGE</strong> (number of inputs with a valid value) and, when every input has variance, <strong>VARIANCE</strong>. The file opens in the FITS Viewer and in other FITS readers.</p>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" aria-disabled="true" data-mb-download>Download mosaic FITS</button>
+        </div>
+        <p class="workspace-status" role="status" data-mb-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="mb-note-title">
+        <h2 id="mb-note-title">How the mosaic is built</h2>
+        <p class="workspace-help"><strong>Same physical quantity.</strong> Every input must have the same <strong>BUNIT</strong>, or differ only by a Jy prefix (kJy/sr and MJy/sr), which is converted with the factor shown. Values are treated as <strong>surface brightness</strong> (MJy/sr, per steradian or per angular area): they are interpolated and averaged, never summed, so the unit and the scale stay physical. Flux per pixel (Jy/pixel, counts, DN, electrons) and Jy/beam are refused, because resampling them needs an area or beam scaling that this tool does not do.</p>
+        <p class="workspace-help"><strong>Same band.</strong> SPHEREx cutouts carry a per-pixel wavelength table. Mosaic Builder evaluates the wavelength of two inputs at the same sky positions, not just from the file name or detector number, and refuses inputs whose wavelengths differ by more than one bandwidth. Files with a FILTER or BAND keyword must agree on it. Without either, the spectral coverage cannot be checked and this is said so.</p>
+        <p class="workspace-help"><strong>Output grid.</strong> By default the grid is a north-up TAN projection centred on the union of the input footprints, with the finest input pixel scale (you can set a scale and a size). Alternatively the WCS of one input can be reused, which keeps that input unresampled where it lies on the grid. Footprints are projected through each WCS, so the 0°/360° boundary, rotated inputs and different pixel scales are handled. The size and a memory estimate are checked before anything is allocated; if a limit is exceeded, a coarser scale or a smaller central field is offered.</p>
+        <p class="workspace-help"><strong>Resampling.</strong> Each input is resampled by bilinear interpolation at the output pixel centres through both WCS (the sampling of reproject_interp with order bilinear). This smooths the input and correlates the noise of neighbouring pixels. The four neighbouring input pixel centres must lie inside the input, so the outermost half pixel of an input is not used, and a pixel next to a NaN or masked pixel is invalid. When output pixels are more than 1.25 times larger than input pixels, several bilinear samples inside each output pixel are averaged so that fine images are not aliased.</p>
+        <p class="workspace-help"><strong>Combination.</strong> <em>Mean</em> averages the valid inputs at each pixel with equal weights. <em>Inverse-variance</em> weights each input by 1 / variance of the reprojected VARIANCE image and needs a variance in matching units in every input; a pixel whose variance is missing, zero or negative is left out of that average. A pixel is valid where at least one input contributes; the coverage map counts the contributing inputs, and pixels covered by none stay NaN. Only NaN and BLANK pixels are invalid in an input; FLAGS and other mask images are not interpreted. Residual background, calibration and PSF differences between exposures are not matched, so seams and steps can appear where the coverage changes.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+
+    <template data-mb-panel-template>
+      <figure class="tm-panel" data-mb-panel>
+        <figcaption class="tm-panel__head">
+          <span class="tm-panel__role" data-mb-panel-role></span>
+          <span class="tm-panel__title" data-mb-panel-title></span>
+        </figcaption>
+        <div class="tm-viewport" tabindex="0" role="group" aria-describedby="mb-keys" data-mb-viewport>
+          <div class="fits-empty" data-mb-empty><p>Add inputs to plan the mosaic.</p></div>
+          <canvas role="img" hidden data-mb-canvas></canvas>
+        </div>
+        <p class="tm-panel__line" data-mb-range></p>
+        <p class="tm-panel__line" data-mb-zoom></p>
+        <p class="tm-panel__line tm-panel__pointer" data-mb-pointer></p>
+      </figure>
+    </template>
+  </body>
+</html>

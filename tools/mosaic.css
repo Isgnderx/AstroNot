@@ -1,0 +1,125 @@
+/* Mosaic Builder workspace. Builds on workspace.css and the Time Machine panel, table, note and control styles. */
+.mb-inputs, .mb-settings, .mb-plan, .mb-footprints, .mb-result, .mb-export { margin-block-start: var(--workspace-gap); }
+.mb-settings .workspace-help, .mb-plan .tm-pair__verdict, .mb-result .tm-pair__verdict { max-inline-size: 80ch; }
+.mb-plan .tm-checks dd, .mb-result .tm-checks dd { max-inline-size: 80ch; }
+
+.mb-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mb-add { display: inline-block; min-inline-size: 11rem; }
+.tm-actions .workspace-button[hidden] { display: none; }
+
+.mb-table { min-inline-size: 46rem; }
+.mb-table td, .mb-table th { overflow-wrap: anywhere; }
+.mb-table tr[data-state="loading"] td { color: var(--workspace-muted); }
+.mb-table tr[data-state="error"] td { color: #ffd0cb; }
+.mb-table tr[data-flag="duplicate"] td, .mb-table tr[data-flag="problem"] td { color: #f3d98f; }
+.mb-table select { max-inline-size: 15rem; }
+.mb-table .workspace-button { min-block-size: 2.5rem; padding-inline: 0.75rem; white-space: nowrap; }
+.mb-table .mb-name { font-weight: 600; color: var(--ink); }
+.mb-table .mb-sub { display: block; color: var(--workspace-muted); font-size: 0.8125rem; }
+.mb-table .mb-error { display: block; margin-block-start: 0.2rem; color: #ffd0cb; font-size: 0.8125rem; }
+
+.mb-chip {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+  border: 2px solid var(--chip, #eaecf1);
+  border-radius: 50%;
+  background: #101216;
+  color: #f2f4f8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mb-progress {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 34rem;
+  block-size: 0.6rem;
+  margin-block-start: 0.6rem;
+  accent-color: #eaecf1;
+}
+
+.mb-progress[hidden] { display: none; }
+
+.mb-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--workspace-gap);
+  margin-block-start: 0.9rem;
+}
+
+.mb-panels .tm-viewport { block-size: clamp(16rem, 52svh, 34rem); }
+.mb-panels .tm-panel__line:empty { display: none; }
+.tm-viewport[data-selected]:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+.mb-legend { margin-block-start: 1rem; max-inline-size: 44rem; }
+.mb-legend h3 { font-size: 0.875rem; font-weight: 650; }
+.mb-legend[hidden] { display: none; }
+
+.mb-legend__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mb-legend__list li { display: flex; align-items: center; gap: 0.4rem; }
+
+.mb-swatch {
+  display: inline-block;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 1px solid #6b7280;
+  vertical-align: -0.2rem;
+}
+
+.mb-swatch--hatch { margin-inline-end: 0.35rem; background: repeating-linear-gradient(45deg, #14171c 0 3px, #5b6270 3px 4px); }
+.mb-legend__invalid { margin-block-start: 0.5rem; }
+
+.mb-pixel__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.6rem 0.9rem;
+  margin-block: 0.75rem 0.5rem;
+}
+
+.mb-pixel__inputs label { min-inline-size: 7rem; max-inline-size: 9rem; }
+.mb-pixel__inputs .workspace-button[aria-disabled="true"], .tm-display__bar .workspace-button[aria-disabled="true"],
+.mb-export .workspace-button[aria-disabled="true"], .mb-plan .workspace-button[aria-disabled="true"], .mb-source .workspace-button[aria-disabled="true"],
+.tm-source .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+.mb-readout, .tm-table.mb-readout { min-inline-size: 0; max-inline-size: 56rem; table-layout: fixed; }
+.mb-readout th[scope="row"] { inline-size: 42%; }
+.mb-readout caption { overflow-wrap: anywhere; }
+.mb-readout td[data-state="invalid"] { color: #f3d98f; }
+
+@media (max-width: 1000px) {
+  .mb-panels { grid-template-columns: minmax(0, 1fr); }
+  .mb-panels .tm-viewport { block-size: clamp(14rem, 46svh, 26rem); }
+}
+
+@media (max-width: 750px) {
+  .mb-pixel__inputs label { flex: 1 1 6rem; max-inline-size: none; }
+  .mb-pixel__inputs .workspace-button { flex: 1 1 auto; }
+  .mb-add { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .mb-settings input, .mb-pixel__inputs input { font-size: 1rem; }
+}

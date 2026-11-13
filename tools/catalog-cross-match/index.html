@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Catalog Cross-Match — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/cross-match.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/observation-csv.js" defer></script>
+    <script src="../../tools/xmatch.js" defer></script>
+    <script src="../../tools/cross-match.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="catalog-cross-match">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Catalog Cross-Match</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Analysis</p>
+        <h1 data-workspace-title>Catalog Cross-Match</h1>
+        <p class="workspace-description" data-workspace-description>Compare SPHEREx source positions with entries in Gaia and WISE.</p>
+      </header>
+
+      <section class="workspace-panel xm-intro" aria-labelledby="xm-intro-title">
+        <h2 id="xm-intro-title">Match your positions with a catalog extract</h2>
+        <p class="workspace-help">Load <strong>your sources</strong> (a CSV with an ID, RA and Dec) and a <strong>catalog extract</strong> (a CSV saved from the archive, such as Gaia DR3 or AllWISE). Both files are read on this device; nothing is uploaded. For every source of yours, AstroNot lists the catalog rows within the radius you set, nearest first. A match here is a <strong>position match only</strong>; it does not confirm that two entries are the same object.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-xm-example>Load real example (AllWISE sources, Gaia DR3 catalog)</button>
+          <a class="workspace-source" href="../../tools/index.html" data-route="/tools">Back to all tools</a>
+        </div>
+        <p class="workspace-status" role="status" data-xm-example-status></p>
+      </section>
+
+      <section class="workspace-panel xm-section" aria-labelledby="xm-src-title">
+        <h2 id="xm-src-title">1. Your sources</h2>
+        <p class="workspace-help">A comma-separated CSV with a header row. The Source Detection export (<strong>source_id, x_pixel, y_pixel, ra, dec, …</strong>) is read as it is; for any other file, pick the columns below. Rows without a valid position are listed as <strong>Invalid coordinates</strong> and are not matched.</p>
+        <div class="xm-file">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".csv,text/csv,text/plain" disabled data-xm-src-file>
+            <span class="workspace-button tm-file__button" data-xm-src-file-label>Choose your sources CSV</span>
+          </label>
+        </div>
+        <p class="workspace-status" role="status" data-xm-src-status></p>
+        <div class="xm-fields" data-xm-src-fields hidden>
+          <label>ID column <select data-xm-src-id></select></label>
+          <label>RA column <select data-xm-src-ra></select></label>
+          <label>Dec column <select data-xm-src-dec></select></label>
+          <label>Coordinate units
+            <select data-xm-src-unit>
+              <option value="deg">Decimal degrees (RA and Dec)</option>
+              <option value="sexagesimal">Sexagesimal: RA in hours, Dec in degrees</option>
+            </select>
+          </label>
+          <label>Epoch of your positions (optional)
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2025.4" data-xm-src-epoch>
+          </label>
+          <label>Epoch unit
+            <select data-xm-src-epoch-unit>
+              <option value="jyear">Julian year</option>
+              <option value="mjd">MJD</option>
+            </select>
+          </label>
+        </div>
+        <p class="workspace-help xm-hint" data-xm-src-hint hidden></p>
+        <dl class="workspace-facts xm-facts" data-xm-src-facts hidden>
+          <div><dt>File</dt><dd data-xm-src-fact="file">—</dd></div>
+          <div><dt>Rows</dt><dd data-xm-src-fact="rows">—</dd></div>
+          <div><dt>Valid positions</dt><dd data-xm-src-fact="valid">—</dd></div>
+          <div><dt>Rows with a problem</dt><dd data-xm-src-fact="problems">—</dd></div>
+          <div><dt>Coordinate system</dt><dd data-xm-src-fact="system">Not stated in the file; treated as ICRS / J2000 degrees</dd></div>
+          <div><dt>Epoch</dt><dd data-xm-src-fact="epoch">Unavailable</dd></div>
+        </dl>
+      </section>
+
+      <section class="workspace-panel xm-section" aria-labelledby="xm-cat-title">
+        <h2 id="xm-cat-title">2. Catalog extract</h2>
+        <p class="workspace-help">A CSV saved from an archive cone search. Gaia (<strong>source_id, ra, dec, pmra, pmdec, ref_epoch, parallax</strong>) and AllWISE (<strong>designation, ra, dec, pmra, pmdec, w1mjdmean, …</strong>) tables from IRSA are recognised. Catalog IDs are kept as text, so 19-digit Gaia IDs stay exact. Lines at the top that start with <strong>#</strong> (for example <strong># release: DR3</strong>) are read as file information.</p>
+        <div class="xm-file">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".csv,text/csv,text/plain" disabled data-xm-cat-file>
+            <span class="workspace-button tm-file__button" data-xm-cat-file-label>Choose the catalog extract CSV</span>
+          </label>
+        </div>
+        <p class="workspace-status" role="status" data-xm-cat-status></p>
+        <p class="workspace-help xm-hint" data-xm-cat-note hidden></p>
+        <div class="xm-fields" data-xm-cat-fields hidden>
+          <label>Catalog name <input type="text" autocomplete="off" placeholder="e.g. Gaia" data-xm-cat-name></label>
+          <label>Release <input type="text" autocomplete="off" placeholder="e.g. DR3" data-xm-cat-release></label>
+          <label>ID column <select data-xm-cat-id></select></label>
+          <label>RA column <select data-xm-cat-ra></select></label>
+          <label>Dec column <select data-xm-cat-dec></select></label>
+          <label>Coordinate units
+            <select data-xm-cat-unit>
+              <option value="deg">Decimal degrees (RA and Dec)</option>
+              <option value="sexagesimal">Sexagesimal: RA in hours, Dec in degrees</option>
+            </select>
+          </label>
+          <label>Proper motion in RA (mas/yr) <select data-xm-cat-pmra></select></label>
+          <label>Proper motion in Dec (mas/yr) <select data-xm-cat-pmdec></select></label>
+          <label>RA proper motion convention
+            <select data-xm-cat-pmconv>
+              <option value="">Choose…</option>
+              <option value="cosdec">Already includes cos(Dec), μα* (Gaia)</option>
+              <option value="plain">Plain dα/dt, cos(Dec) not included</option>
+            </select>
+          </label>
+          <label>Position epoch column <select data-xm-cat-epoch></select></label>
+          <label>Epoch column unit
+            <select data-xm-cat-epoch-unit>
+              <option value="jyear">Julian year</option>
+              <option value="mjd">MJD</option>
+            </select>
+          </label>
+          <label>Epoch for every row (if there is no column)
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 2016.0 (Julian year)" data-xm-cat-fixed-epoch>
+          </label>
+        </div>
+        <fieldset class="xm-coverage" data-xm-cat-coverage hidden>
+          <legend>What the extract covers (optional)</legend>
+          <p class="workspace-help">If the file is a cone search, enter its centre, radius and row limit. AstroNot then tells you which of your sources lie too close to the edge for a missing match to mean anything.</p>
+          <div class="xm-fields">
+            <label>Centre RA (degrees) <input type="text" inputmode="decimal" autocomplete="off" data-xm-cov-ra></label>
+            <label>Centre Dec (degrees) <input type="text" inputmode="decimal" autocomplete="off" data-xm-cov-dec></label>
+            <label>Extract radius (arcsec) <input type="text" inputmode="decimal" autocomplete="off" data-xm-cov-radius></label>
+            <label>Row limit of the request <input type="text" inputmode="numeric" autocomplete="off" data-xm-cov-limit></label>
+          </div>
+        </fieldset>
+        <dl class="workspace-facts xm-facts" data-xm-cat-facts hidden>
+          <div><dt>File</dt><dd data-xm-cat-fact="file">—</dd></div>
+          <div><dt>Rows</dt><dd data-xm-cat-fact="rows">—</dd></div>
+          <div><dt>Valid positions</dt><dd data-xm-cat-fact="valid">—</dd></div>
+          <div><dt>Rows with a problem</dt><dd data-xm-cat-fact="problems">—</dd></div>
+          <div><dt>Coordinate system</dt><dd data-xm-cat-fact="system">Not stated in the file; treated as ICRS degrees</dd></div>
+          <div><dt>Position epoch</dt><dd data-xm-cat-fact="epoch">Unavailable</dd></div>
+          <div><dt>Proper motion</dt><dd data-xm-cat-fact="motion">Unavailable</dd></div>
+          <div><dt>Coverage</dt><dd data-xm-cat-fact="coverage">Not stated</dd></div>
+        </dl>
+
+        <details class="xm-irsa">
+          <summary>Need an extract? Open an IRSA query</summary>
+          <p class="workspace-help">IRSA's TAP service answers a link with a CSV (checked on 13 Nov 2026). The service does not allow a web page to read the answer, so AstroNot cannot fetch it for you: open the link, save the CSV, then choose that file above. Positions default to a circle around your sources; the row limit keeps an arbitrary part of a larger answer, and the CSV does not say so.</p>
+          <div class="xm-fields">
+            <label>Catalog
+              <select data-xm-irsa-table>
+                <option value="gaia">Gaia DR3 (gaia_dr3_source)</option>
+                <option value="allwise">AllWISE Source Catalog (allwise_p3as_psd)</option>
+              </select>
+            </label>
+            <label>Centre RA (degrees) <input type="text" inputmode="decimal" autocomplete="off" data-xm-irsa-ra></label>
+            <label>Centre Dec (degrees) <input type="text" inputmode="decimal" autocomplete="off" data-xm-irsa-dec></label>
+            <label>Radius (arcsec) <input type="text" inputmode="decimal" autocomplete="off" data-xm-irsa-radius></label>
+            <label>Row limit <input type="text" inputmode="numeric" autocomplete="off" value="20000" data-xm-irsa-limit></label>
+          </div>
+          <div class="tm-actions">
+            <a class="workspace-button" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" data-xm-irsa-link>Open IRSA query (CSV)</a>
+            <button class="workspace-button" type="button" data-xm-irsa-fill>Use my sources' area</button>
+          </div>
+          <p class="workspace-status" role="status" data-xm-irsa-status></p>
+          <p class="xm-adql" data-xm-irsa-adql hidden></p>
+        </details>
+      </section>
+
+      <section class="workspace-panel xm-section" aria-labelledby="xm-set-title">
+        <h2 id="xm-set-title">3. Match settings</h2>
+        <div class="xm-fields">
+          <label>Search radius (arcsec)
+            <input type="text" inputmode="decimal" autocomplete="off" value="3" data-xm-radius>
+          </label>
+          <label>Catalog positions
+            <select data-xm-epoch-mode>
+              <option value="none">Use as published (no proper motion applied)</option>
+              <option value="move">Move to an epoch with proper motion</option>
+            </select>
+          </label>
+          <label data-xm-target-wrap hidden>Epoch to move the catalog to
+            <input type="text" inputmode="decimal" autocomplete="off" data-xm-target-epoch>
+          </label>
+          <label data-xm-target-unit-wrap hidden>Epoch unit
+            <select data-xm-target-unit>
+              <option value="jyear">Julian year</option>
+              <option value="mjd">MJD</option>
+            </select>
+          </label>
+        </div>
+        <p class="workspace-help" data-xm-settings-note>The default radius of 3 arcsec is a starting value, not a recommendation for your data: choose it from the position uncertainty of your sources and of the catalog. A catalog row is a candidate when its separation is <strong>at most</strong> the radius (the boundary is included). Radius range: 0.01 to 3600 arcsec.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-xm-run>Match positions</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-xm-use-source-epoch hidden>Use the epoch of my sources</button>
+        </div>
+        <p class="workspace-status" role="status" data-xm-run-status></p>
+      </section>
+
+      <section class="workspace-panel xm-section xm-result" aria-labelledby="xm-result-title" aria-live="polite">
+        <h2 id="xm-result-title">Result</h2>
+        <p class="tm-pair__verdict" data-xm-verdict>Load your sources and a catalog extract, then choose <strong>Match positions</strong>.</p>
+        <ul class="tm-notes" data-xm-notes hidden></ul>
+        <dl class="workspace-facts xm-facts" data-xm-summary hidden>
+          <div><dt>Catalog</dt><dd data-xm-fact="catalog">—</dd></div>
+          <div><dt>Radius</dt><dd data-xm-fact="radius">—</dd></div>
+          <div><dt>Epochs</dt><dd data-xm-fact="epochs">—</dd></div>
+          <div><dt>Your sources</dt><dd data-xm-fact="sources">—</dd></div>
+          <div><dt>Single candidate</dt><dd data-xm-fact="single">—</dd></div>
+          <div><dt>Multiple candidates</dt><dd data-xm-fact="multiple">—</dd></div>
+          <div><dt>No match</dt><dd data-xm-fact="none">—</dd></div>
+          <div><dt>Invalid coordinates</dt><dd data-xm-fact="invalid">—</dd></div>
+          <div><dt>Index</dt><dd data-xm-fact="index">—</dd></div>
+        </dl>
+
+        <div class="xm-tablebar" data-xm-tablebar hidden>
+          <label>Show
+            <select data-xm-filter>
+              <option value="all">All sources</option>
+              <option value="single-candidate">Single candidate</option>
+              <option value="multiple-candidates">Multiple candidates</option>
+              <option value="no-match">No match</option>
+              <option value="invalid-coordinates">Invalid coordinates</option>
+            </select>
+          </label>
+          <div class="xm-pager">
+            <button class="workspace-button" type="button" data-xm-prev>Previous</button>
+            <span data-xm-page-label aria-live="polite"></span>
+            <button class="workspace-button" type="button" data-xm-next>Next</button>
+          </div>
+        </div>
+        <div class="tm-table-wrap xm-table-wrap" data-xm-table-wrap hidden>
+          <table class="tm-table xm-table" data-xm-table>
+            <caption>Nearest candidate for each of your sources. Position match only; separations in arcsec, positions in degrees (ICRS).</caption>
+            <thead>
+              <tr>
+                <th scope="col">Your source</th>
+                <th scope="col">Status</th>
+                <th scope="col">Catalog</th>
+                <th scope="col">Nearest candidate</th>
+                <th scope="col">Your position (RA, Dec °)</th>
+                <th scope="col">Candidate position (RA, Dec °)</th>
+                <th scope="col">Separation (arcsec)</th>
+                <th scope="col">Candidates</th>
+                <th scope="col">Catalog epoch (Julian year)</th>
+              </tr>
+            </thead>
+            <tbody data-xm-rows></tbody>
+          </table>
+        </div>
+        <p class="tm-keys" data-xm-table-note hidden>Choose a source ID in the table to see every candidate for it below. Rows are numbered as in your files: row 1 is the first row after the header.</p>
+      </section>
+
+      <section class="workspace-panel xm-section xm-detail" aria-labelledby="xm-detail-title" data-xm-detail hidden>
+        <h2 id="xm-detail-title" tabindex="-1" data-xm-detail-title>Candidates</h2>
+        <p class="workspace-help" data-xm-detail-note></p>
+        <div class="tm-table-wrap">
+          <table class="tm-table xm-table">
+            <caption data-xm-detail-caption>All catalog rows within the radius, nearest first.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Catalog ID</th>
+                <th scope="col">Catalog row</th>
+                <th scope="col">Position (RA, Dec °)</th>
+                <th scope="col">Published position (RA, Dec °)</th>
+                <th scope="col">Separation (arcsec)</th>
+                <th scope="col">Epoch (Julian year)</th>
+              </tr>
+            </thead>
+            <tbody data-xm-detail-rows></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel xm-section" aria-labelledby="xm-export-title">
+        <h2 id="xm-export-title">Export</h2>
+        <p class="workspace-help">The CSV has one row for each candidate (rank 1 is the nearest) and one row for every source with no candidate or with invalid coordinates. It keeps IDs as text, positions in degrees, separations in arcsec, the radius, the comparison epoch and each catalog row's published epoch, and the catalog name and release.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-xm-download>Download results CSV</button>
+          <label class="tm-check"><input type="checkbox" data-xm-sheet> <span>Write long IDs as ="…" so a spreadsheet keeps every digit</span></label>
+        </div>
+        <p class="workspace-status" role="status" data-xm-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="xm-method-title">
+        <h2 id="xm-method-title">How the match works</h2>
+        <p class="workspace-help"><strong>Separation</strong> is the great-circle angle between two positions, computed with Vincenty's formula, which stays accurate from sub-milliarcsecond to antipodal distances. RA is handled across 0°/360° (359.9999° and 0.0001° on the equator are 0.72 arcsec apart) and near the poles, where every RA is searched. Positions are read as ICRS / J2000 degrees; a catalog in another frame or equinox must be converted first.</p>
+        <p class="workspace-help"><strong>Candidates</strong> are all catalog rows with a separation of at most the radius. They are sorted by separation. Separations that agree within 0.001 milliarcsec count as a tie, and a tie is broken by catalog ID (digit-only IDs in numeric order) and then by catalog row, so the order never depends on file order. <strong>Nearest candidate</strong> is simply the first of that list. It is a position match only; whether two entries are the same object needs more evidence, such as brightness, colour, proper motion or the position uncertainties.</p>
+        <p class="workspace-help"><strong>Epochs.</strong> Without proper motion, separations compare your positions as given with the catalog positions at their published epoch. If you move the catalog to an epoch, each row is carried along a great circle by its proper motion for the time between its own epoch and the chosen one; parallax and radial velocity are ignored. Gaia <strong>pmra</strong> is μα* = μα·cos(Dec), already including cos(Dec) (Gaia DR3 documentation); the AllWISE documentation does not say, so you choose. Rows without proper motion or epoch keep their published position and are counted. Your own positions are never moved.</p>
+        <p class="workspace-help"><strong>Coverage.</strong> A source with no match may simply lie outside the extract. If you give the extract's centre and radius, AstroNot marks sources whose whole search circle is not inside it; if the number of rows equals the request's row limit, the extract may be cut off and coverage is unknown.</p>
+        <p class="workspace-help xm-credit">The example holds 40 AllWISE Source Catalog rows (<strong>allwise_p3as_psd</strong>) and 72 Gaia DR3 rows (<strong>gaia_dr3_source</strong>) returned by NASA/IPAC IRSA's TAP service on 13 Nov 2026 for a 90 arcsec cone around RA 156.09328159°, Dec −41.64466331° (the SPHEREx example position). AllWISE rows stand in for a list of your own sources; no SPHEREx source list is bundled. Credit: AllWISE, a NASA/IPAC Infrared Science Archive product from WISE (UCLA, JPL/Caltech, NASA); Gaia DR3, ESA/Gaia/DPAC.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

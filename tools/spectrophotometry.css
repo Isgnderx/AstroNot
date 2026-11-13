@@ -1,0 +1,83 @@
+/* Spectrophotometry workspace. Builds on workspace.css and the Time Machine table, note and button styles. */
+.sp-target, .sp-result, .sp-export, .sp-detail { margin-block-start: var(--workspace-gap); }
+.sp-images .workspace-help, .sp-target .workspace-help, .sp-export .workspace-help { max-inline-size: 78ch; }
+.sp-images .tm-file { min-inline-size: 11rem; }
+
+.sp-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sp-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem 1rem;
+  margin-block-start: 0.85rem;
+}
+
+.sp-checks { display: grid; gap: 0.1rem; margin-block-start: 0.6rem; }
+.sp-checks .tm-check { min-block-size: 2.5rem; font-weight: 450; }
+
+.sp-stale { color: #f3d98f; font-size: 0.875rem; }
+.sp-stale:empty { display: none; }
+.sp-images .tm-actions .workspace-button[aria-disabled="true"], .sp-export .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.sp-list, .sp-results { font-size: 0.8125rem; }
+.sp-list td, .sp-results td, .sp-results th[scope="row"] { overflow-wrap: anywhere; }
+.sp-results th[scope="row"] { font-weight: 550; }
+.sp-results td[data-empty], .sp-list td[data-empty] { color: var(--workspace-muted); }
+.sp-results tr[data-state="refused"] td, .sp-results tr[data-state="refused"] th { color: #f3d98f; }
+.sp-results tr[data-selected] { background: #161a20; }
+.sp-results .workspace-button { min-block-size: 2.25rem; padding-block: 0.2rem; font-size: 0.8125rem; text-align: start; }
+.sp-list .workspace-button { min-block-size: 2.25rem; padding-block: 0.2rem; font-size: 0.8125rem; white-space: nowrap; }
+.sp-list td:last-child { white-space: nowrap; }
+
+.sp-result .tm-pair__verdict { max-inline-size: 85ch; }
+
+.sp-detail__choice { min-inline-size: 14rem; max-inline-size: 28rem; }
+
+.sp-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--workspace-gap) 1.5rem;
+}
+
+.sp-figure { margin: 0; min-inline-size: 0; }
+
+.sp-figure canvas {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 28rem;
+  block-size: auto;
+  border: 1px solid #2c3139;
+  background: #060709;
+  image-rendering: pixelated;
+}
+
+.sp-facts { margin-block: 0; }
+.sp-conversions { max-inline-size: 85ch; }
+.sp-pixels { margin-block-start: 0.9rem; }
+.sp-pixels summary { min-block-size: 2.75rem; display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; font-weight: 600; }
+.sp-pixels summary:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.sp-pixels td[data-state="left-out"] { color: #f3d98f; }
+.sp-link { text-decoration: underline; text-underline-offset: 0.18em; color: #d9e0ec; }
+
+@media (max-width: 900px) {
+  .sp-detail__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 750px) {
+  .sp-list, .sp-results { min-inline-size: 44rem; }
+  .sp-images .tm-actions .workspace-button, .sp-images .tm-file { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .sp-fields input, .sp-fields select { font-size: 1rem; }
+}
+.sp-results td:nth-child(2) { min-inline-size: 7.5rem; }

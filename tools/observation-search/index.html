@@ -43,6 +43,19 @@
         <form class="workspace-panel observation-form" data-observation-form>
           <h2>Search parameters</h2>
           <fieldset>
+            <legend>Data release</legend>
+            <p class="workspace-help">Each release is its own IRSA collection, and the same observation can appear in several with different processing. DR1 is the default. QR2 is archived and may return no rows.</p>
+            <div class="observation-fields observation-fields--release">
+              <label>SPHEREx release
+                <select name="release" data-observation-release>
+                  <option value="dr1" selected>SPHEREx DR1</option>
+                  <option value="qr3">SPHEREx QR3</option>
+                  <option value="qr2">SPHEREx QR2 (archived, may return no rows)</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset>
             <legend>Sky position</legend>
             <p class="workspace-help">ICRS coordinates and cone radius in decimal degrees.</p>
             <div class="observation-fields observation-fields--position">
@@ -74,7 +87,7 @@
         <aside class="workspace-panel observation-query" aria-labelledby="query-title">
           <h2 id="query-title">IRSA query</h2>
           <dl class="workspace-facts">
-            <div><dt>Collection</dt><dd>SPHEREx Quick Release 2</dd></div>
+            <div><dt>Collection</dt><dd data-query-collection>SPHEREx DR1 (spherex_dr1)</dd></div>
             <div><dt>Service</dt><dd>Simple Image Access (SIA 2)</dd></div>
             <div><dt>Result format</dt><dd>CSV · up to 100 records</dd></div>
           </dl>

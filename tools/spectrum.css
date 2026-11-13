@@ -1,0 +1,157 @@
+/* Spectrum Lab workspace. Builds on workspace.css and the Time Machine panel, table, segment and note styles. */
+.sl-columns, .sl-import, .sl-selection, .sl-plot, .sl-point, .sl-table { margin-block-start: var(--workspace-gap); }
+.sl-columns .workspace-help, .sl-import .workspace-help, .sl-selection .workspace-help { max-inline-size: 75ch; }
+.sl-mapping, .sl-units, .sl-range { margin-block-start: 0.85rem; }
+.sl-mapping { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.sl-selection .workspace-status { margin-block-start: 0.5rem; }
+
+.sl-provenance { max-inline-size: 75ch; }
+.sl-provenance[data-synthetic] {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #d6b25e;
+  border-inline-start-width: 4px;
+  border-radius: 0.3rem;
+  background: #19160e;
+  color: #f3e4b6;
+}
+
+.sl-details { margin-block-start: 0.75rem; }
+.sl-details summary {
+  min-block-size: 2.75rem;
+  padding-block: 0.55rem;
+  color: #dce0e8;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sl-details summary:focus-visible, .sl-sort:focus-visible, .sl-row-button:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+.sl-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0.75rem;
+  padding-inline-start: 1.2rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sl-list li { overflow-wrap: anywhere; }
+
+.sl-toggles { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.sl-toggles .tm-segment { align-items: center; }
+.sl-toggle-label { color: var(--workspace-muted); font-size: 0.875rem; font-weight: 600; }
+.sl-toggles .workspace-button[aria-pressed="true"] { border-color: #eaecf1; background: #eaecf1; color: #101216; }
+
+.sl-plot__title { margin-block: 0.6rem; color: var(--ink); font-size: 0.9375rem; font-weight: 600; overflow-wrap: anywhere; }
+.sl-plot > .tm-check { margin-block-start: 0.4rem; }
+
+.sl-chart {
+  position: relative;
+  block-size: clamp(18rem, 52svh, 34rem);
+  overflow: hidden;
+  border: 1px solid #2c3139;
+  background: #060709;
+}
+
+.sl-chart:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.sl-chart canvas { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; cursor: crosshair; }
+
+.sl-chart__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: var(--workspace-muted);
+  font-size: 0.9375rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.sl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  color: var(--ink);
+  font-size: 0.875rem;
+  list-style: none;
+}
+
+.sl-legend li { display: flex; align-items: baseline; gap: 0.4rem; }
+.sl-swatch { font-size: 1rem; line-height: 1; }
+.sl-lognote { margin-block-start: 0.5rem; padding: 0.5rem 0.7rem; border: 1px solid #d6b25e; border-inline-start-width: 4px; border-radius: 0.3rem; background: #19160e; }
+.sl-lognote .workspace-help { margin-block-start: 0; color: #f3e4b6; }
+.sl-lognote .sl-details { margin-block-start: 0.25rem; }
+
+.sl-point .tm-actions { margin-block-start: 0.6rem; }
+.sl-readout, .tm-table.sl-readout { min-inline-size: 0; max-inline-size: 52rem; }
+.sl-readout th[scope="row"] { inline-size: 11rem; font-weight: 550; overflow-wrap: anywhere; }
+.sl-readout td { overflow-wrap: anywhere; }
+
+.sl-table__wrap { max-block-size: min(70svh, 40rem); overflow: auto; }
+.sl-table__wrap:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.sl-data { min-inline-size: 38rem; }
+.sl-data thead th { position: sticky; inset-block-start: 0; z-index: 1; background: #101216; }
+
+.sl-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: 2.75rem;
+  padding: 0.2rem 0.3rem;
+  border: 0;
+  border-radius: 0.2rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.sl-sort::after { color: #6b7280; content: "↕"; }
+th[aria-sort="ascending"] .sl-sort::after { color: var(--ink); content: "↑"; }
+th[aria-sort="descending"] .sl-sort::after { color: var(--ink); content: "↓"; }
+th[aria-sort="ascending"], th[aria-sort="descending"] { color: var(--ink); }
+
+.sl-row-button {
+  min-block-size: 2.75rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #4a505a;
+  border-radius: 0.3rem;
+  background: #191c22;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.sl-row-button[aria-pressed="true"] { border-color: #eaecf1; background: #eaecf1; color: #101216; }
+.sl-data tr[data-selected] td, .sl-data tr[data-selected] th { background: #1a2130; }
+.sl-unavailable { color: var(--workspace-muted); font-style: italic; }
+.sl-flagtext { display: block; color: var(--workspace-muted); font-size: 0.8125rem; }
+
+@media (hover: hover) and (pointer: fine) {
+  .sl-row-button:hover:not([aria-pressed="true"]), .sl-sort:hover { border-color: #dbe0e8; color: #fff; }
+}
+
+@media (max-width: 750px) {
+  .sl-chart { block-size: clamp(16rem, 48svh, 26rem); }
+  .sl-toggles .workspace-button { flex: 1 1 auto; }
+  .sl-readout th[scope="row"] { inline-size: 40%; }
+  .sl-data { min-inline-size: 34rem; }
+}
+
+@media (pointer: coarse) {
+  .sl-selection input, .sl-columns select { font-size: 1rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sl-row-button, .sl-sort { transition: border-color 120ms ease-out, background-color 120ms ease-out; }
+}

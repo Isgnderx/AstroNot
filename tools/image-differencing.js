@@ -11,6 +11,15 @@
   const Wcs = AstroNotWcs;
   const Pair = AstroNotPair;
   const Diff = AstroNotDifference;
+
+  // Optional Rust/WebAssembly accelerator for the reprojection loop (rust/crates/reproject). It is installed when it has
+  // loaded; until then, and whenever it cannot load (no WebAssembly, no SIMD, file missing), the JavaScript loop runs.
+  // <html data-reproject="wasm|js"> tells which one is installed; AstroNotDifference.kernelStatus() counts the calls.
+  if (typeof AstroNotWasm === "object") {
+    AstroNotWasm.load("reproject").then((kernel) => {
+      document.documentElement.dataset.reproject = AstroNotDifference.useKernel(kernel) ? "wasm" : "js";
+    });
+  }
   const { createWcs, screenToFits, fitsToScreen, insideImage } = Wcs;
 
   const roles = ["reference", "target"];

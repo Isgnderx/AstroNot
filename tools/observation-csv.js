@@ -1,4 +1,4 @@
-// Pure helpers for IRSA SIA results and SPHEREx QR2 product links.
+// Pure helpers for IRSA SIA results and SPHEREx level 2 product links (DR1, QR3 and QR2).
 // Loaded by Observation Search and FITS Viewer; also loaded by tests/observation.test.mjs.
 //
 // Archive facts checked against the live service (see README, "Observation Search to FITS Viewer"):
@@ -7,13 +7,43 @@
 // - The CSV has one row per observation and detector. It has no overflow flag.
 // - The cloud_access column holds JSON with commas and is NOT quoted, so a raw row has more fields than
 //   the header. joinUnquotedJson() puts those fields back together.
+// - Each SPHEREx release is its own SIA collection (spherex_dr1, spherex_qr3, spherex_qr2) with the same columns.
+//   On 2026-11-14 spherex_qr2 answered with the header only (0 rows) while DR1 and QR3 returned rows. The same
+//   observation can appear in several releases with different processing versions in the file path.
 // - Cutouts are requested by appending ?center=RA,Dec&size=<value><unit> to a product URL.
 
 const irsaMaxRecords = 100;
 const irsaHost = "irsa.ipac.caltech.edu";
-const irsaProductPath = /^\/ibe\/data\/spherex\/qr2\/level2\/[A-Za-z0-9._/-]+\.fits$/;
+const irsaReleases = {
+  dr1: { collection: "spherex_dr1", label: "SPHEREx DR1" },
+  qr3: { collection: "spherex_qr3", label: "SPHEREx QR3" },
+  qr2: { collection: "spherex_qr2", label: "SPHEREx QR2" },
+};
+const irsaDefaultRelease = "dr1";
+const irsaProductPath = /^\/ibe\/data\/spherex\/(dr1|qr3|qr2)\/level2\/[A-Za-z0-9._/-]+\.fits$/;
 const irsaObservationId = /^[A-Za-z0-9._-]{1,64}$/;
 const irsaRequiredColumns = ["obs_id", "access_url"];
+
+function irsaIsRelease(key) {
+  return typeof key === "string" && Object.prototype.hasOwnProperty.call(irsaReleases, key);
+}
+
+// The release a validated product URL belongs to ("dr1", "qr3" or "qr2"), or null.
+function irsaReleaseOfUrl(url) {
+  const match = irsaProductPath.exec(url.pathname);
+  return match ? match[1] : null;
+}
+
+// Message for a search or file with no rows. It names the release and suggests the others.
+function irsaEmptyMessage(release) {
+  if (!irsaIsRelease(release)) {
+    return "No observations in this file. Widen the radius, dates, or wavelength range, or choose another data release and prepare the search again.";
+  }
+  const others = Object.keys(irsaReleases).filter((key) => key !== release).map((key) => irsaReleases[key].label).join(" or ");
+  return "No " + irsaReleases[release].label + " observations matched this search. " +
+    (release === "qr2" ? "QR2 is archived and may return no rows. Try another data release (" + others + ")."
+      : "Widen the radius, dates, or wavelength range, or try another data release (" + others + ").");
+}
 
 function parseCsv(text) {
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
@@ -212,7 +242,7 @@ function parseIrsaResults(text) {
     }
     const url = validateIrsaProductUrl(get("access_url"));
     if (!url) {
-      skipped.push({ number, obsId, reason: get("access_url") ? "the file link is not a SPHEREx QR2 product on " + irsaHost : "there is no file link" });
+      skipped.push({ number, obsId, reason: get("access_url") ? "the file link is not a SPHEREx DR1, QR3 or QR2 level 2 product on " + irsaHost : "there is no file link" });
       return;
     }
     if (seen.has(url.href)) {
@@ -223,6 +253,7 @@ function parseIrsaResults(text) {
     rows.push({
       obsId,
       product: url,
+      release: irsaReleaseOfUrl(url),
       detector: irsaDetector(url, get("energy_bandpassname")),
       bandpass: get("energy_bandpassname"),
       format: format || "",

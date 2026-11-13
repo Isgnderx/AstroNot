@@ -8,9 +8,18 @@
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
     <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/motion.css">
     <script src="../../routes.js" defer></script>
-    <script src="../../tools/registry.js" defer></script>
-    <script src="../../tools/workspace.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/wasm.js" defer></script>
+    <script src="../../tools/wasm/reproject.wasm.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/difference.js" defer></script>
+    <script src="../../tools/wasm/detect.wasm.js" defer></script>
+    <script src="../../tools/motion-model.js" defer></script>
+    <script src="../../tools/motion.js" defer></script>
   </head>
   <body class="workspace-page" data-workspace-id="moving-object-analysis">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
@@ -37,8 +46,224 @@
         <h1 data-workspace-title>Motion Detector</h1>
         <p class="workspace-description" data-workspace-description>Track position changes in asteroids, comets, and nearby stars across epochs.</p>
       </header>
-      <div data-workspace-content></div>
-      <noscript><p class="workspace-status">Coming Soon. Enable JavaScript to view the workspace preview.</p></noscript>
+
+      <section class="workspace-panel tm-source" aria-labelledby="mo-source-title">
+        <h2 id="mo-source-title">Observations of one field</h2>
+        <p class="workspace-help"><strong>This tool finds candidates. It does not confirm a moving object.</strong> Load two or more FITS observations of the same field (three or more are better: they give a fitted rate and its residuals). Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS and a known <strong>BUNIT</strong>, and all must use the same units. One observation is the <strong>reference</strong>; every other one is subtracted from it, <strong>Δ = epoch − reference</strong>, and the tool pairs a negative residual (where the reference has flux the epoch lacks) with a positive one (where the epoch has flux the reference lacks). Residual pairs also come from variable stars, imperfect alignment, PSF and background differences and artifacts, so every candidate needs a look at the original images.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" multiple accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-mo-files>
+            <span class="workspace-button workspace-button--primary tm-file__button" data-mo-files-label>Add FITS files</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-mo-example>Load SPHEREx example pair</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mo-clear>Remove all</button>
+          <a class="workspace-source" href="../../tools/image-differencing/index.html" data-route="/tools/image-differencing">Inspect one pair in Image Differencing</a>
+        </div>
+        <p class="workspace-status" role="status" data-mo-status></p>
+        <div class="tm-table-wrap" data-mo-epochs-wrap hidden>
+          <table class="tm-table mo-epochs">
+            <caption>Loaded observations. Choose one as the reference; the default is the earliest observation with a valid time.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Reference</th>
+                <th scope="col">Observation and file</th>
+                <th scope="col">Image HDU</th>
+                <th scope="col">Observed</th>
+                <th scope="col">Difference with the reference</th>
+                <th scope="col"><span class="mo-sr">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody data-mo-epochs></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel mo-settings" aria-labelledby="mo-settings-title">
+        <h2 id="mo-settings-title">Detection settings</h2>
+        <div class="tm-controls">
+          <label>Threshold method
+            <select data-mo-mode>
+              <option value="local-mad">Local robust scatter (MAD) of Δ</option>
+              <option value="global-mad">Global robust scatter (MAD) of Δ</option>
+              <option value="snr">SNR from variance images</option>
+              <option value="absolute">Absolute |Δ| in the image unit</option>
+            </select>
+          </label>
+          <label><span data-mo-threshold-label>Threshold (× scatter)</span>
+            <input type="text" inputmode="decimal" autocomplete="off" value="5" data-mo-threshold>
+          </label>
+          <label>Minimum separation of a pair (pixels)
+            <input type="text" inputmode="decimal" autocomplete="off" value="2.5" data-mo-min>
+          </label>
+          <label>Search radius for a pair (pixels)
+            <input type="text" inputmode="decimal" autocomplete="off" value="15" data-mo-max>
+          </label>
+          <label>If the pixel grids differ
+            <select data-mo-alignment>
+              <option value="reproject">Reproject each epoch onto the reference grid (bilinear)</option>
+              <option value="require-same-grid">Require one identical pixel grid</option>
+            </select>
+          </label>
+          <label class="tm-check" data-mo-assume-wrap hidden><input type="checkbox" data-mo-assume> <span>BUNIT is missing: treat the images as the same unit (not verified)</span></label>
+        </div>
+        <p class="workspace-help" data-mo-settings-note></p>
+      </section>
+
+      <section class="workspace-panel mo-result" aria-labelledby="mo-result-title" aria-live="polite">
+        <h2 id="mo-result-title">Search result</h2>
+        <p class="tm-pair__verdict" data-mo-verdict>Load at least two observations of the same field to search for candidates.</p>
+        <ul class="tm-notes" data-mo-notes hidden></ul>
+        <dl class="workspace-facts tm-checks" data-mo-summary hidden>
+          <div><dt>Reference</dt><dd data-mo-fact="reference">—</dd></div>
+          <div><dt>Difference</dt><dd data-mo-fact="difference">—</dd></div>
+          <div><dt>Threshold</dt><dd data-mo-fact="threshold">—</dd></div>
+          <div><dt>Residual pairs</dt><dd data-mo-fact="pairs">—</dd></div>
+          <div><dt>Not examined</dt><dd data-mo-fact="excluded">—</dd></div>
+          <div><dt>Pixel scale</dt><dd data-mo-fact="scale">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="workspace-panel mo-candidates" aria-labelledby="mo-candidates-title">
+        <div class="tm-display__bar">
+          <h2 id="mo-candidates-title">Candidates</h2>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mo-new>New candidate (mark by hand)</button>
+        </div>
+        <p class="workspace-help" data-mo-candidates-note>No candidates yet.</p>
+        <div class="tm-table-wrap" data-mo-candidates-wrap hidden>
+          <table class="tm-table mo-candidates__table">
+            <caption>Candidates ranked by the number of epochs they appear in. Select a row to show it in the images below. Positions are on the reference grid; sky positions are ICRS degrees.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Candidate</th>
+                <th scope="col">Review</th>
+                <th scope="col">Epochs</th>
+                <th scope="col">First and last position (RA, Dec)</th>
+                <th scope="col">Observed (first → last)</th>
+                <th scope="col">Δt</th>
+                <th scope="col">Displacement</th>
+                <th scope="col">Rate</th>
+                <th scope="col">Position angle</th>
+              </tr>
+            </thead>
+            <tbody data-mo-candidates></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel mo-detail" aria-labelledby="mo-detail-title" data-mo-detail hidden>
+        <div class="tm-display__bar">
+          <h2 id="mo-detail-title" data-mo-detail-title>Candidate</h2>
+          <div class="tm-segment" role="group" aria-label="Review this candidate">
+            <button class="workspace-button" type="button" aria-pressed="false" data-mo-review="keep">Keep for review</button>
+            <button class="workspace-button" type="button" aria-pressed="false" data-mo-review="dismissed">Dismiss</button>
+            <button class="workspace-button" type="button" aria-pressed="false" data-mo-review="candidate">Reset to candidate</button>
+          </div>
+        </div>
+        <p class="workspace-help"><strong>Candidate, not a detection.</strong> <span data-mo-detail-origin></span> The review choice changes only the status; it never changes a measured position, time or ID.</p>
+        <ul class="tm-notes" data-mo-detail-notes hidden></ul>
+        <div class="tm-table-wrap">
+          <table class="tm-table mo-positions">
+            <caption>Positions of the candidate, one per epoch, in time order where times are known. Type pixel numbers or mark on the images below; FITS pixel numbers start at (1, 1) on the reference grid.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Epoch</th>
+                <th scope="col">Observed</th>
+                <th scope="col">Pixel x</th>
+                <th scope="col">Pixel y</th>
+                <th scope="col">RA, Dec (ICRS)</th>
+                <th scope="col">In the epoch's file (x, y)</th>
+                <th scope="col">East, north from the first (″)</th>
+                <th scope="col">Fit residual (″)</th>
+                <th scope="col">Source of the position</th>
+                <th scope="col"><span class="mo-sr">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody data-mo-positions></tbody>
+          </table>
+        </div>
+        <dl class="workspace-facts tm-checks" data-mo-track>
+          <div><dt>Positions used</dt><dd data-mo-track-fact="n">—</dd></div>
+          <div><dt>Displacement</dt><dd data-mo-track-fact="displacement">—</dd></div>
+          <div><dt>Δt</dt><dd data-mo-track-fact="dt">—</dd></div>
+          <div><dt>Rate</dt><dd data-mo-track-fact="rate">—</dd></div>
+          <div><dt>Direction</dt><dd data-mo-track-fact="direction">—</dd></div>
+          <div><dt>Fit quality</dt><dd data-mo-track-fact="fit">—</dd></div>
+        </dl>
+        <figure class="mo-plot">
+          <canvas width="640" height="360" role="img" data-mo-plot></canvas>
+          <figcaption class="workspace-help" data-mo-plot-caption>Track on the sky.</figcaption>
+        </figure>
+      </section>
+
+      <section class="workspace-panel tm-display" aria-labelledby="mo-display-title">
+        <div class="tm-display__bar">
+          <h2 id="mo-display-title">Images</h2>
+          <button class="workspace-button" type="button" aria-disabled="true" data-mo-fit>Fit all views</button>
+        </div>
+        <div class="tm-controls">
+          <label>Epoch shown
+            <select data-mo-epoch disabled></select>
+          </label>
+          <label>Reference and epoch range
+            <select data-mo-clip>
+              <option value="1-99">1st to 99th percentile (shared)</option>
+              <option value="0.1-99.9">0.1th to 99.9th percentile (shared)</option>
+              <option value="0-100">Minimum to maximum (shared)</option>
+            </select>
+          </label>
+          <label>Difference scale limit (±)
+            <select data-mo-limit>
+              <option value="99">99th percentile of |Δ|</option>
+              <option value="95">95th percentile of |Δ|</option>
+              <option value="100">Maximum |Δ|</option>
+            </select>
+          </label>
+          <label class="tm-check"><input type="checkbox" checked data-mo-refine> <span>Snap marks to the local centroid of the source</span></label>
+        </div>
+        <p class="workspace-help">The display range and the color scale change only how the images look. Detection, positions and rates are computed from the pixel arrays, never from the pictures. In the difference image, <strong>blue is negative</strong> (the epoch is lower than the reference: the reference position of a moving source) and <strong>red is positive</strong> (the epoch is higher: its position in this epoch).</p>
+        <div class="mo-panels" data-mo-panels></div>
+        <div class="mo-legend" data-mo-legend hidden>
+          <canvas width="256" height="16" role="img" aria-label="Color scale for the difference, negative on the left through zero in the middle to positive on the right" data-mo-legend-bar></canvas>
+          <div class="mo-legend__ticks" aria-hidden="true"><span data-mo-legend-low>−L</span><span>0</span><span data-mo-legend-high>+L</span></div>
+          <p class="workspace-help" data-mo-legend-text></p>
+        </div>
+        <p class="tm-keys" id="mo-keys">Click or tap an image to read its pixel. With a candidate selected, a click in the Reference image sets its reference position and a click in the Epoch image sets its position in the epoch shown. With a view focused: arrow keys move the cursor pixel by one (Shift: ten) and the views follow, Enter marks the cursor pixel (in the Reference or Epoch image), + and − zoom, 0 fits the image. Drag to pan, Ctrl + scroll or a two-finger pinch zooms. All three views share one pan and zoom because they are on the reference grid. Ring marks the reference position, square the position in the epoch shown.</p>
+        <p class="mo-readout" role="status" data-mo-readout>Select a pixel to read the reference, epoch and Δ values.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-mo-live></p>
+      </section>
+
+      <section class="workspace-panel mo-export" aria-labelledby="mo-export-title">
+        <h2 id="mo-export-title">Export</h2>
+        <p class="workspace-help">Download every candidate as CSV: one row per position with the candidate ID, review status, observation ID, file name and HDU, observation time (UTC, MJD and its source), reference-grid pixel, ICRS RA and Dec, the pixel in the epoch's own file, east and north offsets, fit residual, displacement, rate (arcsec/hour and arcsec/day), position angle, the reason a rate is empty, the difference direction and the detection method. Empty cells mean unavailable. Dismissed candidates are included with their status.</p>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" aria-disabled="true" data-mo-download>Download candidates (CSV)</button>
+        </div>
+        <p class="workspace-status" role="status" data-mo-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="mo-note-title">
+        <h2 id="mo-note-title">How candidates are found, and what they are not</h2>
+        <p class="workspace-help"><strong>Δ = epoch − reference</strong> is computed by the Image Differencing code for pixels valid in both images, after the units, the sky overlap and the pixel grid are checked from the WCS (equal array sizes alone are never enough). Epochs on another grid are reprojected onto the reference grid by bilinear interpolation, which smooths them and correlates their noise. No PSF matching or background correction is applied.</p>
+        <p class="workspace-help"><strong>Residuals.</strong> Local maxima and minima of Δ above the chosen threshold are listed. The threshold method is named in the result. Peaks within two pixels of the image edge, of a NaN or masked pixel or of the area the epoch does not cover are not examined. A positive and a negative residual closer than the search radius and farther apart than the minimum separation form a pair. A pair is dropped when both original images are bright at its midpoint (a shifted static star) and unpaired residuals (brightness changes, transients) are counted but never called moving. Sources that move less than about the minimum separation, or whose lobes overlap a bright neighbour, are not found.</p>
+        <p class="workspace-help"><strong>Positions and rates.</strong> A candidate keeps one position per epoch on the reference grid, measured as a centroid in the original image (or marked by you). RA and Dec come from the reference WCS, the position in each epoch's file from that epoch's WCS. Displacement is the great-circle separation in arcsec and the position angle is measured from north through east. Two positions give an end-to-end rate; three or more give a straight-line least-squares fit in east and north against time, with residuals and a formal rate uncertainty. Position errors are not propagated, and motion that is not along a straight line at constant speed is not modelled. If a time is missing or two times are equal, the rate is left empty and the reason is shown; you can type a UTC time for an observation whose header has none, and it is labelled as entered manually.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
+
+    <template data-mo-panel-template>
+      <figure class="tm-panel" data-mo-panel>
+        <figcaption class="tm-panel__head">
+          <span class="tm-panel__role" data-mo-panel-role></span>
+          <span class="tm-panel__title" data-mo-panel-title></span>
+        </figcaption>
+        <div class="tm-viewport" tabindex="0" role="group" aria-describedby="mo-keys" data-mo-viewport>
+          <div class="fits-empty" data-mo-empty><p>Load observations to see them here.</p></div>
+          <canvas role="img" hidden data-mo-canvas></canvas>
+        </div>
+        <p class="tm-panel__line" data-mo-range></p>
+        <p class="tm-panel__line" data-mo-zoom></p>
+        <p class="tm-panel__line tm-panel__pointer" data-mo-pointer></p>
+      </figure>
+    </template>
   </body>
 </html>

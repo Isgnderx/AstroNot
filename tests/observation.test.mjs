@@ -16,7 +16,7 @@ const sandbox = vm.createContext({ URL, URLSearchParams, Date, Number, Math });
 const lib = vm.runInContext(
   readFileSync(join(root, "tools/observation-csv.js"), "utf8") + "\n" +
   readFileSync(join(root, "tools/observation.js"), "utf8") +
-  "\n({ parseCsv, parseIrsaResults, validateIrsaProductUrl, irsaCutoutUrl, irsaFootprint, irsaFootprintContains, irsaMjdToUtc, buildObservationQuery, irsaMaxRecords });",
+  "\n({ parseCsv, parseIrsaResults, validateIrsaProductUrl, irsaCutoutUrl, irsaFootprint, irsaFootprintContains, irsaMjdToUtc, buildObservationQuery, irsaMaxRecords, irsaEmptyMessage, irsaReleaseOfUrl, irsaReleases, irsaDefaultRelease });",
   sandbox,
 );
 
@@ -24,6 +24,9 @@ const lib = vm.runInContext(
 const same = (actual, expected) => assert.deepEqual(JSON.parse(JSON.stringify(actual)), expected);
 
 const product = "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W21_2C/l2b-v20-2025-250/2/level2_2025W21_2C_0280_1D2_spx_l2b-v20-2025-250.fits";
+// Same observation and detector as the QR2 file above, as the archive lists them in DR1 (verified 2026-11-14), and a QR3 file.
+const productDr1 = "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W21_2C/l2b-v27-2026-199/2/level2_2025W21_2C_0280_1D2_spx_l2b-v27-2026-199.fits";
+const productQr3 = "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/2026W20_2A/l2b-v27-2026-267/3/level2_2026W20_2A_0436_3D3_spx_l2b-v27-2026-267.fits";
 const header = "obs_id,access_url,access_format,energy_bandpassname,em_min,em_max,t_min,t_max,access_estsize,s_region,proposal_title";
 const square = "POLYGON ICRS 10 -1 12 -1 12 1 10 1 10 -1";
 const line = (id, url = product, format = "image/fits", extra = {}) =>
@@ -97,6 +100,8 @@ test("IRSA results: mismatched URLs and product types are skipped with a reason"
   const rows = [
     line("good_1"),
     line("bad_host", "https://example.com/ibe/data/spherex/qr2/level2/a/b.fits"),
+    line("other_release", "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr1/level2/a/b.fits"),
+    line("other_level", "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level3/a/b.fits"),
     line("http_url", product.replace("https:", "http:")),
     line("wrong_path", "https://irsa.ipac.caltech.edu/ibe/data/wise/x.fits"),
     line("query_url", product + "?center=1,2&size=0.1"),
@@ -110,10 +115,10 @@ test("IRSA results: mismatched URLs and product types are skipped with a reason"
   const parsed = lib.parseIrsaResults(header + "\n" + rows + "\n");
   assert.equal(parsed.ok, true);
   same(parsed.rows.map((row) => row.obsId), ["good_1"]);
-  assert.equal(parsed.total, 11);
-  assert.equal(parsed.skipped.length, 10);
+  assert.equal(parsed.total, 13);
+  assert.equal(parsed.skipped.length, 12);
   assert.match(parsed.skipped.find((entry) => entry.obsId === "not_fits").reason, /text\/html/);
-  assert.match(parsed.skipped.find((entry) => entry.obsId === "bad_host").reason, /SPHEREx QR2 product/);
+  assert.match(parsed.skipped.find((entry) => entry.obsId === "bad_host").reason, /SPHEREx DR1, QR3 or QR2 level 2 product/);
   assert.match(parsed.skipped.find((entry) => entry.obsId === "dup").reason, /repeats/);
   assert.match(parsed.skipped.at(-1).reason, /2 fields/);
 });
@@ -160,7 +165,7 @@ test("Footprint test: inside, outside, wrap at RA 0, near the pole, unknown", ()
 
 test("SIA query uses degrees, MJD, and metres", () => {
   const { url, ra, dec, radius } = lib.buildObservationQuery({
-    ra: "156.09328159", dec: "-41.64466331", radius: "0.02",
+    release: "qr2", ra: "156.09328159", dec: "-41.64466331", radius: "0.02",
     dateStart: "2025-05-24", dateEnd: "2025-05-24", bandStart: "1.2", bandEnd: "1.4",
   });
   assert.equal(url.origin + url.pathname, "https://irsa.ipac.caltech.edu/SIA");
@@ -196,10 +201,93 @@ test("Two consecutive searches build independent queries", () => {
   assert.equal(first.url.searchParams.get("POS"), "CIRCLE 1 1 0.1");
 });
 
+test("SIA query: each data release selects its own IRSA collection, and DR1 is the default", () => {
+  const base = { ra: "156.09328159", dec: "-41.64466331", radius: "0.02" };
+  for (const [release, collection] of [["dr1", "spherex_dr1"], ["qr3", "spherex_qr3"], ["qr2", "spherex_qr2"]]) {
+    const query = lib.buildObservationQuery({ ...base, release });
+    assert.equal(query.url.searchParams.get("COLLECTION"), collection);
+    assert.equal(query.release, release);
+    assert.equal(query.url.searchParams.get("POS"), "CIRCLE 156.09328159 -41.64466331 0.02");
+  }
+  assert.equal(lib.irsaDefaultRelease, "dr1");
+  assert.equal(lib.buildObservationQuery(base).url.searchParams.get("COLLECTION"), "spherex_dr1");
+  assert.equal(lib.buildObservationQuery({ ...base, release: "" }).release, "dr1");
+  for (const bad of ["qr1", "DR1", "spherex_dr1", "__proto__", "constructor", "dr1&COLLECTION=x"]) {
+    assert.throws(() => lib.buildObservationQuery({ ...base, release: bad }), /data release/, bad);
+  }
+});
+
+test("Product URLs: only DR1, QR3 and QR2 level 2 files on https irsa.ipac.caltech.edu are accepted", () => {
+  for (const [href, release] of [[productDr1, "dr1"], [productQr3, "qr3"], [product, "qr2"]]) {
+    const url = lib.validateIrsaProductUrl(href);
+    assert.ok(url, href);
+    assert.equal(lib.irsaReleaseOfUrl(url), release);
+    // Cutouts keep the release path.
+    assert.equal(lib.irsaCutoutUrl(href, 156.09328159, -41.64466331, 0.12).origin + lib.irsaCutoutUrl(href, 1, 1, 0.1).pathname, href);
+  }
+  assert.equal(lib.irsaCutoutUrl(productDr1, 156.09328159, -41.64466331, 0.12).search, "?center=156.09328159,-41.64466331&size=0.12deg");
+  const rejected = [
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr1/level2/a/b.fits",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr2/level2/a/b.fits",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level3/a/b.fits",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/a/b.fits.gz",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/xdr1/level2/a/b.fits",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/a//b.fits",
+    "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/../../../wise/b.fits",
+    "https://example.com/ibe/data/spherex/dr1/level2/a/b.fits",
+    "https://irsa.ipac.caltech.edu.evil.example/ibe/data/spherex/qr3/level2/a/b.fits",
+    "https://irsa.ipac.caltech.edu:8443/ibe/data/spherex/qr3/level2/a/b.fits",
+    "http://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/a/b.fits",
+    "https://user:pw@irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/a/b.fits",
+    productDr1 + "?center=1,2&size=0.1",
+    productQr3 + "#x",
+    "javascript:alert(1)",
+    "",
+  ];
+  for (const href of rejected) {
+    assert.equal(lib.validateIrsaProductUrl(href), null, href);
+    assert.equal(lib.irsaCutoutUrl(href, 1, 1, 0.1), null, href);
+  }
+});
+
+test("IRSA results: rows from each release import with their release, and a mixed file keeps all three", () => {
+  const csv = header + "\n" + [
+    line("2025W21_2C_0280_1", productDr1),
+    line("2026W20_2A_0436_3", productQr3),
+    line("2025W21_2C_0280_1", product),
+  ].join("\n") + "\n";
+  const parsed = lib.parseIrsaResults(csv);
+  assert.equal(parsed.ok, true);
+  same(parsed.rows.map((row) => row.release), ["dr1", "qr3", "qr2"]);
+  same(parsed.rows.map((row) => row.detector), [2, 3, 2]);
+  assert.equal(parsed.skipped.length, 0);
+  const only = lib.parseIrsaResults(header + "\n" + line("2025W21_2C_0280_1", productDr1) + "\n");
+  assert.equal(only.rows[0].product.href, productDr1);
+  assert.equal(only.rows[0].detector, 2);
+});
+
+test("Zero rows: the message names the release and suggests the others", () => {
+  assert.equal(lib.parseIrsaResults(header + "\n").rows.length, 0);
+  const dr1 = lib.irsaEmptyMessage("dr1");
+  assert.match(dr1, /No SPHEREx DR1 observations matched/);
+  assert.match(dr1, /another data release \(SPHEREx QR3 or SPHEREx QR2\)/);
+  assert.doesNotMatch(dr1, /archived/);
+  const qr3 = lib.irsaEmptyMessage("qr3");
+  assert.match(qr3, /No SPHEREx QR3 observations/);
+  assert.match(qr3, /SPHEREx DR1 or SPHEREx QR2/);
+  const qr2 = lib.irsaEmptyMessage("qr2");
+  assert.match(qr2, /No SPHEREx QR2 observations/);
+  assert.match(qr2, /archived and may return no rows/);
+  assert.match(qr2, /SPHEREx DR1 or SPHEREx QR3/);
+  for (const unknown of [null, undefined, "qr1", "__proto__"]) {
+    assert.match(lib.irsaEmptyMessage(unknown), /choose another data release/);
+  }
+});
+
 // ---- Live archive test (real IRSA service). Run: ASTRONOT_LIVE=1 node --test tests/observation.test.mjs ---------------
 test("LIVE: SIA CSV -> parsed row -> cutout whose header OBSID matches", { skip: !process.env.ASTRONOT_LIVE }, async () => {
   const { url } = lib.buildObservationQuery({
-    ra: "156.09328159", dec: "-41.64466331", radius: "0.02",
+    release: process.env.ASTRONOT_RELEASE || lib.irsaDefaultRelease, ra: "156.09328159", dec: "-41.64466331", radius: "0.02",
     dateStart: "2025-05-24", dateEnd: "2025-05-24", bandStart: "1.2", bandEnd: "1.4",
   });
   const response = await fetch(url.href);

@@ -8,9 +8,12 @@
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
     <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/spectrum.css">
     <script src="../../routes.js" defer></script>
-    <script src="../../tools/registry.js" defer></script>
-    <script src="../../tools/workspace.js" defer></script>
+    <script src="../../assets/tools/spectrum-example.js" defer></script>
+    <script src="../../tools/spectrum-csv.js" defer></script>
+    <script src="../../tools/spectrum.js" defer></script>
   </head>
   <body class="workspace-page" data-workspace-id="spectral-viewer">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
@@ -35,10 +38,177 @@
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Observation</p>
         <h1 data-workspace-title>Spectrum Lab</h1>
-        <p class="workspace-description" data-workspace-description>Examine the same region of sky across different infrared wavelength bands.</p>
+        <p class="workspace-description" data-workspace-description>Open a measured spectrum and read its flux density, uncertainties and archive flags against wavelength.</p>
       </header>
-      <div data-workspace-content></div>
-      <noscript><p class="workspace-status">Coming Soon. Enable JavaScript to view the workspace preview.</p></noscript>
+
+      <section class="workspace-panel tm-source" aria-labelledby="sl-source-title">
+        <h2 id="sl-source-title">Spectrum file</h2>
+        <p class="workspace-help">Choose a spectrum saved as <strong>CSV</strong> (comma, semicolon, tab or pipe separated, up to <span data-sl-max-size>25</span> MB). The file is read on this device and is not uploaded. The expected columns are <strong>wavelength</strong> in µm, <strong>flux</strong> in µJy and <strong>flux_err</strong> in µJy (the cell may be empty), plus optional <strong>lambda_width</strong> (µm), <strong>flags</strong> (integer bitmask), <strong>source_id</strong>, <strong>obs_id</strong>, <strong>mjd</strong>, <strong>ra</strong>, <strong>dec</strong> and <strong>method</strong>. Header names are matched without regard to case and other columns are kept. For any other CSV you can pick the columns and units yourself. Flux must be a flux density per unit frequency (Jy, mJy, µJy); flux per unit wavelength is a different quantity and is not supported.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-sl-file>
+            <span class="workspace-button workspace-button--primary tm-file__button">Choose CSV file</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-sl-example>Load example spectrum</button>
+          <button class="workspace-button" type="button" hidden data-sl-clear>Clear spectrum</button>
+        </div>
+        <p class="workspace-status" role="status" data-sl-status></p>
+        <p class="workspace-help sl-provenance" data-sl-provenance hidden></p>
+      </section>
+
+      <section class="workspace-panel sl-columns" aria-labelledby="sl-columns-title" data-sl-columns-panel hidden>
+        <h2 id="sl-columns-title">Columns and units</h2>
+        <p class="workspace-help" data-sl-columns-note></p>
+        <div class="tm-controls sl-mapping" data-sl-mapping></div>
+        <div class="tm-controls sl-units">
+          <label>Wavelength unit in the file
+            <select data-sl-unit-wavelength></select>
+          </label>
+          <label>Flux unit in the file
+            <select data-sl-unit-flux></select>
+          </label>
+          <label>Delimiter
+            <select data-sl-delimiter>
+              <option value="auto">Detect automatically</option>
+              <option value=",">Comma</option>
+              <option value=";">Semicolon</option>
+              <option value="&#9;">Tab</option>
+              <option value="|">Pipe</option>
+            </select>
+          </label>
+        </div>
+        <p class="workspace-help" data-sl-units-note></p>
+      </section>
+
+      <section class="workspace-panel sl-import" aria-labelledby="sl-import-title" data-sl-import-panel hidden>
+        <h2 id="sl-import-title">What was read</h2>
+        <ul class="tm-notes" data-sl-notes hidden></ul>
+        <dl class="workspace-facts tm-checks" data-sl-facts></dl>
+        <details class="sl-details" data-sl-bad hidden>
+          <summary data-sl-bad-summary></summary>
+          <p class="workspace-help">Rows that cannot be plotted are left out and never change the other rows. Line numbers are lines of the file, so the header is normally line 1.</p>
+          <ul class="sl-list" data-sl-bad-reasons></ul>
+          <div class="tm-table-wrap">
+            <table class="tm-table">
+              <caption data-sl-bad-caption></caption>
+              <thead><tr><th scope="col">Line</th><th scope="col">Reason</th></tr></thead>
+              <tbody data-sl-bad-body></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section class="workspace-panel sl-selection" aria-labelledby="sl-selection-title" data-sl-selection-panel hidden>
+        <h2 id="sl-selection-title">Source, range and units</h2>
+        <div class="tm-controls">
+          <label>Source
+            <select data-sl-source></select>
+          </label>
+          <label>Observation
+            <select data-sl-observation></select>
+          </label>
+          <label>Measurement flags
+            <select data-sl-flagfilter>
+              <option value="all">Show every measurement</option>
+              <option value="clean">Only flags = 0 or not reported</option>
+              <option value="flagged">Only measurements with a flag set</option>
+            </select>
+          </label>
+        </div>
+        <div class="tm-controls sl-range">
+          <label>Minimum wavelength
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="from the data" data-sl-min>
+          </label>
+          <label>Maximum wavelength
+            <input type="text" inputmode="decimal" autocomplete="off" placeholder="from the data" data-sl-max>
+          </label>
+          <label>Wavelength unit shown
+            <select data-sl-show-wavelength></select>
+          </label>
+          <label>Flux unit shown
+            <select data-sl-show-flux></select>
+          </label>
+        </div>
+        <p class="workspace-status" data-sl-range-error data-error></p>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" data-sl-reset-range>Use the whole wavelength range</button>
+        </div>
+        <p class="workspace-help" data-sl-selection-note></p>
+      </section>
+
+      <section class="workspace-panel tm-display sl-plot" aria-labelledby="sl-plot-title" data-sl-plot-panel hidden>
+        <div class="tm-display__bar">
+          <h2 id="sl-plot-title">Spectrum</h2>
+          <div class="sl-toggles">
+            <div class="tm-segment" role="group" aria-label="Wavelength axis scale">
+              <span class="sl-toggle-label" aria-hidden="true">Wavelength</span>
+              <button class="workspace-button" type="button" aria-pressed="true" data-sl-xscale="linear">Linear</button>
+              <button class="workspace-button" type="button" aria-pressed="false" data-sl-xscale="log">Log</button>
+            </div>
+            <div class="tm-segment" role="group" aria-label="Flux axis scale">
+              <span class="sl-toggle-label" aria-hidden="true">Flux</span>
+              <button class="workspace-button" type="button" aria-pressed="true" data-sl-yscale="linear">Linear</button>
+              <button class="workspace-button" type="button" aria-pressed="false" data-sl-yscale="log">Log</button>
+            </div>
+          </div>
+        </div>
+        <label class="tm-check" data-sl-width-wrap hidden><input type="checkbox" data-sl-width> <span>Show the wavelength width (lambda_width) of each measurement</span></label>
+        <p class="sl-plot__title" data-sl-plot-title></p>
+        <div class="sl-chart" tabindex="0" role="group" aria-label="Spectrum plot. Use the arrow keys to move between measurements." aria-describedby="sl-keys" data-sl-chart>
+          <canvas role="img" data-sl-canvas></canvas>
+          <p class="sl-chart__empty" data-sl-empty hidden></p>
+        </div>
+        <ul class="sl-legend" data-sl-legend aria-label="Observations in the plot"></ul>
+        <div class="sl-lognote" data-sl-lognote hidden>
+          <p class="workspace-help" data-sl-lognote-text></p>
+          <details class="sl-details" data-sl-lognote-details>
+            <summary>Points not drawn on the logarithmic flux axis</summary>
+            <ul class="sl-list" data-sl-lognote-list></ul>
+          </details>
+        </div>
+        <p class="tm-keys" id="sl-keys">Each marker is one measurement at its true wavelength; nothing is smoothed, binned or interpolated, and gaps in the data stay empty. The vertical bars are the flux_err uncertainty (±1 on the quoted value) and a hollow marker means the measurement has a flag set. Click or tap a marker, or focus the plot and use the left and right arrow keys, Home and End, to read a measurement; Escape clears it. Every value is also in the table below.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-sl-live></p>
+      </section>
+
+      <section class="workspace-panel sl-point" aria-labelledby="sl-point-title" data-sl-point-panel hidden>
+        <h2 id="sl-point-title">Selected measurement</h2>
+        <p class="workspace-help" data-sl-point-note>Select a marker in the plot or a row in the table.</p>
+        <div class="tm-table-wrap">
+          <table class="tm-table sl-readout" data-sl-readout hidden>
+            <caption>Values of the selected measurement, converted to the units shown, next to the text of its input row</caption>
+            <thead><tr><th scope="col">Quantity</th><th scope="col">Value</th></tr></thead>
+            <tbody data-sl-readout-body></tbody>
+          </table>
+        </div>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" hidden data-sl-point-clear>Clear selection</button>
+        </div>
+      </section>
+
+      <section class="workspace-panel sl-table" aria-labelledby="sl-table-title" data-sl-table-panel hidden>
+        <h2 id="sl-table-title">Measurements</h2>
+        <p class="workspace-help" data-sl-table-note>Sort a column with its heading button. Press a row button to select that measurement.</p>
+        <div class="tm-table-wrap sl-table__wrap" tabindex="0" role="region" aria-label="Measurements table" data-sl-table-wrap>
+          <table class="tm-table sl-data" data-sl-table>
+            <caption data-sl-table-caption></caption>
+            <thead data-sl-thead></thead>
+            <tbody data-sl-tbody></tbody>
+          </table>
+        </div>
+        <div class="tm-actions">
+          <button class="workspace-button" type="button" hidden data-sl-more>Show more rows</button>
+        </div>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="sl-note-title">
+        <h2 id="sl-note-title">How to read this spectrum</h2>
+        <p class="workspace-help">A spectrum here is a list of measurements, each at one <strong>wavelength</strong> with a <strong>flux density</strong> (the flux per unit frequency, in jansky units) and, when the file gives it, its <strong>uncertainty</strong>. Values stay exactly as the file states them. Changing a unit only rescales them: 100 µJy is 0.0001 Jy, 1.2 µm is 0.0000012 m, and the error and the width of a point are rescaled with the same factor as the point.</p>
+        <p class="workspace-help">Negative and zero fluxes are real measurements of a faint source plus noise, so they are kept and shown on the linear axis. A logarithmic flux axis cannot place them; they are then left out of the drawing, counted above the plot and kept in the table. An empty <strong>flux_err</strong> means the uncertainty is unavailable; it is shown as Unavailable and is not treated as zero.</p>
+        <p class="workspace-help">Several measurements may share one wavelength (for example repeat observations). Each is kept as its own point with its input line and observation ID. Different sources are never drawn together; choose the source above. The plot never joins points with a line.</p>
+        <p class="workspace-help"><strong>flags</strong> is read with the SPHEREx Spectrophotometry bit definitions from the <a class="workspace-source sl-inline-link" href="https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html" target="_blank" rel="noopener">IRSA Spectrophotometry Tool documentation</a>. Bits the documentation names but does not describe are shown by name only, and a bit that is not documented is shown as an unknown bit with its raw value. The raw number is always shown too. The decoding only applies to flags written by that pipeline; for any other file, rely on the raw value.</p>
+        <p class="workspace-help">Whether a file really comes from the archive is not checked here. The example spectrum is generated for AstroNot and is not an archive result.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
   </body>
 </html>

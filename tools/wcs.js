@@ -274,10 +274,18 @@
       return converged && isNumber(u) && isNumber(v) ? { x: u + crpix[0], y: v + crpix[1] } : null;
     }
 
+    // Flat copy of everything pixelToSky/skyToPixel use, for the WebAssembly kernels (rust/crates/reproject documents the layout).
+    const lists = sip ? [sip.a, sip.b, sip.ap, sip.bp] : [[], [], [], []];
+    const params = Float64Array.from([
+      alpha0, delta0, lonpole, ...matrix, ...inverse, crpix[0], crpix[1], sip ? 1 : 0, ...lists.map((list) => list.length),
+      ...lists.flatMap((list) => list.flat()),
+    ]);
+
     const projection = "TAN" + (sip ? "-SIP" : "");
     return {
       ok: true,
       wcs: {
+        params,
         projection,
         frame: "ICRS",
         crval: [alpha0, delta0],

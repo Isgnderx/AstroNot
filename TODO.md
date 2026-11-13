@@ -18,13 +18,15 @@
 
 - [x] **Time Machine** — eyni göy sahəsinin müxtəlif tarixlərdə çəkilmiş görüntülərini yan-yana müqayisə et.
 - [x] **Image Differencing** — eyni koordinat sisteminə uyğunlaşdırılmış iki görüntünün fərqini göstər.
-- [ ] **Motion Detector** — bir neçə müşahidədə görünən hərəkət namizədlərini qeyd et və ilkin görüntülərlə yoxla.
-- [ ] **Spectrum Lab** — real dalğa uzunluğu və axın ölçmələrini vahidlər və qeyri-müəyyənliklə birlikdə göstər.
-- [ ] Spectrophotometry
-- [ ] Source Detection
-- [ ] Light Curve Analysis
-- [ ] Catalog Cross-Match
-- [ ] Mosaic Builder
+- [x] **Motion Detector** — bir neçə müşahidədə görünən hərəkət namizədlərini qeyd et və ilkin görüntülərlə yoxla.
+  - İşləyir (`/tools/motion`), real 3 epoxlu SPHEREx seriyasında sınaqdan keçib; 4 təsdiqlənməmiş namizəd çıxıb, real hərəkətli obyekt iddia edilmir.
+- [x] **Spectrum Lab** — real dalğa uzunluğu və axın ölçmələrini vahidlər və qeyri-müəyyənliklə birlikdə göstər.
+  - İşləyir (`/tools/spectrum`). IRSA-nın öz yükləməsi VOTable-dır və faktiki ixrac başlığı yoxlanmayıb; nümunə spektr sintetikdir və belə etiketlənib. Real IRSA ixracı ilə üç nöqtəlik yoxlama qalır.
+- [x] Spectrophotometry (`/tools/spectrophotometry`; IRSA-nın məcburi fotometriyası ilə müqayisə hələ aparılmayıb)
+- [x] Source Detection (`/tools/source-detection`; photutils/Astropy ilə müqayisə hələ aparılmayıb)
+- [x] Light Curve Analysis (`/tools/light-curve-analysis`; TDB/barisentrik yollar yalnız sintetik testlərlə yoxlanıb)
+- [x] Catalog Cross-Match (`/tools/catalog-cross-match`; Astropy və IRSA best-neighbour cədvəli ilə yoxlanıb)
+- [x] Mosaic Builder (`/tools/mosaic-builder`; FLAGS şəkli şərh olunmur)
 
 ## Hazırdır
 

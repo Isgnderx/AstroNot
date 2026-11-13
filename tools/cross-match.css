@@ -1,0 +1,113 @@
+/* Catalog Cross-Match workspace. Builds on workspace.css and the Time Machine buttons, notes, tables and file picker. */
+.xm-section { margin-block-start: var(--workspace-gap); }
+.xm-intro .workspace-help, .xm-section > .workspace-help, .tm-note .workspace-help { max-inline-size: 75ch; }
+.xm-section [hidden], .xm-section[hidden] { display: none; }
+
+.xm-file { margin-block-start: 0.85rem; max-inline-size: 22rem; }
+
+.xm-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  align-items: end;
+  gap: 0.75rem 1rem;
+  margin-block-start: 0.85rem;
+}
+
+.xm-hint { max-inline-size: 75ch; }
+.xm-facts { max-inline-size: 52rem; }
+.xm-facts dd { max-inline-size: 38rem; }
+
+.xm-coverage {
+  min-inline-size: 0;
+  margin: 1rem 0 0;
+  padding: 0.75rem 0 0;
+  border: 0;
+  border-block-start: 1px solid #292d34;
+}
+
+.xm-coverage legend { padding: 0; font-size: 0.875rem; font-weight: 650; }
+
+.xm-irsa { margin-block-start: 1rem; padding-block-start: 0.4rem; border-block-start: 1px solid #292d34; }
+
+.xm-irsa summary {
+  min-block-size: 2.75rem;
+  padding-block: 0.55rem;
+  color: #dce0e8;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.xm-irsa .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.xm-adql {
+  margin-block-start: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid #2e343d;
+  background: #080a0e;
+  color: #dce0e8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.xm-section .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+.xm-result .tm-pair__verdict { max-inline-size: 80ch; }
+
+.xm-tablebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-block-start: 1rem;
+}
+
+.xm-tablebar label { min-inline-size: 14rem; }
+.xm-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; color: var(--workspace-muted); font-size: 0.875rem; }
+.xm-pager .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.xm-table { min-inline-size: 72rem; }
+.xm-table td { overflow-wrap: anywhere; }
+.xm-table th { min-inline-size: 6.5rem; overflow-wrap: normal; }
+.xm-table td.xm-num { white-space: nowrap; }
+.xm-table td { min-inline-size: 5rem; }
+.xm-table td.xm-id { min-inline-size: 11rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.xm-table tr[data-selected] td { background: #171a20; }
+.xm-table small { display: block; color: var(--workspace-muted); font-size: 0.75rem; }
+
+.xm-status { display: inline-block; padding: 0.1rem 0.45rem; border: 1px solid #4a505a; border-radius: 0.25rem; font-size: 0.8125rem; white-space: nowrap; }
+.xm-status[data-status="single-candidate"] { border-color: #8fbf9f; }
+.xm-status[data-status="multiple-candidates"] { border-color: #d6b25e; color: #f3d98f; }
+.xm-status[data-status="no-match"] { border-color: #6b7280; color: var(--workspace-muted); }
+.xm-status[data-status="invalid-coordinates"] { border-color: #d9887f; color: #ffd0cb; }
+
+.xm-row-button {
+  display: inline;
+  min-block-size: 2.75rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: #d9e0ec;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.xm-detail { scroll-margin-block-start: 1rem; }
+.xm-credit { color: var(--workspace-muted); }
+
+@media (max-width: 750px) {
+  .xm-file { max-inline-size: none; }
+  .xm-tablebar label { min-inline-size: 0; flex: 1 1 100%; }
+  .xm-pager .workspace-button { flex: 1 1 auto; }
+  .xm-section .tm-actions .workspace-button { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .xm-section input, .xm-section select { font-size: 1rem; }
+}

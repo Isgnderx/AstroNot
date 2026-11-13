@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Light Curve Analysis — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/light-curve.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../assets/tools/light-curve-example.js" defer></script>
+    <script src="../../tools/timeseries.js" defer></script>
+    <script src="../../tools/light-curve.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="light-curve-analysis">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Light Curve Analysis</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Analysis</p>
+        <h1 data-workspace-title>Light Curve Analysis</h1>
+        <p class="workspace-description" data-workspace-description>Visualize how a source’s measured brightness changes over time.</p>
+      </header>
+
+      <section class="workspace-panel lc-source" aria-labelledby="lc-source-title">
+        <h2 id="lc-source-title">Time-series file</h2>
+        <p class="workspace-help">Open a CSV file of measurements of one or more sources at different times. The primary format is the <strong>Spectrophotometry CSV</strong> (<code>source_id, obs_id, mjd, ra, dec, wavelength, lambda_width, flux, flux_err, flags, method</code>, with MJD in UTC, wavelength in µm and flux in µJy). Any other table works too: you choose the time column, its format (ISO 8601, JD or MJD) and time scale, and the measurement kind (flux or magnitude) and unit. Files are read on this device and are never uploaded.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" disabled data-lc-file>
+            <span class="workspace-button workspace-button--primary tm-file__button">Choose CSV file</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-lc-example>Load example</button>
+          <a class="workspace-source" href="../../tools/observation-search/index.html" data-route="/tools/observation-search">Find SPHEREx observations in Observation Search</a>
+        </div>
+        <p class="workspace-status" role="status" data-lc-status></p>
+        <dl class="workspace-facts lc-facts" data-lc-facts hidden>
+          <div><dt>File</dt><dd data-lc-fact="file">—</dd></div>
+          <div><dt>Reading</dt><dd data-lc-fact="profile">—</dd></div>
+          <div><dt>Rows read</dt><dd data-lc-fact="rows">—</dd></div>
+          <div><dt>Sources and series</dt><dd data-lc-fact="series">—</dd></div>
+          <div><dt>Provenance</dt><dd data-lc-fact="provenance">—</dd></div>
+        </dl>
+        <details class="lc-rejected" data-lc-rejected hidden>
+          <summary data-lc-rejected-summary>Rows that could not be read</summary>
+          <ul class="lc-rejected__list" data-lc-rejected-list></ul>
+        </details>
+      </section>
+
+      <section class="workspace-panel lc-columns" aria-labelledby="lc-columns-title" data-lc-columns hidden>
+        <h2 id="lc-columns-title">Columns, time and units</h2>
+        <p class="workspace-help" data-lc-profile-note></p>
+        <div class="lc-grid">
+          <fieldset class="lc-fieldset">
+            <legend>Time</legend>
+            <label>Time column <select data-lc-col="time"></select></label>
+            <label>Time format
+              <select data-lc-time-format>
+                <option value="iso">ISO 8601 date and time</option>
+                <option value="mjd">Modified Julian Date (MJD)</option>
+                <option value="jd">Julian Date (JD)</option>
+              </select>
+            </label>
+            <label>Time scale of the file
+              <select data-lc-time-scale>
+                <option value="UTC">UTC</option>
+                <option value="TDB">TDB</option>
+                <option value="TT">TT</option>
+                <option value="TAI">TAI</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </label>
+            <label>Time scale column (optional, overrides the choice above) <select data-lc-col="timeScale"></select></label>
+            <label class="tm-check"><input type="checkbox" data-lc-barycentric> <span>The file declares barycentric correction (BJD)</span></label>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Measurement</legend>
+            <label>Measurement column <select data-lc-col="value"></select></label>
+            <label>Kind
+              <select data-lc-kind>
+                <option value="flux">Flux density</option>
+                <option value="magnitude">Magnitude</option>
+              </select>
+            </label>
+            <label>Unit <select data-lc-unit></select></label>
+            <label data-lc-unit-custom-wrap hidden>Unit text <input type="text" autocomplete="off" placeholder="e.g. MJy/sr" data-lc-unit-custom></label>
+            <label>Uncertainty column (1σ) <select data-lc-col="error"></select></label>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Identity and quality</legend>
+            <label>Source column <select data-lc-col="source"></select></label>
+            <label>Source name if there is no column <input type="text" autocomplete="off" placeholder="e.g. HD 12345" data-lc-default-source></label>
+            <label>Observation ID column <select data-lc-col="obsId"></select></label>
+            <label>Quality flags column (integer bitmask) <select data-lc-col="flags"></select></label>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Band</legend>
+            <label>Band or filter column <select data-lc-col="band"></select></label>
+            <label>Band name if there is no column <input type="text" autocomplete="off" placeholder="e.g. 3.6 µm" data-lc-default-band></label>
+            <label>Wavelength column (µm) <select data-lc-col="wavelength"></select></label>
+            <label>Wavelength width column (µm) <select data-lc-col="lambdaWidth"></select></label>
+          </fieldset>
+        </div>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" data-lc-apply>Apply columns and units</button>
+        </div>
+        <p class="workspace-status" role="status" data-lc-apply-status></p>
+      </section>
+
+      <section class="workspace-panel lc-filters" aria-labelledby="lc-filters-title" data-lc-filters hidden>
+        <h2 id="lc-filters-title">Series and filters</h2>
+        <div class="lc-grid">
+          <fieldset class="lc-fieldset">
+            <legend>Which series</legend>
+            <label>Source <select data-lc-source></select></label>
+            <label>Bands
+              <select data-lc-binning>
+                <option value="column">Use the band column</option>
+                <option value="width">Bin by wavelength, fixed width</option>
+                <option value="edges">Bin by wavelength, custom edges</option>
+                <option value="none">No bands (one series per source)</option>
+              </select>
+            </label>
+            <label data-lc-width-wrap hidden>Bin width (µm) <input type="text" inputmode="decimal" autocomplete="off" data-lc-width></label>
+            <label data-lc-edges-wrap hidden>Band edges (µm, comma-separated) <input type="text" inputmode="decimal" autocomplete="off" placeholder="0.75, 1.1, 1.65, 2.4" data-lc-edges></label>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Time range</legend>
+            <label>From <input type="text" autocomplete="off" data-lc-from></label>
+            <label>To <input type="text" autocomplete="off" data-lc-to></label>
+            <div class="tm-actions"><button class="workspace-button" type="button" data-lc-range-reset>Use the full time range</button></div>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Quality</legend>
+            <label>Rows to show
+              <select data-lc-quality>
+                <option value="all">All rows</option>
+                <option value="unflagged">Only rows with flags = 0</option>
+              </select>
+            </label>
+            <label>Ignore these flag bits (integer, 0 = none) <input type="text" inputmode="numeric" autocomplete="off" value="0" data-lc-ignore></label>
+            <p class="workspace-help" data-lc-quality-note></p>
+          </fieldset>
+          <fieldset class="lc-fieldset">
+            <legend>Display</legend>
+            <label>Show values as <select data-lc-display></select></label>
+            <label>Time format
+              <select data-lc-axis-format>
+                <option value="mjd">MJD</option>
+                <option value="jd">JD</option>
+                <option value="iso">ISO 8601 date</option>
+              </select>
+            </label>
+            <label>Time scale <select data-lc-plot-scale></select></label>
+            <label>Time reference
+              <select data-lc-plot-ref>
+                <option value="geo">Not barycentric</option>
+                <option value="bary">Barycentric (BJD)</option>
+              </select>
+            </label>
+          </fieldset>
+        </div>
+        <fieldset class="lc-fieldset lc-series-pick">
+          <legend>Series to show</legend>
+          <div class="tm-actions">
+            <button class="workspace-button" type="button" data-lc-series-all>Select all</button>
+            <button class="workspace-button" type="button" data-lc-series-none>Clear</button>
+          </div>
+          <div class="lc-series-list" data-lc-series-list></div>
+        </fieldset>
+        <p class="workspace-status" role="status" data-lc-filter-status></p>
+        <ul class="tm-notes" data-lc-notes hidden></ul>
+      </section>
+
+      <section class="workspace-panel lc-plot" aria-labelledby="lc-plot-title" data-lc-plot-panel hidden>
+        <div class="tm-display__bar">
+          <h2 id="lc-plot-title">Light curve</h2>
+          <label class="tm-check"><input type="checkbox" data-lc-connect> <span>Draw a line between consecutive points</span></label>
+        </div>
+        <ul class="lc-legend" data-lc-legend aria-label="Series legend"></ul>
+        <div class="lc-chart" data-lc-chart>
+          <svg class="lc-svg" data-lc-svg tabindex="0" role="group" aria-label="Light curve plot" aria-describedby="lc-keys lc-axis-note"></svg>
+        </div>
+        <p class="workspace-help lc-axis-note" id="lc-axis-note" data-lc-axis-note></p>
+        <p class="tm-keys" id="lc-keys">Click or tap a point to select it; the same row is highlighted in the table. With the plot focused: Right and Left arrows move to the next and previous point in time, Home and End jump to the first and last point, Escape clears the selection. Error bars show 1σ where the file gives an uncertainty. No point is drawn where there is no measurement, and lines are only a guide.</p>
+        <p class="tm-live" role="status" aria-live="polite" data-lc-live></p>
+      </section>
+
+      <section class="workspace-panel lc-summary" aria-labelledby="lc-summary-title" data-lc-summary-panel hidden>
+        <h2 id="lc-summary-title">Series summary</h2>
+        <p class="workspace-help">Computed from the rows currently shown. Mean and median are given only when the band is defined and every value in the series has the same original unit.</p>
+        <div class="tm-table-wrap">
+          <table class="tm-table lc-table" data-lc-summary-table>
+            <caption data-lc-summary-caption>Series summary</caption>
+            <thead><tr>
+              <th scope="col">Source</th><th scope="col">Band</th><th scope="col">Rows shown</th><th scope="col">Valid points</th>
+              <th scope="col" data-lc-first-head>First</th><th scope="col" data-lc-last-head>Last</th><th scope="col" data-lc-mean-head>Mean</th><th scope="col" data-lc-median-head>Median</th><th scope="col">Notes</th>
+            </tr></thead>
+            <tbody data-lc-summary-body></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel lc-observations" aria-labelledby="lc-table-title" data-lc-table-panel hidden>
+        <div class="tm-display__bar">
+          <h2 id="lc-table-title">Observations</h2>
+          <button class="workspace-button" type="button" hidden data-lc-show-all>Show all rows</button>
+        </div>
+        <p class="workspace-help">Rows are sorted by time; observations at the same time stay in file order. Selecting a row selects its point in the plot. Use the Up and Down arrow keys, Home and End to move through the rows.</p>
+        <div class="tm-table-wrap lc-table-scroll" data-lc-table-scroll>
+          <table class="tm-table lc-table lc-data" role="grid" aria-label="Observations" data-lc-table>
+            <caption data-lc-table-caption>Observations</caption>
+            <thead><tr data-lc-table-head></tr></thead>
+            <tbody data-lc-table-body></tbody>
+          </table>
+        </div>
+        <p class="workspace-help" data-lc-table-note></p>
+      </section>
+
+      <section class="workspace-panel lc-detail" aria-labelledby="lc-detail-title" data-lc-detail-panel hidden>
+        <h2 id="lc-detail-title">Selected observation</h2>
+        <p class="workspace-help" data-lc-detail-empty>Select a point or a table row to see everything the file says about it.</p>
+        <dl class="workspace-facts lc-facts" data-lc-detail hidden></dl>
+      </section>
+
+      <section class="workspace-panel lc-export" aria-labelledby="lc-export-title" data-lc-export-panel hidden>
+        <h2 id="lc-export-title">Export</h2>
+        <p class="workspace-help">Download the rows now shown in the table as a CSV file. Values stay in their original units and times in their original scale; each row keeps its observation ID, its row number in the source file, the original time text, the MJD, the time scale and reference, the kind and unit, flags and the band. This file can be opened again in this tool.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" disabled data-lc-export>Download the shown rows (CSV)</button>
+        </div>
+        <p class="workspace-status" role="status" data-lc-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note lc-note" aria-labelledby="lc-note-title">
+        <h2 id="lc-note-title">How times and values are handled</h2>
+        <p class="workspace-help"><strong>Time.</strong> ISO 8601, JD and MJD are read as given. Inside one time scale <strong>JD = MJD + 2400000.5</strong> exactly. <strong>UTC, TAI and TT</strong> convert exactly: TAI = UTC + the integer leap-second offset (IERS list, 1972 to 2027-06-28, 37 s since 2017) and TT = TAI + 32.184 s. <strong>TDB</strong> differs from TT by a position-dependent term of about 1.7 ms, so a TDB time is only compared with TDB; the same holds for an unknown scale. A time is labeled <strong>BJD</strong> only when you state that the file is barycentre-corrected, and it is only compared with other barycentric times. Rows whose time cannot be put on the plot’s scale are left out and counted.</p>
+        <p class="workspace-help"><strong>Flux and magnitude.</strong> Flux densities in Jy, mJy, µJy and nJy convert exactly. AB magnitudes use <strong>m = −2.5 log₁₀(F / 3631 Jy)</strong> and the uncertainty <strong>σₘ = 1.0857 · σ_F / F</strong> (first order, valid when σ_F is much smaller than F). A flux of zero or less has no magnitude, so it stays in the table but is not plotted. Vega and unspecified magnitudes are never converted. On a magnitude axis <strong>smaller numbers are brighter and are drawn at the top</strong>.</p>
+        <p class="workspace-help"><strong>Series and statistics.</strong> A series is one source in one band. A band is a label from the file or a wavelength bin you define; unbinned data have no defined band and get no mean or median. Missing measurements, negative or zero flux and unknown uncertainties stay in the table and are never replaced by invented values. SPHEREx observes one sky position at a different wavelength in each exposure, so a wavelength bin that is wide mixes spectral shape with change over time.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

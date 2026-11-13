@@ -1,0 +1,137 @@
+/* Motion Detector workspace. Builds on workspace.css and the Time Machine panel, table and note styles. */
+.mo-settings, .mo-result, .mo-candidates, .mo-detail, .mo-export { margin-block-start: var(--workspace-gap); }
+.mo-settings .workspace-help { max-inline-size: 75ch; }
+.mo-result .tm-pair__verdict { max-inline-size: 80ch; }
+.mo-result .tm-checks dd { max-inline-size: 80ch; }
+.mo-detail .workspace-help { max-inline-size: 75ch; }
+.mo-export .workspace-help { max-inline-size: 75ch; }
+.mo-export .workspace-button[aria-disabled="true"],
+.mo-candidates .workspace-button[aria-disabled="true"],
+.tm-display__bar .workspace-button[aria-disabled="true"],
+.tm-actions .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.mo-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mo-sub { margin-block-start: 0.15rem; color: var(--workspace-muted); font-size: 0.8125rem; }
+.mo-error { color: #ffd0cb; }
+.mo-sub.mo-error { color: #ffd0cb; }
+
+.workspace .mo-radio {
+  inline-size: 1.4rem;
+  min-inline-size: 1.4rem;
+  min-block-size: 1.4rem;
+  block-size: 1.4rem;
+  padding: 0;
+  accent-color: #eaecf1;
+}
+
+.tm-table td .workspace-button.mo-small,
+.workspace-button.mo-small {
+  min-block-size: 2.75rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.mo-epochs td, .mo-positions td, .mo-positions th, .mo-candidates__table td, .mo-candidates__table th { vertical-align: top; }
+.mo-epochs { min-inline-size: 52rem; }
+.mo-epochs select, .mo-epochs input[type="text"] { min-inline-size: 11rem; font-size: 0.875rem; }
+.mo-epochs td:nth-child(5) { min-inline-size: 14rem; }
+.mo-candidates__table { min-inline-size: 64rem; }
+.mo-candidates__table th[scope="row"] { min-inline-size: 5.5rem; }
+.mo-candidates__table td:nth-child(2) { min-inline-size: 7rem; }
+.mo-candidates__table td:nth-child(3) { min-inline-size: 4rem; }
+.mo-positions { min-inline-size: 62rem; }
+.mo-position-input { min-inline-size: 5.5rem; max-inline-size: 7rem; }
+.mo-actions { white-space: nowrap; }
+.mo-actions .workspace-button + .workspace-button { margin-inline-start: 0.35rem; }
+.mo-positions tr[data-shown] th, .mo-positions tr[data-shown] td { background: #14171c; }
+
+.mo-row-button {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #4a505a;
+  border-radius: 0.3rem;
+  background: #191c22;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mo-row-button[aria-current="true"] { border-color: #eaecf1; background: #eaecf1; color: #101216; }
+.mo-row-button:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.mo-candidates__table tr[data-selected] td, .mo-candidates__table tr[data-selected] th { background: #14171c; }
+.mo-candidates__table tr[data-dismissed] td { color: #8d95a3; text-decoration: line-through; text-decoration-color: #5b6270; }
+
+.tm-segment .workspace-button[aria-disabled="true"], .tm-segment .workspace-button:disabled { opacity: 0.56; cursor: default; }
+
+.mo-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--workspace-gap);
+  margin-block-start: 0.9rem;
+}
+
+.mo-panels .tm-viewport { block-size: clamp(15rem, 42svh, 30rem); }
+.mo-panels .tm-panel__line:empty { display: none; }
+.tm-viewport:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+.mo-legend { margin-block-start: 1rem; max-inline-size: 36rem; }
+.mo-legend[hidden], .mo-legend [hidden] { display: none; }
+
+.mo-legend canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 1rem;
+  border: 1px solid #4a505a;
+}
+
+.mo-legend__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 0.3rem;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mo-readout {
+  margin-block-start: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #31353d;
+  border-radius: 0.3rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.mo-plot { margin: 1rem 0 0; max-inline-size: 44rem; }
+.mo-plot canvas { display: block; inline-size: 100%; block-size: 22rem; border: 1px solid #2c3139; background: #060709; }
+
+@media (max-width: 1000px) {
+  .mo-panels { grid-template-columns: minmax(0, 1fr); }
+  .mo-panels .tm-viewport { block-size: clamp(14rem, 44svh, 26rem); }
+}
+
+@media (max-width: 750px) {
+  .mo-plot canvas { block-size: 16rem; }
+  .tm-segment .workspace-button { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .mo-settings input, .mo-detail input, .mo-epochs input, .mo-epochs select { font-size: 1rem; }
+}
+
+/* Visually hidden text inside a scrolling table must stay inside it, or it widens the page on narrow screens. */
+.mo-epochs th, .mo-positions th, .mo-candidates__table th { position: relative; }
+.tm-table-wrap { position: relative; }

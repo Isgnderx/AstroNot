@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Spectrophotometry — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/spectrophotometry.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits.js" defer></script>
+    <script src="../../tools/pair.js" defer></script>
+    <script src="../../tools/photometry.js" defer></script>
+    <script src="../../tools/spectrophotometry.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="spectrophotometry">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Spectrophotometry</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Analysis</p>
+        <h1 data-workspace-title>Spectrophotometry</h1>
+        <p class="workspace-description" data-workspace-description>Measure the flux density of one sky position in calibrated SPHEREx images and write a spectrum that Spectrum Lab can open.</p>
+      </header>
+
+      <section class="workspace-panel sp-images" aria-labelledby="sp-images-title">
+        <h2 id="sp-images-title">Calibrated images</h2>
+        <p class="workspace-help">Choose one or more SPHEREx Level 2 FITS images or cutouts (uncompressed, <strong>IMAGE</strong> in <strong>MJy/sr</strong>, TAN or TAN-SIP WCS in ICRS). The tool also reads a <strong>FLAGS</strong> image, a <strong>VARIANCE</strong> image and the <strong>WCS-WAVE</strong> table when the file has them. Each file is one exposure, so each gives one point of the spectrum. Files are read on this device.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" multiple disabled data-sp-file>
+            <span class="workspace-button workspace-button--primary tm-file__button">Choose FITS files</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-sp-example-pair>Load SPHEREx example pair</button>
+          <button class="workspace-button" type="button" disabled data-sp-example-single>Load single-image example (no wavelength table)</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-sp-clear>Remove all images</button>
+        </div>
+        <p class="workspace-status" role="status" data-sp-status></p>
+        <div class="tm-table-wrap" data-sp-list-wrap hidden>
+          <table class="tm-table sp-list">
+            <caption>Loaded images</caption>
+            <thead>
+              <tr>
+                <th scope="col">File</th><th scope="col">Observation ID</th><th scope="col">Image HDU</th><th scope="col">Size</th>
+                <th scope="col">BUNIT</th><th scope="col">Observed (UTC)</th><th scope="col">Companions</th><th scope="col">WCS</th><th scope="col"><span class="sp-hidden">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody data-sp-list></tbody>
+          </table>
+        </div>
+      </section>
+
+      <form class="workspace-panel sp-target" aria-labelledby="sp-target-title" novalidate data-sp-form>
+        <h2 id="sp-target-title">Target and aperture</h2>
+        <p class="workspace-help">Enter the sky position in decimal degrees (ICRS). The position is mapped to a pixel of every image with that image's own WCS. The aperture is a circle around it; the background comes from the annulus between the two outer radii. Changing any value clears the results until you measure again.</p>
+        <div class="sp-fields">
+          <label>Source ID <input type="text" autocomplete="off" spellcheck="false" value="target-1" data-sp-field="sourceId"></label>
+          <label>RA (ICRS, degrees) <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="156.02411" data-sp-field="ra"></label>
+          <label>Dec (ICRS, degrees) <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="-41.66916" data-sp-field="dec"></label>
+          <label>Radius unit
+            <select data-sp-field="radiusUnit">
+              <option value="pixel">Pixels</option>
+              <option value="arcsec">Arcsec (converted with the local pixel scale)</option>
+            </select>
+          </label>
+          <label>Aperture radius <input type="text" inputmode="decimal" autocomplete="off" value="2.5" data-sp-field="radius"></label>
+          <label>Background method
+            <select data-sp-field="background">
+              <option value="median">Annulus, sigma-clipped median</option>
+              <option value="mean">Annulus, sigma-clipped mean</option>
+              <option value="none">No background subtraction</option>
+            </select>
+          </label>
+          <label>Annulus inner radius <input type="text" inputmode="decimal" autocomplete="off" value="4" data-sp-field="innerRadius"></label>
+          <label>Annulus outer radius <input type="text" inputmode="decimal" autocomplete="off" value="7" data-sp-field="outerRadius"></label>
+          <label>Minimum aperture coverage (%) <input type="text" inputmode="decimal" autocomplete="off" value="90" data-sp-field="minCoverage"></label>
+          <label>Minimum valid annulus pixels <input type="text" inputmode="numeric" autocomplete="off" value="20" data-sp-field="minAnnulusPixels"></label>
+        </div>
+        <div class="sp-checks">
+          <label class="tm-check"><input type="checkbox" checked data-sp-field="maskFlags"> <span>Leave out pixels that the IRSA forced photometry also ignores (bad FLAGS bits)</span></label>
+          <label class="tm-check"><input type="checkbox" data-sp-field="excludeSource"> <span>Leave SOURCE-flagged pixels out of the background annulus</span></label>
+        </div>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="submit" data-sp-measure>Measure</button>
+          <span class="sp-stale" role="status" data-sp-stale></span>
+        </div>
+        <p class="workspace-status" role="status" data-sp-form-status></p>
+      </form>
+
+      <section class="workspace-panel sp-result" aria-labelledby="sp-result-title">
+        <h2 id="sp-result-title">Aperture flux density</h2>
+        <p class="tm-pair__verdict" role="status" data-sp-verdict>Load images and enter a target to measure.</p>
+        <ul class="tm-notes" data-sp-notes hidden></ul>
+        <div class="tm-table-wrap" data-sp-results-wrap hidden>
+          <table class="tm-table sp-results">
+            <caption>One row per image. Flux is the aperture flux density in μJy, background-subtracted. Only rows with a wavelength from the file's own spectral WCS are written to the CSV.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Image</th><th scope="col">Status</th><th scope="col">Wavelength (μm)</th><th scope="col">Bandwidth (μm)</th>
+                <th scope="col">Aperture flux density (μJy)</th><th scope="col">Uncertainty (μJy)</th><th scope="col">Background (MJy/sr)</th>
+                <th scope="col">Aperture coverage</th><th scope="col">Masked</th><th scope="col">Flags</th><th scope="col">Spectrum point</th>
+              </tr>
+            </thead>
+            <tbody data-sp-results></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel sp-export" aria-labelledby="sp-export-title">
+        <h2 id="sp-export-title">Spectrum Lab hand-off</h2>
+        <p class="workspace-help">The CSV has the Spectrum Lab columns <strong>source_id, obs_id, mjd, ra, dec, wavelength, lambda_width, flux, flux_err, flags, method</strong> (wavelength and lambda_width in μm, flux and flux_err in μJy, mjd in UTC, flags 0 when nothing is flagged) followed by extra columns about the aperture and the status. An unknown uncertainty is an empty field. The method column says <strong>aperture-photometry</strong>: this is not the archive's forced photometry.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-sp-download>Download spectrum CSV</button>
+          <a class="workspace-source" href="../../tools/spectrum/index.html" data-route="/tools/spectrum" data-sp-lab>Open Spectrum Lab</a>
+        </div>
+        <p class="workspace-status" role="status" data-sp-export-status></p>
+        <p class="workspace-help">Next: download the CSV, open Spectrum Lab and choose that file there.</p>
+      </section>
+
+      <section class="workspace-panel sp-detail" aria-labelledby="sp-detail-title" data-sp-detail hidden>
+        <div class="tm-display__bar">
+          <h2 id="sp-detail-title">Measurement detail</h2>
+          <label class="sp-detail__choice">Image
+            <select data-sp-detail-select></select>
+          </label>
+        </div>
+        <div class="sp-detail__grid">
+          <figure class="sp-figure">
+            <canvas role="img" aria-label="Cutout around the target" data-sp-canvas></canvas>
+            <figcaption class="workspace-help" data-sp-canvas-caption></figcaption>
+          </figure>
+          <dl class="workspace-facts sp-facts" data-sp-facts></dl>
+        </div>
+        <p class="workspace-help sp-conversions" data-sp-conversions></p>
+        <details class="sp-pixels">
+          <summary>Pixels of the aperture</summary>
+          <div class="tm-table-wrap">
+            <table class="tm-table">
+              <caption>Every pixel the aperture touches. Weight is the exact overlap; left-out pixels do not enter the sum.</caption>
+              <thead><tr><th scope="col">x</th><th scope="col">y</th><th scope="col">Weight</th><th scope="col">Value (image unit)</th><th scope="col">Solid angle (sr)</th><th scope="col">FLAGS</th><th scope="col">Used</th></tr></thead>
+              <tbody data-sp-pixels></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="sp-note-title">
+        <h2 id="sp-note-title">How the flux is computed</h2>
+        <p class="workspace-help"><strong>Aperture flux density</strong> = 10⁶ × Σ wᵢ (Iᵢ − b) Ωᵢ in Jy, with Iᵢ and the background b in MJy/sr and Ωᵢ the solid angle of pixel i in sr. The weights wᵢ are the exact overlaps of the pixels with the circle (partly covered pixels count by their covered fraction). Ωᵢ comes from the image WCS (the sky area of the pixel corners), not from a constant. The result is shown in μJy.</p>
+        <p class="workspace-help"><strong>Background</strong> b is the sigma-clipped median (or mean) of the valid annulus pixels, with 3σ clipping. Pixels that are NaN, BLANK or flagged (SUR_ERROR, NONFUNC, MISSING_DATA, HOT, COLD, NONLINEAR, PERSIST, BLOOM, SNOWBALL, HALO, SATELLITE_HALO, the bits the archive tool ignores when fitting) are left out of the aperture and the annulus, never replaced. The flux is not corrected for left-out area; the covered share and the masked share are shown, and a measurement below the minimum coverage is refused. A target outside the image is not measured.</p>
+        <p class="workspace-help"><strong>Wavelength</strong> is read from the per-pixel spectral WCS of the file (the WCS-WAVE lookup table) at the target pixel. A file without that table gives a flux but no spectrum point, and is left out of the CSV. <strong>Uncertainty</strong> is propagated from the VARIANCE image only (independent pixel noise plus the error of the background level); without a VARIANCE image the uncertainty is empty. It contains no calibration, aperture-correction or correlated-noise term. <strong>Flags</strong> are the bitwise OR of the FLAGS values of the aperture pixels, plus bit 32 (CONTAINS_BAD_PIXEL) when a pixel was left out, as in the IRSA table.</p>
+        <p class="workspace-help"><strong>Not the archive's measurement.</strong> The <a class="sp-link" href="https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html">IRSA SPHEREx Spectrophotometry tool</a> fits a PSF and morphology model with Tractor (forced photometry); this tool sums pixels in a circle. The two differ for blended or extended sources, and no aperture correction is applied here, so compare them only with that difference in mind. The time (mjd) is the mid-exposure time (MJD-AVG) in UTC when the header has it, otherwise the exposure start.</p>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>

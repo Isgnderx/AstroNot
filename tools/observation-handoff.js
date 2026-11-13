@@ -1,5 +1,5 @@
 // FITS Viewer side of the Observation Search hand-off. Observation Search links here with
-// ?obs=<OBSID>&product=<IRSA FITS URL>&det=<1-6>&ra=&dec=&size=. The browser cannot fetch the
+// ?obs=<OBSID>&product=<IRSA FITS URL (DR1, QR3 or QR2 level 2)>&det=<1-6>&ra=&dec=&size=. The browser cannot fetch the
 // archive file itself (IRSA sends no CORS headers), so this panel ties the download to the
 // Viewer's "Choose a local FITS file" step and checks the OBSID in the opened file's header.
 function setupObservationHandoff() {
@@ -42,6 +42,7 @@ function setupObservationHandoff() {
   };
   facts.replaceChildren(
     row("Observation ID", obsId),
+    row("Data release", irsaReleases[irsaReleaseOfUrl(product)].label),
     row("Detector", expectedDetector ? String(expectedDetector) : "Unavailable"),
     row("Cutout center (ICRS)", cutout ? center.ra + "°, " + center.dec + "°" : "Unavailable"),
     row("Cutout size", cutout ? center.size + "°" : "Unavailable"),

@@ -1,0 +1,108 @@
+/* Light Curve Analysis workspace. Builds on workspace.css panels, buttons and facts and the Time Machine table and note styles. */
+.lc-columns, .lc-filters, .lc-plot, .lc-summary, .lc-observations, .lc-detail, .lc-export, .lc-note { margin-block-start: var(--workspace-gap); }
+.lc-source .workspace-help, .lc-columns .workspace-help, .lc-note .workspace-help { max-inline-size: 80ch; }
+.lc-note .workspace-help:first-of-type { margin-block-start: 0.5rem; }
+.lc-source code, .lc-note code { font-size: 0.8125rem; overflow-wrap: anywhere; }
+.lc-source [hidden], .lc-columns [hidden], .lc-filters [hidden], .lc-plot [hidden], .lc-observations [hidden] { display: none; }
+
+.lc-facts dd { max-inline-size: 70ch; }
+
+.lc-rejected { margin-block-start: 0.6rem; font-size: 0.875rem; color: var(--workspace-muted); }
+.lc-rejected summary { min-block-size: 2.75rem; display: flex; align-items: center; cursor: pointer; color: #f3d98f; }
+.lc-rejected__list { margin: 0.3rem 0 0; padding-inline-start: 1.2rem; max-block-size: 14rem; overflow: auto; }
+
+.lc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin-block-start: 0.9rem;
+}
+
+.lc-fieldset {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0.75rem 0.9rem 0.9rem;
+  border: 1px solid #2a2e36;
+  border-radius: 0.4rem;
+}
+
+.lc-fieldset legend { padding-inline: 0.35rem; color: var(--ink); font-size: 0.875rem; font-weight: 650; }
+.lc-fieldset .tm-actions { margin-block-start: 0; }
+.lc-fieldset .workspace-help { margin-block-start: 0; }
+.lc-fieldset .tm-check { min-block-size: 2.75rem; line-height: 1.3; }
+.workspace .lc-fieldset input[aria-invalid="true"] { border-color: #d9887f; }
+
+.lc-series-pick { margin-block-start: 0.9rem; }
+
+.lc-series-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 0.15rem 1rem;
+  max-block-size: 18rem;
+  overflow: auto;
+}
+
+.workspace .lc-series-item { align-items: center; }
+.lc-series-item__text { display: grid; min-inline-size: 0; overflow-wrap: anywhere; }
+.lc-series-item__text small { color: var(--workspace-muted); font-size: 0.75rem; font-weight: 450; }
+.lc-series-item svg { flex: none; }
+
+.lc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.lc-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.lc-legend[hidden] { display: none; }
+
+.lc-chart {
+  inline-size: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
+  border: 1px solid #292d34;
+  border-radius: 0.35rem;
+  background: #0b0d10;
+}
+
+/* styles.css gives every svg an icon size and a currentColor stroke; the plot and its swatches opt out. */
+.lc-svg { display: block; inline-size: auto; block-size: auto; fill: none; stroke: none; stroke-width: 1; touch-action: pan-y; }
+.lc-svg text { stroke: none; }
+.lc-series-item svg, .lc-legend svg { inline-size: 18px; block-size: 18px; stroke: none; }
+.lc-svg:focus-visible { outline: 2px solid #f2f4f8; outline-offset: -2px; }
+.lc-axis-note { max-inline-size: 80ch; }
+
+.lc-table { font-size: 0.8125rem; }
+.lc-table th, .lc-table td { padding: 0.45rem 0.55rem; }
+.lc-data { min-inline-size: 52rem; }
+.lc-data td:last-child { min-inline-size: 11rem; color: #f3d98f; }
+.lc-table-scroll { max-block-size: 34rem; overflow: auto; }
+.lc-table-scroll thead th { position: sticky; inset-block-start: 0; background: var(--workspace-surface); }
+.lc-missing { color: var(--workspace-muted); font-style: italic; }
+
+.lc-row { cursor: pointer; }
+.lc-row:hover th, .lc-row:hover td { background: #171a20; }
+.lc-row:focus-visible { outline: 2px solid #f2f4f8; outline-offset: -2px; }
+.lc-row--selected th, .lc-row--selected td { background: #20304a; }
+
+.lc-detail .lc-facts { max-inline-size: 52rem; }
+
+@media (max-width: 750px) {
+  .lc-grid { grid-template-columns: minmax(0, 1fr); }
+  .lc-series-list { grid-template-columns: minmax(0, 1fr); }
+  .lc-summary .tm-table { min-inline-size: 46rem; }
+  .lc-data { min-inline-size: 48rem; }
+  .lc-table-scroll { max-block-size: 28rem; }
+}
+
+@media (pointer: coarse) {
+  .lc-fieldset input, .lc-fieldset select { font-size: 1rem; }
+}
