@@ -1,5 +1,4 @@
-// Renders the confirmed team profiles from about/team-data.js into the Team section.
-// All text goes in through textContent. Fields that are empty produce no element.
+// Renders the team profiles from about/team-data.js into the Team section.
 (function () {
   const section = document.querySelector("[data-team]");
   if (!section) return;
@@ -41,27 +40,39 @@
     const name = text(member && member.name);
     const role = text(member && member.role);
     const contribution = text(member && member.contribution);
-    // A profile without confirmed name, role and contribution is not shown at all.
-    if (!name || !role || !contribution) return null;
+    if (!name || !role) return null;
 
     const item = element("li", "team-member");
     const article = element("article", "team-member__body");
 
     const src = photoUrl(member.photo);
     const alt = text(member.photo && member.photo.alt);
+    const frame = element("span", "team-member__photo");
     if (src && alt) {
-      const image = element("img", "team-member__photo");
+      const image = element("img", "team-member__image");
       image.src = src;
       image.alt = alt;
       image.width = 112;
       image.height = 112;
       image.loading = "lazy";
       image.decoding = "async";
-      article.append(image);
+      const crop = member.photo.crop;
+      if (crop) {
+        image.classList.add("team-member__image--cropped");
+        image.style.width = 100 * crop.width / crop.size + "%";
+        image.style.left = -100 * crop.left / crop.size + "%";
+        image.style.top = -100 * crop.top / crop.size + "%";
+      }
+      frame.append(image);
+    } else {
+      frame.classList.add("team-member__photo--placeholder");
+      frame.setAttribute("aria-hidden", "true");
     }
+    article.append(frame);
 
     const copy = element("div", "team-member__copy");
-    copy.append(element("h3", "team-member__name", name), element("p", "team-member__role", role), element("p", "team-member__bio", contribution));
+    copy.append(element("h3", "team-member__name", name), element("p", "team-member__role", role));
+    if (contribution) copy.append(element("p", "team-member__bio", contribution));
 
     const link = profileLink(member.link);
     if (link) {

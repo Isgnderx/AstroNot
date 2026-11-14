@@ -105,8 +105,9 @@ export async function buildDemo({ out = join(repo, "dist"), base = "/" } = {}) {
     await mkdir(join(target, ".."), { recursive: true });
     if (file === notFoundFile) {
       const source = await readFile(join(repo, file), "utf8");
-      if (!source.includes('<base href="/">')) throw new Error(notFoundFile + ' must contain <base href="/">');
-      await writeFile(target, source.replace('<base href="/">', '<base href="' + base + '">'));
+      const rootBase = /<base href="\/"\s*\/?>/;
+      if (!rootBase.test(source)) throw new Error(notFoundFile + ' must contain <base href="/">');
+      await writeFile(target, source.replace(rootBase, '<base href="' + base + '">'));
     } else {
       await cp(join(repo, ...file.split("/")), target);
     }

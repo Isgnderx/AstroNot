@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="../about/team.css">
     <script src="../routes.js" defer></script>
+    <script src="../assets/i18n/site-language.js" defer></script>
     <script src="../site.js" defer></script>
     <script src="../about/team-data.js" defer></script>
     <script src="../about/team.js" defer></script>
@@ -40,15 +41,28 @@
 
     <main id="page-content" tabindex="-1">
       <section class="frame about-page section-space" aria-labelledby="about-title">
-        <header class="about-page__heading">
-          <h1 class="section-title" id="about-title">About AstroNot</h1>
-          <p class="section-lede">Explore real telescope observations and learn what they reveal about the night sky.</p>
-        </header>
-        <div class="about-page__sections">
-          <section aria-labelledby="mission-title">
-            <h2 id="mission-title">Mission</h2>
-            <p>AstroNot brings public discovery, astronomy education, and scientific tools together. Start with a telescope image, learn how it was made, or work with observations in the archive.</p>
+        <div class="about-page__overview">
+          <header class="about-page__heading">
+            <h1 class="section-title" id="about-title">About AstroNot</h1>
+            <p class="section-lede">Explore real telescope observations and learn what they reveal about the night sky.</p>
+          </header>
+          <section class="about-page__mission" aria-labelledby="mission-title">
+            <h2 class="section-title" id="mission-title">Mission</h2>
+            <p class="section-lede">AstroNot brings public discovery, astronomy education, and scientific tools together. Start with a telescope image, learn how it was made, or work with observations in the archive.</p>
             <a class="text-link" href="../explore/index.html" data-route="/explore">Explore the sky <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg></a>
+          </section>
+        </div>
+        <div class="about-page__sections">
+          <section class="about-guide" aria-labelledby="user-guide-title">
+            <h1 id="user-guide-title">A simple guide for users</h1>
+            <div>
+              <h2>Guide for Non-Researchers</h2>
+              <p>Start with <a href="../explore/index.html" data-route="/explore">Explore</a> and pick an object that catches your eye, such as Saturn or the Orion Nebula. Visit <a href="../learn/index.html" data-route="/learn">Learn</a> to see how different kinds of light reveal different features in the same galaxy. When you’re ready to try working with an image, follow the FITS guide and load the included SPHEREx example. You can also browse <a href="../tools/index.html#non-researcher-tools" data-route="/tools#non-researcher-tools">Non-researcher Tools</a> to see ideas for future activities, from finding constellations to comparing planet sizes.</p>
+            </div>
+            <div>
+              <h2>Guide for Researchers</h2>
+              <p>Start in <a href="../tools/index.html#scientific-tools" data-route="/tools#scientific-tools">Scientific Tools</a>. Use Observation Search to find SPHEREx data by sky position, date, or wavelength. Download a cutout, then open it in FITS Viewer to check its observation ID, time, and units. Use Time Machine to compare observations from different dates, or Spectrophotometry to measure flux at a chosen sky position. When exporting a result, check which observations went into it and whether uncertainty estimates were available for your measurement.</p>
+            </div>
           </section>
           <section aria-labelledby="team-title" data-team>
             <h2 id="team-title">Team</h2>

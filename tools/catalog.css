@@ -1,22 +1,7 @@
 .tools {
-  position: relative;
-  isolation: isolate;
   overflow: clip;
   padding-block: clamp(3.25rem, 5.2vw, 6rem);
   border-block: 1px solid #25282d;
-  background: #0b0d10;
-}
-
-.tools::before {
-  position: absolute;
-  z-index: -1;
-  inset: 0 0 auto;
-  block-size: 19rem;
-  background: url("../assets/starfield.svg") 70% 35% / cover no-repeat;
-  mask-image: linear-gradient(#000, transparent);
-  opacity: 0.22;
-  pointer-events: none;
-  content: "";
 }
 
 .tools__heading {
@@ -83,28 +68,17 @@
 .tools__toolbar,
 .tools__filters,
 .tools__controls,
-.tools__quick-links,
 .tools__notes {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.tools__quick-links {
-  gap: 0.25rem 1rem;
-  margin-block-end: 1.05rem;
-  color: #b5bbc5;
-  font-size: 0.875rem;
-}
-
-.tools__quick-links a,
 .tool-card__preview {
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-
-.tools__quick-links a { padding-block: 0.3rem; }
 
 .tools__toolbar {
   justify-content: space-between;
@@ -194,6 +168,15 @@
 
 .tools__track:focus-visible { outline-offset: 3px; }
 .tools__item { display: flex; min-inline-size: 0; scroll-snap-align: start; }
+
+.tools__home-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 
 .tool-card {
   position: relative;
@@ -347,9 +330,9 @@ a.tool-card__launch::after {
 .tools__availability { font-variant-numeric: tabular-nums; }
 .tools__credits a { text-decoration: underline; text-underline-offset: 0.2em; }
 
-.tools__notes--featured { gap: 0.75rem 1rem; margin-block-start: 1.1rem; }
+.tools__notes--home { gap: 0.75rem 1rem; margin-block-start: 1.1rem; }
 
-.tools__show-all {
+.tools__directory-link {
   min-block-size: 2.875rem;
   margin-inline-start: auto;
   padding-inline: 1.25rem;
@@ -362,14 +345,38 @@ a.tool-card__launch::after {
   .tools__step[aria-disabled="false"]:hover { border-color: #858b95; background: #20232a; }
   .tool-card[data-ready]:hover { border-color: #d3d8e2; background: #191c22; }
   .tool-card[data-ready]:hover .tool-card__launch { background: #fff; }
-  .tool-card__preview:hover, .tools__quick-links a:hover { color: #c4d6fa; }
+  .tool-card__preview:hover { color: #c4d6fa; }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .tool-card {
+    transform: scale(1);
+    transition: transform 0.6s ease-in-out;
+  }
+
+  .tool-card:hover { transform: scale(1.012); }
 }
 
 .tools__filter:active, .tools__step[aria-disabled="false"]:active { border-color: #eef0f4; }
 .tool-card[data-ready]:active .tool-card__launch { background: #cfd4de; }
 
 @media (min-width: 1650px) {
-  .tools__track:not(.tools__track--featured) { --columns: 5; }
+  .tools__track { --columns: 5; }
+}
+
+@media (min-width: 621px) {
+  .tools__home-list .tool-card {
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  }
+
+  .tools__home-list .tool-card__visual {
+    aspect-ratio: auto;
+    border-block-end: 0;
+    border-inline-end: 1px solid #2e323a;
+  }
+
+  .tools__home-list .tool-card__visual img { position: absolute; inset: 0; }
 }
 
 @media (max-width: 1180px) {

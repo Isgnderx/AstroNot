@@ -564,6 +564,7 @@
   }
 
   function outlinedText(ctx, text, x, y, color) {
+    text = window.AstroNotLanguage?.translate(text) ?? text;
     ctx.font = "600 12px Inter, system-ui, sans-serif";
     ctx.lineWidth = 3;
     ctx.strokeStyle = "rgba(0,0,0,0.85)";
@@ -1394,6 +1395,7 @@
   }
 
   function drawPlot(candidate, evaluated) {
+    const translate = window.AstroNotLanguage?.translate ?? ((text) => text);
     const canvas = el.plot;
     const { track, points } = evaluated;
     const width = Math.max(280, Math.round(canvas.clientWidth || 640));
@@ -1410,7 +1412,7 @@
     if (!track.ok || measured.length < 2) {
       ctx.fillStyle = "#b6bdc8";
       ctx.font = "14px Inter, system-ui, sans-serif";
-      ctx.fillText("Mark at least two positions to see the track.", 16, 28);
+      ctx.fillText(translate("Mark at least two positions to see the track."), 16, 28, width - 32);
       canvas.setAttribute("aria-label", "Track plot: fewer than two positions marked.");
       el.plotCaption.textContent = "Track on the sky: needs at least two positions.";
       return;
@@ -1458,11 +1460,11 @@
     ctx.strokeRect(margin.left, margin.top, plotW, plotH);
     ctx.fillStyle = "#dce0e8";
     ctx.font = "12px Inter, system-ui, sans-serif";
-    ctx.fillText("← East offset from the first position (arcsec)", margin.left + plotW / 2 - 130, height - 8);
+    ctx.fillText(translate("← East offset from the first position (arcsec)"), margin.left + plotW / 2 - 130, height - 8, plotW);
     ctx.save();
     ctx.translate(13, margin.top + plotH / 2 + 60);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("North offset (arcsec) ↑", 0, 0);
+    ctx.fillText(translate("North offset (arcsec) ↑"), 0, 0, plotH);
     ctx.restore();
 
     ctx.save();
@@ -1656,4 +1658,5 @@
   buildPanels();
   wire();
   refresh();
+  window.addEventListener("astronot-languagechange", refresh);
 })();
