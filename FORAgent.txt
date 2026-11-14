@@ -1,0 +1,282 @@
+FORAgent.txt — AstroNot project handoff for AI agents
+=======================================================
+Written 2026-11-14 by Claude (Claude Code session) for any AI agent or developer who continues this
+project. Everything below is verifiable in the repository, its git history and the files named here.
+Bu fayl layihəni başqa bir AI-a və ya tərtibatçıya vermək üçün hazırlanıb; ingiliscədir ki, hər agent
+başa düşsün. Repo sahibinin iş dili Azərbaycan dilidir.
+
+
+1. WHAT ASTRONOT IS
+-------------------
+AstroNot ("We're not astronauts. We are AstroNot.") is a static astronomy web site built by a student
+team (About page: Mehin Mashadiyeva — project manager, Aykhan Isgandarzada — system engineer and repo
+owner, GitHub `Isgnderx`; Uzeyir Bayramli — ML/data; Khadija Ahmadova — backend; Jahid Mahmudzada —
+frontend). It gives researchers and students browser-only tools for NASA's SPHEREx infrared survey
+data as served by IRSA (NASA/IPAC Infrared Science Archive): searching observations, opening FITS
+files, comparing epochs, photometry, spectra, source detection, catalog cross-matching, mosaics, and
+— the newest tool — forced ePSF spectrophotometry that reproduces IRSA's own Spectrophotometry Tool in
+the browser.
+
+Design principles that every tool follows:
+- Everything runs client-side. There is no server, no database, no build step. Files the user chooses
+  are read on their device and never uploaded.
+- Honest output: every refusal has a reason, partial results are reported as partial, nothing is
+  smoothed or guessed, and results are never presented as official archive products.
+- Real data, real validation: examples are real SPHEREx cutouts or real IRSA tables; numerics are
+  checked against Astropy/photutils/reproject and, for the new tool, against the Rust program it ports.
+- Six interface languages (en, az, tr, ru, zh, es) through a runtime catalog; Azerbaijani is the
+  owner's language and was hand-translated.
+
+Repository: https://github.com/Isgnderx/AstroNot (remote `origin`). Local path on the owner's machine:
+C:\Users\loq\Desktop\AstroNot. Not published anywhere yet (README → "Status: not published").
+
+
+2. TECHNOLOGY
+-------------
+- Plain HTML + CSS + JavaScript (classic scripts, no modules/bundler/framework; ES2022+ features
+  are used freely). Pages are served by any static host; `node serve.mjs` is the local preview
+  (default port 4173; a folder without trailing slash 301-redirects like GitHub Pages).
+- Node 24 for tests and scripts: `node --test` runs everything under `tests/` (node:test + assert).
+- Rust → WebAssembly kernels (`rust/crates/*`, `crate-type = cdylib`, no dependencies, plain
+  `extern "C"` exports + `an_alloc/an_free`) for heavy pixel work (csv, detect, fitsdata, probe,
+  reproject, xmatch). Built with `node scripts/build-wasm.mjs`; output committed as
+  `tools/wasm/<name>.wasm` and `.wasm.js` (base64, works from file://). Every kernel has a JS
+  fallback that is also the reference in tests. The new Forced Spectrophotometry tool is JS-only
+  (network-bound, not compute-bound).
+- Module convention for shared logic: an IIFE that sets `root.AstroNotXxx = api` AND
+  `module.exports = api` when CommonJS is present, so the same file loads in the page and in node
+  tests (`createRequire` + `require("../tools/xxx.js")`). Dependencies are reached as
+  `typeof module === "object" && module.exports ? require("./y.js") : root.AstroNotY`.
+  UI files (`tools/<tool>.js`) hold DOM code only; numerics live in DOM-free modules.
+- Styling: `styles.css` (site), `tools/workspace.css` (tool page frame), `tools/time-machine.css`
+  (shared tables/file inputs), one CSS per tool. Inter font (OFL) bundled.
+- i18n: `assets/i18n/site-language.js` walks text nodes/attributes and replaces them from a catalog
+  `assets/i18n/<lang>.js` = `window.AstroNotLanguage.register("az", {messages}, {templates})`.
+  Keys are the exact English text (whitespace-collapsed); templates use `{}` in the key and `{0}`,
+  `{1}` in the value for strings the UI builds with numbers. `?lang=az` on any URL or the picker in
+  the nav selects the language (persisted in localStorage). Elements with `translate="no"` are left
+  alone.
+- Routing: `routes.js` (`sitePage("/tools/x")`, `siteAsset(...)`, language carry-over); tool pages
+  are real folders `tools/<route>/index.html`; `tools/registry.js` lists every tool (id, route,
+  name, category, description, diagram/image) and drives the home page, `/tools` directory and the
+  legacy `workspace.html?tool=` redirects.
+- Publishing: `scripts/publish-rules.mjs` is the allowlist of what ships (root files, `assets/`,
+  `tools/`, `explore/`, `learn/`, `about/`; extensions .html .css .js .svg .jpg .png .woff2 .wasm
+  .txt). `scripts/build-demo.mjs` builds `dist/` (+404.html, .nojekyll, build-manifest.json with
+  per-file SHA-256); `scripts/preview-dist.mjs` emulates a subpath host. `tests/publish.test.mjs`
+  checks package contents and serve.mjs parity. `tests/`, `scripts/`, `.md`, `.py`, `.git` never
+  ship. CSV files cannot ship (no content type) — bundled data goes in as a `.js` global.
+- Python is optional: some tests compare against Astropy/photutils/reproject when
+  `ASTRONOT_PYTHON` points to an interpreter that has them; otherwise those tests are skipped
+  (12 skips are normal).
+- Git on Windows: `core.autocrlf=true`; binary fixtures are protected by
+  `tests/data/spxphot/.gitattributes` (`* -text`). Line endings in files are LF.
+
+
+3. REPOSITORY LAYOUT
+--------------------
+index.html, workspace.html, routes.js, site.js, styles.css, 404.html
+explore/, learn/, about/ (about/team-data.js, team.js, team.css)
+tools/
+  index.html, registry.js, catalog.js, workspace.js, workspace.css, wasm.js, wasm/
+  <route>/index.html + <route>.js + <route>.css for each tool (see §4)
+  shared DOM-free modules: wcs.js (TAN/TAN-SIP WCS, 1-based FITS pixels), fits.js (local FITS
+  parsing + WASM decode), pair.js (observation time, WCS-WAVE table, grid/overlap checks, views),
+  photometry.js (aperture photometry), difference.js, detect.js, pixels.js, motion-model.js,
+  mosaic-model.js, spectrum-csv.js (Spectrum Lab CSV contract), observation-csv.js (IRSA SIA CSV
+  importer), observation-handoff.js, xmatch.js (angles, separations, cross-match), csv-kernel.js,
+  fits-range.js / epsf.js / forced-phot.js (new, see §6), forced-spectrophotometry-plot.js (new)
+assets/ (images, fonts, i18n/, tools/ example data as .js globals, methods.svg diagrams)
+rust/ (Cargo workspace of WASM kernels; rust/README.md explains the pattern)
+scripts/ (build-demo, preview-dist, build-wasm, publish-rules, bench-reproject,
+          make-bd17-frames.mjs — regenerates the Forced Spectrophotometry example frame list)
+tests/ (*.test.mjs per module, fits-builder.mjs for synthetic FITS, *-reference.py for Python
+        cross-checks, data/spxphot/ reference material for the new tool)
+docs/superpowers/specs/2026-11-14-forced-spectrophotometry-design.md  (approved design)
+docs/superpowers/plans/2026-11-14-forced-spectrophotometry.md         (9-task implementation plan)
+README.md (authoritative description of every tool, its method, validation and limits — read it)
+TODO.md (Azerbaijani; open items and follow-ups)
+BUILD-PROMPTS.md (Azerbaijani; earlier prompt texts used to build tools with coding agents)
+
+
+4. THE TOOLS (routes under /tools/)
+-----------------------------------
+Observation: sky-explorer (pan/zoom a SPHEREx image, RA/Dec from WCS), time-machine (compare two
+epochs, blink, timeline, display-only alignment), spectrum (Spectrum Lab: plot a spectrum CSV with
+units/errors/flags), observation-search (builds an IRSA SIA query link for SPHEREx DR1/QR3/QR2 and
+the deep-field collections; imports the returned CSV; hands off to FITS Viewer and to Forced
+Spectrophotometry — IRSA sends no CORS headers, so the page cannot fetch SIA/TAP itself).
+Analysis: motion (moving-object candidates across epochs), spectrophotometry (aperture flux density
+at one position in local calibrated images — NOT the IRSA method), forced-spectrophotometry (NEW:
+the IRSA method, see §6), source-detection, light-curve-analysis, catalog-cross-match (Gaia DR3 /
+AllWISE extracts).
+Processing: fits-viewer (local FITS, headers, HDUs), image-differencing, mosaic-builder.
+Non-researcher entries (constellation finder etc.) are directory cards only.
+README.md has one paragraph per tool with the exact method, limits, examples and test files.
+
+Data facts that shape the tools (verified on the dates given):
+- IRSA SIA/TAP/cutout services send no Access-Control-Allow-Origin header (12–14 Nov 2026), so a
+  browser page cannot read them; users save the CSV from the prepared link and import it.
+- IRSA's public S3 bucket https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/ DOES send
+  `Access-Control-Allow-Origin: *`, allows `Range`, and answers 206 (14 Nov 2026). This is what makes
+  Forced Spectrophotometry possible client-side.
+- A SPHEREx Level-2 frame (~70 MB) has HDUs PRIMARY, IMAGE (float32 2040×2040, MJy/sr, TAN-SIP),
+  FLAGS (RICE_1 tile-compressed int32, one tile per row), VARIANCE, ZODI, EPSF (BINTABLE, 441 zones
+  of 33×33 at 5× oversampling, ~3.86 MB), WCS-WAVE (-TAB wavelength lookup). IRSA cutouts keep EPSF
+  and WCS-WAVE and store FLAGS decompressed. The site's bundled QR2 example cutouts keep only
+  IMAGE (+WCS-WAVE), so they have no EPSF.
+- The IRSA cutout service often answers 503 under parallel load.
+
+
+5. WHAT WAS DONE BEFORE THIS SESSION (git history, oldest first)
+----------------------------------------------------------------
+ab53b19 Initial commit → 5aeca0c site and tools scaffold → f103976 WCS implementation →
+8e0d973 demo package build + preview server + publish rules + 404 → 427b3c4/ec12f23 frontend update
+and language selection (six catalogs, machine-translated) → e8b81f3 merge of the `cahid_front` PR.
+By that point all thirteen scientific tools existed with tests (see README).
+
+
+6. WHAT CLAUDE DID IN THIS SESSION (14 Nov 2026)
+------------------------------------------------
+6.1 Azerbaijani retranslation (commit ea3ecdd on main)
+- The owner reported the Azerbaijani UI was poor (the catalog had been filled by Google Translate:
+  "Threshold → Dərs", "Magnitude → Məcnun", …). All 2,441 entries of assets/i18n/az.js were
+  re-translated by hand (ten parallel translators working from one glossary; see the glossary terms
+  in §8), 41 messages + 1 template that had never been in the catalog were added, and 13 templates
+  that spliced English grammar fragments (plural "s", has/have, is/are) were fixed so counts no longer
+  render as "2 kadrs". Verified by rendering all 20 pages headless with ?lang=az. Other languages
+  (tr/ru/es/zh) are still machine-quality — a known follow-up.
+
+6.2 Forced Spectrophotometry (branch feature/forced-spectrophotometry, worktree
+    C:\Users\loq\Desktop\AstroNot\.worktrees\forced-spectrophotometry, 16 commits 9a0d18a..434c218)
+Origin: the owner had reverse-engineered IRSA's SPHEREx Spectrophotometry Tool and Spectral Image
+Search into a Rust CLI, `spxphot` (C:\Users\loq\Downloads\spxphot\spxphot — read its README.md; it
+documents the reverse engineering, the method, validation vs IRSA: median flux ratio 0.9999 on
+BD+17 4708, flags identical, 22 s vs 11 min). The owner asked to implement "the same thing" as a new
+tool on the site, "quite high quality". After brainstorming (approach B: a separate tool page; the
+owner approved the design doc and all rulings) the work was planned into 9 tasks and executed with
+one fresh implementer agent per task, a reviewer per task, and fix loops where needed. Everything is
+a line-by-line port of the Rust, same function names and comments, so the two can be diffed.
+
+Result, by file:
+- tools/fits-range.js — FITS headers (HIERARCH, HISTORY calib ids), byte sources (memory; HTTP Range
+  with 7 retries from 750 ms doubling, 206 required, 416 = non-retried EOF), HDU chain walk, row
+  reads (uncompressed and RICE_1 row-tiled), BINTABLE. Port of fits.rs + archive.rs Source.
+- tools/epsf.js — not-a-knot cubic spline (photutils ImagePSF equivalent, matched to 1e-9), ePSF
+  zone selection/rendering, Sersic profile convolved on the ePSF lattice. Port of psf.rs + sersic.rs.
+- tools/forced-phot.js (~1,140 lines, three sections) — TAN-SIP (0-based, Newton world→pixel),
+  pixel solid angle, WCS-WAVE lookup with/without SIP; the weighted linear least-squares fit
+  (fluxes + constant sky, Cholesky, sigma-clipped background with crowded-field fallback, fit_ql,
+  flag propagation within 2.5 px, bits 32/33, flags as BigInt internally); frames from Observation
+  Search rows → S3 URLs, targets CSV (≤20, Sersic optional), calibration cache keyed by detector +
+  calibration UUIDs, per-frame measurement (process_frame), the concurrent run (pool, AbortSignal,
+  progress, dedupe by uri, per-collection memo of the IMAGE header offset), CSV writers
+  (spxphot's 19 IRSA-named columns; Spectrum Lab contract with method=forced-epsf).
+- tools/forced-spectrophotometry/index.html, forced-spectrophotometry.js (UI), -plot.js (SVG
+  spectrum plot: per-detector colours, error bars, hollow = flagged, log/linear, selection shared
+  with the results grid), .css. Panels: Frames (SIA CSV import / local FITS / BD+17 4708 example),
+  Targets, Filters and parameters (spxphot defaults; Advanced), Run (Measure/Cancel/progress),
+  Results (grid + run report), Downloads, method note with the agreement table, differences, Sersic
+  caveat and the credit/non-affiliation sentence.
+- Observation Search: MAXREC 100 → 2000; collections spherex_dr1/qr3/qr2 + dr1_deep/qr3_deep;
+  rows carry `collection` and `deep` from obs_collection; hand-off link to the new tool (only when
+  rows exist).
+- tests/fits-range.test.mjs, epsf.test.mjs, forced-phot.test.mjs (+ observation tests extended):
+  spxphot's astropy/photutils vectors, Rust unit tests ported, the Review Focus edge cases (frame
+  edge, missing EPSF, failing source, abort, degenerate fit), CSV contracts, and the PARITY test.
+- tests/data/spxphot/: spxphot's vectors, IRSA validation CSVs, a fresh oracle bd17_spxphot.csv
+  (352 rows, regenerated with the freshly built spxphot; 0 rows differ from the older copy), a real
+  fixture cutout bd17-cutout.fits (DR1 detector 1, 0.06°, all six extensions, 3.97 MB) with its
+  SIA row sidecar, PROVENANCE.md (commands, hashes, dates).
+- assets/tools/spherex-bd17-frames.js — the example frame list (239 DR1 + 113 QR3 rows, 9 SIA
+  columns, 87 kB), produced by scripts/make-bd17-frames.mjs.
+- README.md paragraph, TODO.md follow-ups, az.js entries for every visible string of the new page.
+
+Measured results (recorded in the SDD ledger and task reports):
+- Fixture cutout vs spxphot's own output: every one of the 19 columns equal to ≤ 4.8e-11 relative
+  (flux), fit_ql 5e-15, flags identical.
+- Live from S3 (ASTRONOT_LIVE=1): first 6 frames equal to spxphot exactly; full 352 frames
+  (ASTRONOT_LIVE_FULL=1): median flux ratio vs IRSA's own output 0.99987, 6 ePSF downloads, ~103 s.
+- The page itself in headless Chrome: "352 spectral points, 0 frame failures, 6 ePSF calibration
+  downloads, 107.0 s"; its IRSA-format CSV matched the oracle 352/352 rows at 6.4e-12.
+- node --test: 370 tests, 356 pass, 0 fail, 14 skipped (12 Astropy-gated + 2 LIVE-gated).
+
+Process artefacts (git-ignored, under the worktree): .superpowers/sdd/2026-11-14-forced-
+spectrophotometry/progress.md is the execution ledger (every ruling, every deferred minor finding,
+every task's commits), task-N-brief.md / task-N-report.md, review-*.diff packages. If the worktree
+is gone, the git history and this file are the record.
+
+
+7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
+---------------------------------------------------
+- main: HEAD 27a2751 — the feature branch was fast-forward-merged on 14 Nov 2026 (17 commits
+  9a0d18a..27a2751 on top of 56864a3); the worktree and the branch were removed afterwards. Local
+  main is 20 commits ahead of origin/main (e8b81f3) and has NOT been pushed. FORAgent.txt is
+  untracked. node --test on the merged tree: 370 tests, 356 pass, 0 fail, 14 skipped.
+- The final whole-branch review (14 Nov 2026) returned "ready with fixes": 5 Important findings
+  and 3 small ones. The owner chose to merge first and fix later; the findings, each with the fix it
+  needs, are recorded in TODO.md under the Forced Spectrophotometry follow-ups (archive-unreachable
+  behaviour and Cancel/timeouts; local file + S3 twin measured twice; no spxphot oracle for the
+  Sérsic/joint-fit paths; unbounded frames table; hollow-marker rule; four az keys; filter counts).
+  A fix wave had been started and was stopped by the owner; its partial changes were discarded, so
+  the tree holds only reviewed, committed work.
+- Next steps: fix the TODO items (the fix recipes there are specific), then publish (README
+  "Status: not published" lists the open choices: host, URL path, visibility).
+- The SDD execution ledger was copied to the session scratchpad before the worktree was removed;
+  its substance (rulings, deferred minors) is in this file and in TODO.md.
+- Open items the owner should decide (also in TODO.md):
+  * Hollow-marker rule in the plot: in practice hollow = CONTAINS_BAD_PIXEL only, which is set on
+    246/352 BD+17 4708 points (all of detectors 1–2), so the cue says little for bright stars.
+    Options: keep and reword the legend; or hollow = FIT_ERROR/near-saturation bits only.
+  * The Spectrum Lab CSV's obs_id column holds lvf_id (EXPIDN), not the IRSA obs_id.
+  * tr/ru/es/zh strings for the new tool (and re-translation of those catalogs generally).
+  * Observation Search could build IRSA-format cutouts locally from S3 (spxphot `search
+    --download cutout`); the IRSA cutout service is unreliable.
+  * Sersic (galaxy) mode is shipped "indicative only", as in spxphot (fluxes ~4 % high vs IRSA).
+  * Deferred minor review findings are listed in the ledger (progress.md, lines "minor (deferred)").
+- Rulings Claude made on the owner's behalf during execution (all in the ledger): drop s_region
+  from the example frame list (size); keep tests/data/spxphot/.gitattributes; fallback collection
+  "spherex_" + release when obs_collection is absent; memoise only the IMAGE header offset (FLAGS
+  heap varies per frame); walkHdus ends only on a real EOF; a missing EPSF extension is a "skipped"
+  frame, not a failure; tool pages do not load tools/workspace.js (plan text error); tool name in
+  Azerbaijani "Məcburi Spektrofotometriya".
+
+How to run things:
+  node serve.mjs                       # http://127.0.0.1:4173 (PORT env or arg — see serve.mjs)
+  node --test                          # all tests (~15 s)
+  ASTRONOT_LIVE=1 node --test tests/forced-phot.test.mjs        # 6 frames from S3
+  ASTRONOT_LIVE_FULL=1 node --test tests/forced-phot.test.mjs   # 352 frames (~2 min)
+  node scripts/build-demo.mjs [--base /AstroNot/]               # dist/
+  node scripts/make-bd17-frames.mjs    # refresh the example frame list from IRSA SIA
+  cd C:\Users\loq\Downloads\spxphot\spxphot && cargo build --release   # the Rust reference
+Headless checks used in this project: "C:/Program Files/Google/Chrome/Application/chrome.exe"
+--headless=new --disable-gpu --user-data-dir=<tmp> --virtual-time-budget=8000 --dump-dom|--screenshot
+<url>, or CDP via --remote-debugging-port for interactive runs.
+
+
+8. CONVENTIONS AND GLOSSARY FOR FUTURE WORK
+-------------------------------------------
+- Never widen a tolerance to make a parity test pass; a divergence from spxphot is a bug in the port.
+- New visible English strings need hand-written az.js entries (alphabetical; templates for strings
+  with numbers). Azerbaijani glossary used throughout: threshold → hədd; magnitude → ulduz ölçüsü;
+  flux / flux density → axın / axın sıxlığı; light curve → işıq əyrisi; aperture → apertur;
+  background → fon; noise → küy; reference → istinad; epoch → epoxa; frame → kadr; cutout → kəsik;
+  footprint → əhatə izi; coverage → əhatə; candidate → namizəd; detection → aşkarlama; catalog →
+  kataloq; cross-match → çarpaz uyğunlaşdırma; blink → yanıb-sönmə; wavelength → dalğa uzunluğu;
+  variance → dispersiya; residual → qalıq; reprojection → yenidən proyeksiya; mosaic → mozaika;
+  grid → şəbəkə; deep fields → dərin sahələr; release → buraxılış; forced photometry → məcburi
+  fotometriya; download → endirin; measure → ölçün; cancel → ləğv edin. Tool names: Səma
+  Kəşfiyyatçısı, Zaman Maşını, Spektr Laboratoriyası, Hərəkət Aşkarlayıcısı, Müşahidə Axtarışı,
+  FITS Görüntüləyicisi, Spektrofotometriya, Məcburi Spektrofotometriya, Mənbə Aşkarlama, İşıq Əyrisi
+  Təhlili, Kataloq Çarpaz Uyğunlaşdırma, Görüntü Fərqi, Mozaika Qurucusu. Technical tokens (FITS,
+  HDU, EPSF, WCS, IRSA, SPHEREx, DR1/QR3, CSV, MJD, RA, Dec, ICRS, µJy, MJy/sr, column names) stay
+  untranslated.
+- Commit style: imperative subject, body explaining what and why, trailer
+  `Co-Authored-By: Claude <model> <noreply@anthropic.com>` when Claude wrote it.
+- Data credit text used on pages: "Data: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx
+  DR1/QR3." The new tool adds: "This is an independent reimplementation of the IRSA
+  Spectrophotometry Tool's method and is not affiliated with IPAC or the SPHEREx team."
+- Private information: the owner's e-mail and personal details must not be sent to external
+  services.
+
+End of file.
