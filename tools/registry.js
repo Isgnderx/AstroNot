@@ -130,6 +130,51 @@ const scientificTools = [
   },
 ];
 
+const nonResearcherTools = [
+  {
+    id: "constellation-finder",
+    name: "Constellation Finder",
+    category: "observation",
+    description: "Find familiar constellations and learn how to spot them in the night sky.",
+    diagram: "sources",
+  },
+  {
+    id: "moon-phase-calendar",
+    name: "Moon Phase Calendar",
+    category: "observation",
+    description: "Follow the Moon through its phases and see when the next full Moon falls.",
+    diagram: "epochs",
+  },
+  {
+    id: "planet-size-comparison",
+    name: "Planet Size Comparison",
+    category: "analysis",
+    description: "Put planets side by side to see how their sizes compare with Earth.",
+    diagram: "cross-match",
+  },
+  {
+    id: "nebula-color-mixer",
+    name: "Nebula Color Mixer",
+    category: "processing",
+    description: "Blend telescope images from different wavelengths to make a color composite.",
+    diagram: "bands",
+  },
+  {
+    id: "meteor-shower-planner",
+    name: "Meteor Shower Planner",
+    category: "observation",
+    description: "See when meteor showers peak and find out where to look.",
+    diagram: "motion",
+  },
+  {
+    id: "galaxy-shape-quiz",
+    name: "Galaxy Shape Quiz",
+    category: "analysis",
+    description: "Practice telling spiral, elliptical, and irregular galaxies apart.",
+    diagram: "mosaic",
+  },
+];
+
 function workspaceHref(tool) {
   return tool.route ? sitePage("/tools/" + tool.route) : siteAsset("workspace.html?tool=" + tool.id);
 }

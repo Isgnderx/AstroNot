@@ -46,6 +46,7 @@ function createToolCard(tool, headingTag) {
   action.append(footer.querySelector("svg"));
   if (ready) {
     action.href = workspaceHref(tool);
+    if (tool.route) action.dataset.route = "/tools/" + tool.route;
     action.setAttribute("aria-label", "Open " + tool.name + " workspace");
   } else {
     action.type = "button";
@@ -64,7 +65,7 @@ function createToolCard(tool, headingTag) {
   return item;
 }
 
-function setupToolDirectory(directory) {
+function setupToolDirectory(directory, tools, headingTag) {
   const track = directory.querySelector("[data-tool-track]");
   const filters = directory.querySelector("[data-tool-filters]");
   const previous = directory.querySelector("[data-tool-previous]");
@@ -72,7 +73,7 @@ function setupToolDirectory(directory) {
   const range = directory.querySelector("[data-tool-range]");
   const availability = directory.querySelector("[data-tool-availability]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const cards = scientificTools.map((tool) => createToolCard(tool, "h2"));
+  const cards = tools.map((tool) => createToolCard(tool, headingTag));
 
   track.replaceChildren(...cards);
   let shown = cards;
@@ -91,13 +92,15 @@ function setupToolDirectory(directory) {
       const first = indexes[0];
       const last = indexes.at(-1);
       range.textContent = (first === last ? first : first + "–" + last) + " of " + shown.length;
+    } else if (shown.length === 0) {
+      range.textContent = "";
     }
   }
 
   const groups = [["all", "All tools"], ...Object.entries(toolCategories)];
   groups.forEach(([key, label]) => {
     const button = document.createElement("button");
-    const count = scientificTools.filter((tool) => key === "all" || tool.category === key).length;
+    const count = tools.filter((tool) => key === "all" || tool.category === key).length;
     const badge = document.createElement("span");
     button.type = "button";
     button.className = "tools__filter";
@@ -109,7 +112,7 @@ function setupToolDirectory(directory) {
     button.addEventListener("click", () => {
       for (const filter of filters.children) filter.setAttribute("aria-pressed", String(filter === button));
       shown = cards.filter((card, index) => {
-        card.hidden = key !== "all" && scientificTools[index].category !== key;
+        card.hidden = key !== "all" && tools[index].category !== key;
         return !card.hidden;
       });
       announceGroup();
@@ -120,10 +123,14 @@ function setupToolDirectory(directory) {
 
   function announceGroup() {
     const ready = shown.filter((card) => card.querySelector("[data-ready]")).length;
-    availability.textContent = ready + " available · " + (shown.length - ready) + " coming soon";
+    const comingSoon = shown.length - ready;
+    const readyText = ready === 0 ? "No available tools for now" : ready + " available";
+    const comingSoonText = comingSoon === 0 ? "no new tools for now" : comingSoon + " coming soon";
+    availability.textContent = readyText + " · " + comingSoonText;
   }
 
   function scrollCards(direction, page = false) {
+    if (shown.length === 0) return;
     const gap = parseFloat(getComputedStyle(track).columnGap);
     const stride = shown[0].getBoundingClientRect().width + gap;
     const count = page ? Math.max(1, Math.floor((track.clientWidth + gap + 1) / stride)) : 1;
@@ -164,14 +171,14 @@ function setupToolDirectory(directory) {
   new ResizeObserver(updateScrollControls).observe(track);
 }
 
-const toolDirectory = document.querySelector("[data-tools-directory]");
-if (toolDirectory) setupToolDirectory(toolDirectory);
+const scientificDirectory = document.querySelector('[data-tools-directory="scientific"]');
+if (scientificDirectory) setupToolDirectory(scientificDirectory, scientificTools, "h2");
 
-const toolPreview = document.querySelector("[data-tool-preview]");
-if (toolPreview) {
-  const featured = ["sky-survey-viewer", "observation-search", "fits-viewer", "multi-epoch-viewer"]
-    .map((id) => scientificTools.find((tool) => tool.id === id))
-    .filter(Boolean);
-  toolPreview.replaceChildren(...featured.map((tool) => createToolCard(tool, "h3")));
-  toolPreview.hidden = featured.length === 0;
+const nonResearcherDirectory = document.querySelector('[data-tools-directory="non-researcher"]');
+if (nonResearcherDirectory) setupToolDirectory(nonResearcherDirectory, nonResearcherTools, "h3");
+
+const homeTools = document.querySelector("[data-home-tools]");
+if (homeTools) {
+  homeTools.replaceChildren(...scientificTools.map((tool) => createToolCard(tool, "h3")));
+  homeTools.hidden = scientificTools.length === 0;
 }

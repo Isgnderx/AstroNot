@@ -4,11 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0d10">
-    <meta name="description" content="Browse AstroNot workspaces for observation, analysis, and data processing.">
-    <title>Scientific Tools — AstroNot</title>
+    <meta name="description" content="Browse AstroNot tools for astronomy research and casual exploration.">
+    <title>Tools — AstroNot</title>
     <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../styles.css">
     <script src="../routes.js" defer></script>
+    <script src="../assets/i18n/site-language.js" defer></script>
     <script src="../site.js" defer></script>
     <link rel="stylesheet" href="../tools/catalog.css">
     <script src="../tools/registry.js" defer></script>
@@ -54,22 +55,7 @@
             </a>
           </div>
 
-          <div data-tools-directory hidden>
-            <div class="tools__quick-links">
-              <span>Available now</span>
-              <a href="../tools/observation-search/index.html" data-route="/tools/observation-search">Observation Search</a>
-              <a href="../tools/fits-viewer/index.html" data-route="/tools/fits-viewer">FITS Viewer</a>
-              <a href="../tools/sky-explorer/index.html" data-route="/tools/sky-explorer">Sky Explorer</a>
-              <a href="../tools/time-machine/index.html" data-route="/tools/time-machine">Time Machine</a>
-              <a href="../tools/image-differencing/index.html" data-route="/tools/image-differencing">Image Differencing</a>
-              <a href="../tools/spectrum/index.html" data-route="/tools/spectrum">Spectrum Lab</a>
-              <a href="../tools/motion/index.html" data-route="/tools/motion">Motion Detector</a>
-              <a href="../tools/spectrophotometry/index.html" data-route="/tools/spectrophotometry">Spectrophotometry</a>
-              <a href="../tools/source-detection/index.html" data-route="/tools/source-detection">Source Detection</a>
-              <a href="../tools/light-curve-analysis/index.html" data-route="/tools/light-curve-analysis">Light Curve Analysis</a>
-              <a href="../tools/catalog-cross-match/index.html" data-route="/tools/catalog-cross-match">Catalog Cross-Match</a>
-              <a href="../tools/mosaic-builder/index.html" data-route="/tools/mosaic-builder">Mosaic Builder</a>
-            </div>
+          <div data-tools-directory="scientific" hidden>
             <div class="tools__toolbar">
               <div class="tools__filters" role="group" aria-label="Filter tools by category" data-tool-filters></div>
               <div class="tools__controls" role="group" aria-label="Scroll through tools">
@@ -89,6 +75,34 @@
             </div>
           </div>
           <noscript><p class="tools__intro">Enable JavaScript to browse the tool directory and open a workspace.</p></noscript>
+        </div>
+      </section>
+
+      <section class="tools section-space" id="non-researcher-tools" aria-labelledby="non-researcher-tools-title">
+        <div class="frame">
+          <div class="tools__heading">
+            <h2 id="non-researcher-tools-title">Non-researcher Tools</h2>
+          </div>
+
+          <div data-tools-directory="non-researcher" hidden>
+            <div class="tools__toolbar">
+              <div class="tools__filters" role="group" aria-label="Filter non-researcher tools by category" data-tool-filters></div>
+              <div class="tools__controls" role="group" aria-label="Scroll through non-researcher tools">
+                <span class="tools__range" data-tool-range aria-hidden="true"></span>
+                <button type="button" class="tools__step" data-tool-previous aria-label="Previous non-researcher tools" aria-controls="non-researcher-tool-cards" aria-disabled="true">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+                </button>
+                <button type="button" class="tools__step" data-tool-next aria-label="Next non-researcher tools" aria-controls="non-researcher-tool-cards" aria-disabled="true">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <ul class="tools__track" id="non-researcher-tool-cards" tabindex="0" aria-label="Non-researcher tools. Use left and right arrow keys to browse." data-tool-track></ul>
+            <div class="tools__notes">
+              <p class="tools__availability" role="status" data-tool-availability></p>
+            </div>
+          </div>
+          <noscript><p class="tools__intro">Enable JavaScript to browse the tool directory.</p></noscript>
         </div>
       </section>
 

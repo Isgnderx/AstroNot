@@ -4,7 +4,6 @@
   --workspace-muted: #b6bdc8;
   --workspace-gap: 1rem;
   min-block-size: 100svh;
-  background: #0b0d10;
 }
 
 .workspace-frame {

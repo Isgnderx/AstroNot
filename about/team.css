@@ -18,13 +18,31 @@
 }
 
 .team-member__photo {
+  position: relative;
   flex: none;
   inline-size: 5.5rem;
   block-size: 5.5rem;
-  border-radius: 0.5rem;
+  overflow: hidden;
+  border-radius: 50%;
   background: var(--raised);
+}
+
+.team-member__image {
+  inline-size: 100%;
+  block-size: 100%;
   object-fit: cover;
   object-position: center 20%;
+}
+
+.team-member__image--cropped {
+  position: absolute;
+  max-inline-size: none;
+  block-size: auto;
+}
+
+.team-member__photo--placeholder {
+  border: 1px dashed #52617b;
+  background: #0b101b;
 }
 
 .team-member__copy { min-inline-size: 0; }
@@ -85,6 +103,20 @@
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   background: var(--raised);
+}
+
+@media (min-width: 69rem) {
+  .team--group .team-list:has(> .team-member:nth-child(5):last-child) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .team-list:has(> .team-member:nth-child(5):last-child) > .team-member {
+    grid-column: span 2;
+  }
+
+  .team-list:has(> .team-member:nth-child(5):last-child) > .team-member:nth-child(4) {
+    grid-column: 2 / span 2;
+  }
 }
 
 @media (max-width: 680px) {

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="tools/catalog.css">
     <script src="routes.js" defer></script>
+    <script src="assets/i18n/site-language.js" defer></script>
     <script src="tools/registry.js" defer></script>
     <script src="tools/catalog.js" defer></script>
     <script src="site.js" defer></script>
@@ -35,7 +36,6 @@
         <a href="learn/index.html" data-route="/learn">Learn</a>
         <a href="about/index.html" data-route="/about">About</a>
       </nav>
-      <a class="button button--light header-cta" href="explore/index.html" data-route="/explore">Get Started</a>
     </header>
 
     <main>
@@ -75,14 +75,14 @@
           <div class="tools__heading" data-reveal>
             <div>
               <h2 id="discover-title">Scientific Tools</h2>
-              <p class="tools__intro">Search the SPHEREx archive, inspect FITS images, and preview upcoming workspaces.</p>
+              <p class="tools__intro">Search the SPHEREx archive, explore telescope images, and analyze observations.</p>
             </div>
           </div>
-          <ul class="tools__track tools__track--featured" tabindex="0" aria-label="Featured scientific tools" data-tool-preview data-reveal data-delay="1" hidden></ul>
-          <div class="tools__notes tools__notes--featured">
+          <ul class="tools__home-list" aria-labelledby="discover-title" data-home-tools hidden></ul>
+          <div class="tools__notes tools__notes--home">
             <p class="tools__credits">Preview imagery from <a href="https://science.nasa.gov/photojournal/spherexs-dust-cloud-reveal/">NASA/JPL-Caltech</a> and <a href="https://irsa.ipac.caltech.edu/data/SPHEREx/docs/overview_qr.html">NASA/IPAC IRSA</a>.</p>
-            <a class="button button--light tools__show-all" href="tools/index.html" data-route="/tools" aria-label="Show all scientific tools">
-              Show All
+            <a class="button button--light tools__directory-link" href="tools/index.html" data-route="/tools">
+              Open Tools Directory
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>
             </a>
           </div>

@@ -331,10 +331,12 @@ function setupFitsViewer() {
       const term = document.createElement("dt");
       const detail = document.createElement("dd");
       term.textContent = label;
+      detail.setAttribute("translate", "no");
       detail.textContent = value;
       row.append(term, detail);
       return row;
     }));
+    header.setAttribute("translate", "no");
     header.textContent = hdu.cards.join("\n");
   }
 
@@ -395,6 +397,7 @@ function setupFitsViewer() {
 
       currentFile = file;
       hdus = parsed;
+      filename.setAttribute("translate", "no");
       filename.textContent = file.name;
       select.replaceChildren(...hdus.map((hdu, index) => new Option(index + " · " + hdu.name, index)));
       const image = hdus.findIndex((hdu) => hdu.renderable && hdu.fields.EXTNAME === "IMAGE");

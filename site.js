@@ -23,7 +23,7 @@ function setupMenu() {
   });
 
   header.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeMenu(true);
+    if (event.key === "Escape" && !event.defaultPrevented) closeMenu(true);
   });
 
   header.addEventListener("focusout", (event) => {

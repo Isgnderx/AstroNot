@@ -526,11 +526,14 @@
     ctx.fillStyle = ink;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText("Wavelength (" + unitW + ")" + (logX ? ", log scale" : ""), plot.x + plot.w / 2, height - 10);
+    const translate = window.AstroNotLanguage?.translate ?? ((text) => text);
+    const wavelengthLabel = "Wavelength (" + unitW + ")" + (logX ? ", log scale" : "");
+    ctx.fillText(translate(wavelengthLabel), plot.x + plot.w / 2, height - 10);
     ctx.save();
     ctx.translate(16, plot.y + plot.h / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Flux density (" + unitF + ")" + (logY ? ", log scale" : ""), 0, 0);
+    const fluxLabel = "Flux density (" + unitF + ")" + (logY ? ", log scale" : "");
+    ctx.fillText(translate(fluxLabel), 0, 0);
     ctx.restore();
 
     ctx.save();
@@ -861,6 +864,7 @@
   for (const button of xScaleButtons) button.addEventListener("click", () => setScale("x", button.dataset.slXscale));
   for (const button of yScaleButtons) button.addEventListener("click", () => setScale("y", button.dataset.slYscale));
   el.canvas.addEventListener("click", onCanvasClick);
+  window.addEventListener("astronot-languagechange", () => { if (state.spectrum) drawPlot(); });
   el.chart.addEventListener("keydown", onChartKey);
   el.pointClear.addEventListener("click", () => select(null));
   el.more.addEventListener("click", () => { state.limit += pageSize; renderTable(); });
