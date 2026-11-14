@@ -10,9 +10,9 @@
 (function (root) {
   "use strict";
 
-  // rangeLib and epsfLib are used by the fit and the per-frame pipeline; they are required here so the load order is fixed.
-  const rangeLib = typeof module === "object" && module.exports ? require("./fits-range.js") : root.AstroNotFitsRange; // eslint-disable-line no-unused-vars
-  const epsfLib = typeof module === "object" && module.exports ? require("./epsf.js") : root.AstroNotEpsf; // eslint-disable-line no-unused-vars
+  // rangeLib and epsfLib are used by the per-frame pipeline; they are required here so the load order is fixed.
+  const rangeLib = typeof module === "object" && module.exports ? require("./fits-range.js") : root.AstroNotFitsRange;
+  const epsfLib = typeof module === "object" && module.exports ? require("./epsf.js") : root.AstroNotEpsf;
   const wcsLib = typeof module === "object" && module.exports ? require("./wcs.js") : root.AstroNotWcs; // eslint-disable-line no-unused-vars
 
   // ---- Celestial and spectral WCS (port of wcs.rs) ----------------------------------------------------------------------------
@@ -548,7 +548,591 @@
     return inv;
   }
 
-  const api = { sipTerms, createTanSip, createWaveTable, bits, flagNames, defaultParams, withFitHalf, fitFrame };
+  // ---- Frames, calibration cache and the run (port of archive.rs / main.rs) ---------------------------------------------------
+  // Frames come from an Observation Search result list (tools/observation-csv.js rows) instead of spxphot's TAP query; every target
+  // is a member of every frame, and the on-image test per target does the rest.
+
+  const S3_BASE = "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/";
+  const IRSA_PREFIX = "https://irsa.ipac.caltech.edu/ibe/data/spherex/";
+  const METHOD = "forced-epsf";
+
+  // Rust str::trim_start_matches / trim_end_matches (they remove every repetition of the pattern).
+  function trimStartMatches(s, pat) {
+    while (pat && s.startsWith(pat)) s = s.slice(pat.length);
+    return s;
+  }
+  function trimEndMatches(s, pat) {
+    while (pat && s.endsWith(pat)) s = s.slice(0, s.length - pat.length);
+    return s;
+  }
+
+  // Frame (archive.rs) from an Observation Search row. `uri` is the path after IRSA_PREFIX ("dr1/level2/..."); `collection` is the
+  // SIA obs_collection ("spherex_dr1", "spherex_qr3_deep"), falling back to "spherex_" + release for rows without it; `deep` and
+  // `dataCollection` are Frame::deep() and Frame::data_collection(); `mjd` is t_min (NaN when absent, as the Rust parse fallback).
+  // Returns null when the row is not a SPHEREx level-2 FITS file on IRSA.
+  function frameFromImportRow(row) {
+    if (!row || !row.product) return null;
+    const href = typeof row.product === "string" ? row.product : String(row.product.href);
+    if (!href.startsWith(IRSA_PREFIX) || !href.endsWith(".fits")) return null;
+    const uri = href.slice(IRSA_PREFIX.length);
+    const collection = row.collection ? String(row.collection) : row.release ? "spherex_" + row.release : "";
+    if (collection === "") return null;
+    return {
+      uri,
+      url: S3_BASE + uri,
+      obsId: row.obsId,
+      collection,
+      dataCollection: trimEndMatches(trimStartMatches(collection, "spherex_"), "_deep"),
+      deep: collection.endsWith("_deep"),
+      detector: Number.isInteger(row.detector) ? row.detector : null,
+      mjd: typeof row.start === "number" && Number.isFinite(row.start) ? row.start : NaN,
+    };
+  }
+
+  // QueryOpts (archive.rs) applied to a frame list instead of the TAP query: deep frames only with `deep` (the query's
+  // `collection NOT LIKE '%deep%'`), `detectors` (empty = all), and MJD bounds on the frame start (`time_bounds_lower`; a frame
+  // without a start time fails either bound, as SQL NULL does). Each excluded frame is counted under the first filter it fails.
+  function selectFrames(frames, { deep = false, detectors = [], mjdMin = null, mjdMax = null } = {}) {
+    const excluded = { deep: 0, detector: 0, mjd: 0 };
+    const kept = [];
+    for (const f of frames) {
+      if (!deep && String(f.collection).includes("deep")) excluded.deep++;
+      else if (detectors.length > 0 && !detectors.includes(f.detector)) excluded.detector++;
+      else if ((mjdMin !== null && !(f.mjd >= mjdMin)) || (mjdMax !== null && !(f.mjd <= mjdMax))) excluded.mjd++;
+      else kept.push(f);
+    }
+    return { frames: kept, excluded };
+  }
+
+  // Rust str::parse::<f64>: decimal and exponent forms, inf/infinity/nan; nothing else (Number() would also take "", "0x10").
+  function parseRustF64(s) {
+    if (/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(s)) return Number(s);
+    if (/^[+-]?(inf|infinity)$/i.test(s)) return s.startsWith("-") ? -Infinity : Infinity;
+    if (/^[+-]?nan$/i.test(s)) return NaN;
+    return null;
+  }
+
+  // Validate a Sersic shape. Returns { ok: true, shape: null } for Re < 1" (point source, as IRSA does).
+  function validateShape(n, re, q, pa) {
+    if (!(n >= 0.5 && n <= 6.0)) return { ok: false, reason: "Sersic index must be within 0.5..6" };
+    if (!(q > 0.0 && q <= 1.0)) return { ok: false, reason: "axis ratio must be in (0, 1]" };
+    if (!(pa >= -360.0 && pa <= 360.0)) return { ok: false, reason: "position angle must be within -360..360" };
+    if (re >= 20.0) return { ok: false, reason: "effective radius must be < 20 arcsec" };
+    return { ok: true, shape: re >= 1.0 ? { n, reArcsec: re, axisRatio: q, paDeg: pa } : null };
+  }
+
+  // Records of a CSV text as the Rust csv crate reads them: RFC 4180 quoting, CRLF or LF, a leading BOM stripped, blank lines skipped.
+  function csvRecords(text) {
+    const records = [];
+    let record = [];
+    let field = "";
+    let quoted = false;
+    let touched = false; // the current record has content (a blank line has none)
+    const s = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    const endRecord = () => {
+      if (touched) {
+        record.push(field);
+        records.push(record);
+      }
+      record = [];
+      field = "";
+      touched = false;
+    };
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (quoted) {
+        if (c === '"' && s[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else if (c === '"') {
+          quoted = false;
+        } else {
+          field += c;
+        }
+      } else if (c === '"') {
+        quoted = true;
+        touched = true;
+      } else if (c === ",") {
+        record.push(field);
+        field = "";
+        touched = true;
+      } else if (c === "\n" || c === "\r") {
+        if (c === "\r" && s[i + 1] === "\n") i++;
+        endRecord();
+      } else {
+        field += c;
+        touched = true;
+      }
+    }
+    endRecord();
+    return records;
+  }
+
+  // Port of read_targets for a targets file: columns ra, dec[, name][, sersic_n, re_arcsec, axis_ratio, pa_deg] (case-insensitive),
+  // 1..20 rows. Returns { ok: true, targets: [{ name, ra, dec, shape }] } or { ok: false, reason } with the Rust messages.
+  function parseTargetsCsv(text) {
+    const records = csvRecords(String(text));
+    const hdr = (records[0] || []).map((s) => s.trim().toLowerCase());
+    const col = (n) => {
+      const i = hdr.indexOf(n);
+      return i < 0 ? null : i;
+    };
+    const ciRa = col("ra");
+    if (ciRa === null) return { ok: false, reason: "targets need an 'ra' column" };
+    const ciDec = col("dec");
+    if (ciDec === null) return { ok: false, reason: "targets need a 'dec' column" };
+    const v = [];
+    for (let i = 1; i < records.length; i++) {
+      const r = records[i];
+      if (r.length !== records[i - 1].length) {
+        return { ok: false, reason: "found record with " + r.length + " fields, but the previous record has " + records[i - 1].length + " fields" };
+      }
+      const f = (c) => (c === null || r[c] === undefined ? null : parseRustF64(r[c].trim()));
+      const sersic = [f(col("sersic_n")), f(col("re_arcsec")), f(col("axis_ratio")), f(col("pa_deg"))];
+      let shape = null;
+      if (sersic.every((x) => x !== null)) {
+        const checked = validateShape(...sersic);
+        if (!checked.ok) return checked;
+        shape = checked.shape;
+      }
+      const ra = parseRustF64(r[ciRa].trim());
+      const dec = parseRustF64(r[ciDec].trim());
+      if (ra === null || dec === null) return { ok: false, reason: "invalid float literal" };
+      const ciName = col("name");
+      v.push({ name: ciName !== null ? r[ciName] : "src" + i, ra, dec, shape });
+    }
+    if (v.length === 0 || v.length > 20) return { ok: false, reason: "targets file must have 1..=20 rows (got " + v.length + ")" };
+    return { ok: true, targets: v };
+  }
+
+  // ---- calibration cache ----
+  // Rust tokio OnceCell: get_or_try_init runs one initialiser at a time; a failed one leaves the cell empty for the next caller.
+  function onceCell() {
+    return { initialized: false, value: undefined, pending: null };
+  }
+  async function getOrTryInit(cell, init) {
+    for (;;) {
+      if (cell.initialized) return cell.value;
+      if (cell.pending) {
+        try {
+          await cell.pending;
+        } catch (e) {
+          // that initialiser failed; try our own
+        }
+        continue;
+      }
+      cell.pending = init().then(
+        (value) => {
+          cell.value = value;
+          cell.initialized = true;
+          cell.pending = null;
+          return value;
+        },
+        (e) => {
+          cell.pending = null;
+          throw e;
+        }
+      );
+      return cell.pending;
+    }
+  }
+
+  // `layouts` (not in the Rust) remembers, per data collection, where the IMAGE header of a remote frame starts (see imageHdu).
+  function createCalibCache() {
+    const epsfCells = new Map();
+    const waveCells = new Map();
+    const cell = (m, k) => {
+      if (!m.has(k)) m.set(k, onceCell());
+      return m.get(k);
+    };
+
+    const cache = { epsfDownloads: 0, layouts: new Map(), get };
+
+    // Get the ePSF set and wavelength table for this frame. Keys are the calibration UUIDs recorded in the IMAGE header HISTORY, so
+    // each distinct calibration is downloaded once per run, not once per frame.
+    async function get(source, image, afterVariance) {
+      const det = image.header.get("DETECTOR") ?? "?";
+      const ek = det + ":" + (image.header.calibId("epsf") ?? "");
+      const wk = det + ":" + (image.header.calibId("spectral_wcs") ?? "");
+      const ec = cell(epsfCells, ek);
+      const wc = cell(waveCells, wk);
+      if (ec.initialized && wc.initialized) return { epsf: ec.value, wave: wc.value };
+      // Walk the remaining HDUs (ZODI, EPSF, WCS-WAVE) of this file. The Rust stops at any error; here only a real end of file stops
+      // the walk quietly, so a network failure is reported as itself.
+      const tail = new Map();
+      let off = afterVariance;
+      for (let i = 0; i < 4; i++) {
+        let h;
+        try {
+          h = await rangeLib.hduAt(source, off);
+        } catch (e) {
+          if (e && e.code === "EOF") break;
+          throw e;
+        }
+        off = h.end;
+        tail.set(h.name, h);
+        if (h.name === "WCS-WAVE") break;
+      }
+      const epsf = await getOrTryInit(ec, async () => {
+        const h = tail.get("EPSF");
+        if (!h) {
+          const e = new Error("frame has no EPSF extension (pre-QR3 data?)");
+          e.code = "NO_EPSF";
+          throw e;
+        }
+        const bytes = await rangeLib.readTableBytes(source, h);
+        cache.epsfDownloads++;
+        return epsfLib.parseEpsf(h.header, rangeLib.createBinTable(h.header, bytes));
+      });
+      const wave = await getOrTryInit(wc, async () => {
+        const h = tail.get("WCS-WAVE");
+        if (!h) throw new Error("frame has no WCS-WAVE extension");
+        const bytes = await rangeLib.readTableBytes(source, h);
+        const t = rangeLib.createBinTable(h.header, bytes);
+        return createWaveTable(t.get(0, "X"), t.get(0, "Y"), t.get(0, "VALUES")).withSipFrom(image.header.cards);
+      });
+      return { epsf, wave };
+    }
+
+    return cache;
+  }
+
+  // The IMAGE HDU of a frame. spxphot reads the PRIMARY header and then the IMAGE header after it. For remote sources the IMAGE
+  // header offset learned from the first frame of a data collection is tried first, with one bounded read; it is accepted only when
+  // that read holds a complete IMAGE extension header (XTENSION and EXTNAME 'IMAGE') of the remembered NAXIS1/NAXIS2/BITPIX, and
+  // otherwise the PRIMARY-then-IMAGE walk runs. Only the IMAGE offset is remembered: the FLAGS extension is RICE-compressed with a
+  // per-frame heap size, so the offsets of VARIANCE and later HDUs differ between frames, and readRows needs their headers anyway.
+  // Memory sources (local files) never use the memo.
+  async function imageHdu(source, frame, cache) {
+    const key = frame && frame.dataCollection;
+    const useMemo = source.kind !== "memory" && cache && cache.layouts && key;
+    const memo = useMemo ? cache.layouts.get(key) : undefined;
+    if (memo) {
+      let header = null;
+      try {
+        header = rangeLib.parseHeader(await source.read(memo.headerOffset, rangeLib.BLOCK * 16));
+      } catch (e) {
+        if (!e || e.code !== "EOF") throw e;
+      }
+      if (
+        header &&
+        header.get("XTENSION") === "IMAGE" &&
+        header.get("EXTNAME") === "IMAGE" &&
+        header.get("NAXIS1") === memo.naxis1 &&
+        header.get("NAXIS2") === memo.naxis2 &&
+        header.get("BITPIX") === memo.bitpix
+      ) {
+        const dataOffset = memo.headerOffset + header.size;
+        const dataSize = header.dataSize();
+        return { name: "IMAGE", header, dataOffset, dataSize, end: dataOffset + dataSize };
+      }
+    }
+    const primary = await rangeLib.hduAt(source, 0);
+    const image = await rangeLib.hduAt(source, primary.end);
+    if (useMemo && image.name === "IMAGE") {
+      const h = image.header;
+      cache.layouts.set(key, { headerOffset: primary.end, naxis1: h.get("NAXIS1"), naxis2: h.get("NAXIS2"), bitpix: h.get("BITPIX") });
+    }
+    return image;
+  }
+
+  // Fractional systematic error added in quadrature; inferred from IRSA output, where flux_err^2 = flux_err_tractor^2 + (0.03 flux)^2
+  // to <0.1%.
+  const SYS_FRAC = 0.03;
+
+  // Rust `f64 as u8`: truncates and saturates, NaN -> 0.
+  function asU8(x) {
+    if (Number.isNaN(x)) return 0;
+    return Math.min(Math.max(Math.trunc(x), 0), 255);
+  }
+
+  // Measure every target that falls on one frame (port of process_frame; every target is a member). `params` must carry fitHalf
+  // (withFitHalf). Returns spxphot's Row objects: label, ra, dec, lambda, lambda_width, flux, flux_err (statistical error with a 3%
+  // systematic floor in quadrature, IRSA's flux_err), flux_err_tractor (pure statistical error of the linear fit), flags (a Number;
+  // every flag bit is below 2^34, so it is exact), fit_ql, flux_bkg (background under the source, MJy/sr), lvf_id, det_id, deep_flg,
+  // mjd, data_collection, x_image, y_image, n_pix.
+  async function measureFrame({ source, frame, targets, params, cache, strictWave = true }) {
+    const p = params.fitHalf === undefined ? withFitHalf(params) : params;
+    const members = targets.map((_, i) => i);
+
+    const image = await imageHdu(source, frame, cache);
+    const ih = image.header;
+    const w = ih.int("NAXIS1");
+    const h = ih.int("NAXIS2");
+    const wcs = createTanSip(ih.cards);
+
+    // pixel positions of all members on this frame
+    const pos = members.map((i) => wcs.worldToPix(targets[i].ra, targets[i].dec));
+    const on = ([x, y]) => x >= -0.5 && y >= -0.5 && x < w - 0.5 && y < h - 0.5;
+    if (!pos.some(on)) return [];
+    const reach = Math.max(p.bkgHalf, p.fitHalf) + 1;
+    const ys = pos.filter(on).map((q) => roundHalfAway(q[1]));
+    const y0 = Math.max(Math.min(...ys) - reach, 0);
+    const y1 = Math.min(Math.max(...ys) + reach, h - 1);
+    const nrows = y1 - y0 + 1;
+
+    // overlap header discovery with data reads
+    const [imgRows, flagsHdu] = await Promise.all([rangeLib.readRows(source, image, y0, nrows), rangeLib.hduAt(source, image.end)]);
+    const [flagRows, varHdu] = await Promise.all([rangeLib.readRows(source, flagsHdu, y0, nrows), rangeLib.hduAt(source, flagsHdu.end)]);
+    const [varRows, calib] = await Promise.all([rangeLib.readRows(source, varHdu, y0, nrows), cache.get(source, image, varHdu.end)]);
+
+    const px = { image: imgRows, flags: flagRows, variance: varRows, height: h };
+    const det = asU8(ih.num("DETECTOR", frame.detector === null || frame.detector === undefined ? 0 : frame.detector));
+    // cutout pixel -> parent (full-frame) 0-based pixel, via the 'A' WCS
+    const ax = ih.num("CRPIX1A", 1.0);
+    const ay = ih.num("CRPIX2A", 1.0);
+    const wcrpix = [ih.num("CRPIX1W", 1.0), ih.num("CRPIX2W", 1.0)];
+    const lvf = Math.trunc(ih.num("EXPIDN", 0.0));
+    const mjd = ih.num("MJD-AVG", frame.mjd);
+
+    const nSide = 2 * p.fitHalf + 1;
+    const rows = [];
+    pos.forEach(([tx, ty], k) => {
+      if (!on([tx, ty])) return;
+      const t = targets[members[k]];
+      const bx = roundHalfAway(tx) - p.fitHalf;
+      const by = roundHalfAway(ty) - p.fitHalf;
+      const parentX = tx + 1.0 - ax;
+      const parentY = ty + 1.0 - ay;
+      const epsf = calib.epsf.nearest(parentX, parentY);
+      // every member whose PSF touches this fit box is fit jointly
+      const srcs = [[tx, ty]];
+      const idx = [members[k]];
+      pos.forEach((q, j) => {
+        if (j !== k && Math.abs(q[0] - tx) <= p.fitHalf + 4 && Math.abs(q[1] - ty) <= p.fitHalf + 4) {
+          srcs.push(q);
+          idx.push(members[j]);
+        }
+      });
+      const models = srcs.map(([sx, sy], s) => {
+        const shape = targets[idx[s]].shape;
+        if (!shape) {
+          const m = calib.epsf.render(epsf, sx, sy, bx, by, nSide, nSide);
+          let sum = 0;
+          for (let i = 0; i < m.length; i++) sum += m[i];
+          if (sum > 0.0) for (let i = 0; i < m.length; i++) m[i] /= sum;
+          return m;
+        }
+        return epsfLib.createSersic(shape).render(epsf, wcs.localAffineArcsec(sx, sy), sx, sy, bx, by, nSide, nSide);
+      });
+      const fit = fitFrame(px, p, srcs, 0, models, bx, by);
+      const omega = wcs.pixelSolidAngle(tx, ty); // sr
+      const toUjy = omega * 1e12; // (MJy/sr) * sr -> MJy -> uJy
+      const [wave, band] = strictWave ? calib.wave.withoutSip().eval(parentX, parentY, [1.0, 1.0]) : calib.wave.eval(tx, ty, wcrpix);
+      const [ra, dec] = wcs.pixToWorld(tx, ty);
+      const flux = fit.flux[0] * toUjy;
+      const err = fit.fluxErr[0] * toUjy;
+      const sys = SYS_FRAC * flux;
+      rows.push({
+        label: t.name,
+        ra,
+        dec,
+        lambda: wave,
+        lambda_width: band,
+        flux,
+        flux_err: Math.sqrt(err * err + sys * sys),
+        flux_err_tractor: err,
+        flags: Number(fit.flags),
+        fit_ql: fit.fitQl,
+        flux_bkg: fit.bkgPre + fit.bkgFit, // MJy/sr, as in the IRSA output
+        lvf_id: lvf,
+        det_id: det,
+        deep_flg: Boolean(frame.deep),
+        mjd,
+        data_collection: frame.dataCollection,
+        x_image: parentX,
+        y_image: parentY,
+        n_pix: fit.nPix,
+      });
+    });
+    return rows;
+  }
+
+  // Angular separation of two targets in degrees (used by spxphot to size cutout-service requests).
+  function angularSep(a, b) {
+    const r1 = a.ra * D2R;
+    const d1 = a.dec * D2R;
+    const r2 = b.ra * D2R;
+    const d2 = b.dec * D2R;
+    const c = Math.sin(d1) * Math.sin(d2) + Math.cos(d1) * Math.cos(d2) * Math.cos(r1 - r2);
+    return Math.acos(Math.min(Math.max(c, -1.0), 1.0)) / D2R;
+  }
+
+  // Rust f64::total_cmp: -NaN < -inf < ... < -0 < +0 < ... < inf < NaN.
+  const f64Buffer = new Float64Array(1);
+  const i64View = new BigInt64Array(f64Buffer.buffer);
+  function totalKey(x) {
+    f64Buffer[0] = x;
+    const l = i64View[0];
+    return l < 0n ? l ^ 0x7fffffffffffffffn : l;
+  }
+  function totalCmp(a, b) {
+    const ka = totalKey(a);
+    const kb = totalKey(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  }
+
+  // The run (main.rs): measure every frame concurrently with `concurrency` workers. Frames repeating an earlier uri are measured once
+  // (the `members` map). A frame that throws is counted as failed, except a missing EPSF extension, which is skipped with its reason,
+  // as is a frame on which no target falls. With `signal` aborted no new frame is started; frames in flight finish. Rows outside
+  // filters.wvlMin/wvlMax are dropped, and the rest are sorted by label, then wavelength.
+  async function runForcedPhotometry({
+    frames,
+    targets,
+    params = defaultParams,
+    filters = {},
+    concurrency = 6,
+    openSource = (frame) => rangeLib.createHttpSource(frame.url),
+    onProgress = () => {},
+    signal = null,
+  }) {
+    const t0 = Date.now();
+    const p = withFitHalf(params);
+    const strictWave = !p.astropyWave;
+    const cache = createCalibCache();
+
+    // 1. which frames cover which targets: every target is a member of every frame.
+    const list = [];
+    const members = new Map();
+    for (const f of frames) {
+      if (members.has(f.uri)) continue;
+      members.set(
+        f.uri,
+        targets.map((_, i) => i)
+      );
+      list.push(f);
+    }
+
+    // 2. measure every frame concurrently
+    let results = [];
+    const skipped = [];
+    const failed = [];
+    let measured = 0;
+    let done = 0;
+    let next = 0;
+    let cancelled = false;
+    async function worker() {
+      while (next < list.length) {
+        if (signal && signal.aborted) {
+          cancelled = true;
+          return;
+        }
+        const f = list[next++];
+        try {
+          const source = await openSource(f);
+          const rows = await measureFrame({ source, frame: f, targets, params: p, cache, strictWave });
+          if (rows.length === 0) {
+            skipped.push({ uri: f.uri, reason: "target off image" });
+          } else {
+            measured++;
+            for (const r of rows) results.push(r);
+          }
+        } catch (e) {
+          if (e && e.code === "NO_EPSF") skipped.push({ uri: f.uri, reason: e.message });
+          else failed.push({ uri: f.uri, error: e && e.message ? e.message : String(e) });
+        }
+        done++;
+        onProgress({ done, total: list.length, measured, failed: failed.length });
+      }
+    }
+    const workers = [];
+    for (let i = 0; i < Math.min(Math.max(1, concurrency), list.length); i++) workers.push(worker());
+    await Promise.all(workers);
+    if (signal && signal.aborted && done < list.length) cancelled = true;
+
+    const wvlMin = filters.wvlMin ?? null;
+    const wvlMax = filters.wvlMax ?? null;
+    results = results.filter((r) => (wvlMin === null || r.lambda >= wvlMin) && (wvlMax === null || r.lambda <= wvlMax));
+    results.sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : totalCmp(a.lambda, b.lambda)));
+
+    return {
+      rows: results,
+      report: { frames: list.length, measured, skipped, failed, epsfDownloads: cache.epsfDownloads, cancelled, seconds: (Date.now() - t0) / 1000 },
+    };
+  }
+
+  // ---- CSV outputs ----
+  const irsaColumns = ["label", "ra", "dec", "lambda", "lambda_width", "flux", "flux_err", "flux_err_tractor", "flags", "fit_ql", "flux_bkg", "lvf_id", "det_id", "deep_flg", "mjd", "data_collection", "x_image", "y_image", "n_pix"];
+  const spectrumLabColumns = ["source_id", "obs_id", "mjd", "ra", "dec", "wavelength", "lambda_width", "flux", "flux_err", "flags", "method", "lvf_id", "det_id", "x_image", "y_image", "fit_ql", "flux_bkg", "data_collection"];
+
+  function csvField(value) {
+    const s = String(value);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  // Numbers as spxphot's csv writer prints them for the values that occur (shortest round-trip; NaN, inf, -inf).
+  function rustNumber(x) {
+    if (Number.isNaN(x)) return "NaN";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    return String(x);
+  }
+  // Spectrum Lab: non-finite numbers are left empty (the contract reader treats empty as missing).
+  function finiteOrEmpty(x) {
+    return typeof x === "number" && Number.isFinite(x) ? String(x) : "";
+  }
+
+  // spxphot's output CSV (its 19 columns, IRSA's names).
+  function rowsToIrsaCsv(rows) {
+    const lines = [irsaColumns.join(",")];
+    for (const r of rows) lines.push(irsaColumns.map((c) => csvField(typeof r[c] === "number" ? rustNumber(r[c]) : r[c])).join(","));
+    return lines.join("\n") + "\n";
+  }
+
+  // The Spectrum Lab contract columns (tools/photometry.js csvColumns; wavelength um, flux uJy), then this method's extras. obs_id
+  // is the IRSA exposure ID (lvf_id).
+  function rowsToSpectrumLabCsv(rows) {
+    const lines = [spectrumLabColumns.join(",")];
+    for (const r of rows) {
+      const cells = [
+        csvField(r.label),
+        String(r.lvf_id),
+        finiteOrEmpty(r.mjd),
+        finiteOrEmpty(r.ra),
+        finiteOrEmpty(r.dec),
+        finiteOrEmpty(r.lambda),
+        finiteOrEmpty(r.lambda_width),
+        finiteOrEmpty(r.flux),
+        finiteOrEmpty(r.flux_err),
+        String(r.flags),
+        METHOD,
+        String(r.lvf_id),
+        String(r.det_id),
+        finiteOrEmpty(r.x_image),
+        finiteOrEmpty(r.y_image),
+        finiteOrEmpty(r.fit_ql),
+        finiteOrEmpty(r.flux_bkg),
+        csvField(r.data_collection),
+      ];
+      lines.push(cells.join(","));
+    }
+    return lines.join("\n") + "\n";
+  }
+
+  const api = {
+    sipTerms,
+    createTanSip,
+    createWaveTable,
+    bits,
+    flagNames,
+    defaultParams,
+    withFitHalf,
+    fitFrame,
+    S3_BASE,
+    IRSA_PREFIX,
+    METHOD,
+    SYS_FRAC,
+    frameFromImportRow,
+    selectFrames,
+    validateShape,
+    parseTargetsCsv,
+    createCalibCache,
+    measureFrame,
+    angularSep,
+    runForcedPhotometry,
+    irsaColumns,
+    rowsToIrsaCsv,
+    rowsToSpectrumLabCsv,
+  };
 
   root.AstroNotForcedPhot = api;
   if (typeof module === "object" && module.exports) module.exports = api;
