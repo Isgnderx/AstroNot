@@ -18,6 +18,8 @@
     <script src="../../tools/forced-phot.js" defer></script>
     <script src="../../tools/observation-csv.js" defer></script>
     <script src="../../tools/xmatch.js" defer></script>
+    <script src="../../tools/spectrum-csv.js" defer></script>
+    <script src="../../tools/forced-spectrophotometry-plot.js" defer></script>
     <script src="../../tools/forced-spectrophotometry.js" defer></script>
   </head>
   <body class="workspace-page" data-workspace-id="forced-spectrophotometry">
@@ -117,6 +119,7 @@
         </div>
         <details class="fs-advanced">
           <summary>Advanced</summary>
+          <p class="workspace-help">Fit size and background half-size take whole numbers from 1 to 99. That bound is this page's, not spxphot's: spxphot accepts any fit size, fractional ones included, and any background half-size. Concurrent frames is how many frames are read at once (1 to 12, 6 when the field is empty); spxphot reads 48 at once by default.</p>
           <div class="fs-fields">
             <label>Fit size (px) <input type="text" inputmode="numeric" autocomplete="off" value="13" data-fs-param="fitSize"></label>
             <label>Fit shape
@@ -162,12 +165,33 @@
       <section class="workspace-panel fs-results" aria-labelledby="fs-results-title" data-fs-results-section>
         <h2 id="fs-results-title">Results</h2>
         <p class="tm-pair__verdict" data-fs-verdict>Load frames and enter a target, then press Measure.</p>
-        <div class="fs-plot" data-fs-plot hidden></div>
-        <div class="tm-table-wrap" data-fs-results-wrap hidden>
-          <table class="tm-table fs-results-table">
-            <caption>One row per target and frame, sorted by label and wavelength until you sort by a column. Wavelength and width in μm, flux in μJy, background in MJy/sr, positions in full-frame pixels. Select a row with Enter or a click.</caption>
+        <figure class="fs-plot" data-fs-plot hidden>
+          <div class="fs-plot__bar">
+            <h3 class="fs-plot__title">Spectrum</h3>
+            <div class="tm-segment" role="group" aria-label="Flux axis scale">
+              <span class="fs-toggle-label" aria-hidden="true">Flux axis</span>
+              <button class="workspace-button" type="button" aria-pressed="true" data-fs-yscale="linear">Linear</button>
+              <button class="workspace-button" type="button" aria-pressed="false" data-fs-yscale="log">Log</button>
+            </div>
+          </div>
+          <div class="fs-chart" tabindex="0" role="group" aria-label="Spectrum plot. Use the arrow keys to move between points." aria-describedby="fs-plot-summary fs-plot-keys" data-fs-chart></div>
+          <figcaption class="fs-plot__summary" id="fs-plot-summary" data-fs-plot-summary></figcaption>
+          <ul class="fs-legend" aria-label="Detectors and targets in the plot" data-fs-legend></ul>
+          <div class="fs-not-drawn" data-fs-not-drawn hidden>
+            <p class="workspace-help" data-fs-not-drawn-text></p>
+            <details data-fs-not-drawn-details>
+              <summary>Points not drawn</summary>
+              <ul class="fs-not-drawn__list" data-fs-not-drawn-list></ul>
+            </details>
+          </div>
+          <p class="tm-keys" id="fs-plot-keys">Each marker is one exposure at its measured wavelength; nothing is smoothed or binned. Colour is the detector, the marker shape is the target, the vertical bars are flux_err (±1σ, including the 3 % systematic floor), and a hollow marker has CONTAINS_BAD_PIXEL or FIT_ERROR set. Click or tap a marker, or focus the plot and use the left and right arrow keys, Home and End; the same row is selected in the table, and a row chosen in the table is ringed here.</p>
+          <p class="tm-live" role="status" aria-live="polite" data-fs-plot-live></p>
+        </figure>
+        <div class="tm-table-wrap fs-results-wrap" data-fs-results-wrap hidden>
+          <table class="tm-table fs-results-table" role="grid">
+            <caption>One row per target and frame, sorted by label and wavelength until you sort by a column. Wavelength and width in μm, flux in μJy, background in MJy/sr, positions in full-frame pixels. Select a row with a click, Enter or the up and down arrow keys; Home and End go to the first and last row.</caption>
             <thead><tr data-fs-results-head></tr></thead>
-            <tbody data-fs-results></tbody>
+            <tbody translate="no" data-fs-results></tbody>
           </table>
         </div>
         <div class="fs-report" data-fs-report hidden></div>
@@ -186,6 +210,34 @@
 
       <section class="workspace-panel tm-note" aria-labelledby="fs-note-title">
         <h2 id="fs-note-title">How the flux is computed</h2>
+        <p class="workspace-help">This page is a port of spxphot, an independent Rust reimplementation of the IRSA SPHEREx Spectrophotometry Tool, and follows its method step by step. Each frame that covers a target gives one spectral point:</p>
+        <ol class="fs-steps">
+          <li><strong>Find frames.</strong> spxphot asks IRSA TAP for them. TAP sends no CORS header, so a browser cannot ask it; here the frame list comes from the SIA search that Observation Search builds (for BD+17 4708 the same 352 frames: DR1 239, QR3 113), filtered by deep fields, detector and MJD.</li>
+          <li><strong>Read only the needed bytes.</strong> HTTP range requests to IRSA's public copy of the archive on Amazon S3, which allows reads from other sites: about 25 rows of IMAGE and VARIANCE around the target, the same rows of the RICE_1-compressed FLAGS image (decompressed here), and the ePSF and WCS-WAVE tables. The two tables are kept per calibration and downloaded once per detector, not once per frame.</li>
+          <li><strong>Position.</strong> TAN-SIP sky to pixel: an inverse-SIP first guess, then Newton iteration on the forward model, which matches astropy's all_world2pix to better than 1e-6 arcsec.</li>
+          <li><strong>PSF.</strong> The ePSF zone nearest the target, evaluated at the pixel centres with a not-a-knot bicubic spline (the interpolant of photutils ImagePSF) and normalised to a sum of 1. For a galaxy model the analytic Sérsic profile is sampled on the ePSF's 1/5-pixel lattice and convolved with the ePSF; the local WCS Jacobian turns pixels into east and north arcsec.</li>
+          <li><strong>Fit.</strong> Pixels whose flags are on IRSA's ignore list are masked. In a circle 13 px across, the fluxes and a background are solved by weighted linear least squares, data = Σ Fₖ·Pₖ + B with weights 1/VARIANCE. Positions and shapes are fixed, so the model is linear and one solve gives the exact optimum (Tractor, IRSA's engine, reaches it iteratively). Targets close together are fitted jointly.</li>
+          <li><strong>Units.</strong> flux [μJy] = F [MJy/sr per pixel] × Ω [sr] × 10¹², with the pixel solid angle Ω from the WCS Jacobian and the gnomonic area factor (1 + ρ²)^−3/2. flux_err adds a 3 % systematic floor in quadrature to the fit error (flux_err_tractor), as IRSA does.</li>
+        </ol>
+        <p class="workspace-help"><strong>Quality.</strong> fit_ql is the mean of |data − model|/σ within 2.5 px of the target. flags is the OR of the FLAGS pixels within 2.5 px, plus bit 32 CONTAINS_BAD_PIXEL (any flag other than SOURCE and OUTLIER within 2.5 px) and bit 33 FIT_ERROR (the fit has no solution), as IRSA sets them. Wavelength and bandwidth are interpolated bilinearly in the WCS-WAVE table.</p>
+        <div class="tm-table-wrap">
+          <table class="tm-table fs-agreement">
+            <caption>spxphot against the IRSA tool with the same inputs, matched exposure by exposure (spxphot's validation)</caption>
+            <thead>
+              <tr><th scope="col">Target</th><th scope="col">Exposures</th><th scope="col">Flux ratio (median)</th><th scope="col">Pull Δ/σ (median)</th><th scope="col">Within 1σ</th><th scope="col">Error ratio</th><th scope="col">Flags identical</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">BD+17 4708 (bright star)</th><td>352</td><td>0.9999</td><td>−0.02</td><td>84 %</td><td>1.004</td><td>100 %</td><td>Validated</td></tr>
+              <tr><th scope="row">WD 1657+343 (faint star)</th><td>449 of 451 matched</td><td>1.013</td><td>+0.06</td><td>100 %</td><td>1.015</td><td>100 %</td><td>Validated</td></tr>
+              <tr><th scope="row">NGC 7619, Sérsic n = 4, Re = 5″, b/a = 0.7</th><td>345</td><td>1.040</td><td>+10.7</td><td>1 %</td><td>1.084</td><td>100 %</td><td>Not validated</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="workspace-help"><strong>This port against spxphot.</strong> On the test cutout every column equals spxphot's own output to 1e-9 relative (fit_ql to 1e-6) with identical flags, and a full run of the BD+17 4708 example in the browser matched spxphot's CSV on 352 of 352 rows (largest relative difference 6.4e-12).</p>
+        <p class="workspace-help"><strong>Known differences from the IRSA tool.</strong> The wavelength differs by a median of +0.0003 μm (at most 0.002 μm, about 12 % of one channel's bandwidth): IRSA evaluates the spectral WCS slightly differently from a plain WCS-WAVE lookup. fit_ql runs about 6 % higher than IRSA's although the fluxes agree. About 2 % of the bright-star points differ by more than 3σ, most on frames with near-saturation flags or SOURCE-flagged neighbours, where IRSA's exact masking rule is unknown. The 13 px circle and the joint constant sky were calibrated against IRSA output, not read from IRSA's code, which is not public.</p>
+        <p class="workspace-help" data-fs-sersic-note><strong>Galaxy model: not validated.</strong> With a Sérsic profile spxphot's fluxes ran about 4 % above IRSA's (NGC 7619, median ratio 1.040) with a different spectral shape. A likely but unconfirmed cause is that Tractor approximates Sérsic profiles with a mixture of Gaussians, while this method uses the exact profile. Treat galaxy fluxes as indicative only.</p>
+        <p class="workspace-help">Data: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx DR1/QR3. This is an independent reimplementation of the IRSA Spectrophotometry Tool's method and is not affiliated with IPAC or the SPHEREx team.</p>
+        <p class="workspace-help">References: <a class="fs-link" href="https://irsa.ipac.caltech.edu/applications/spherex/">IRSA SPHEREx tools</a> (the Spectrophotometry Tool), <a class="fs-link" href="https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html">IRSA Spectrophotometry Tool documentation</a>, <a class="fs-link" href="https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html">SPHEREx cutout service</a>, <a class="fs-link" href="https://irsa.ipac.caltech.edu/Missions/spherex.html">SPHEREx at IRSA</a>.</p>
       </section>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>

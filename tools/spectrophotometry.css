@@ -2,6 +2,7 @@
 .sp-target, .sp-result, .sp-export, .sp-detail { margin-block-start: var(--workspace-gap); }
 .sp-images .workspace-help, .sp-target .workspace-help, .sp-export .workspace-help { max-inline-size: 78ch; }
 .sp-images .tm-file { min-inline-size: 11rem; }
+.sp-aside { max-inline-size: 78ch; margin-block-start: 0.5rem; }
 
 .sp-hidden {
   position: absolute;

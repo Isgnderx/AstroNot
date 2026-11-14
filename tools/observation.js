@@ -277,8 +277,11 @@ function setupObservationSearch() {
       resultsNotes.append(text("p", "The generated search asks IRSA for at most " + irsaMaxRecords +
         " records and this file has " + total + ". More observations may exist. Narrow the position, dates, or wavelengths.", "workspace-help"));
     }
-    if (preparedPosition) handoff.href = observationForcedPhotometryUrl(preparedPosition);
-    handoff.hidden = !preparedPosition;
+    // The hand-off only makes sense when there are frames to measure.
+    const offerHandoff = Boolean(preparedPosition) && rows.length > 0;
+    if (offerHandoff) handoff.href = observationForcedPhotometryUrl(preparedPosition);
+    else handoff.removeAttribute("href");
+    handoff.hidden = !offerHandoff;
     results.hidden = false;
   }
 

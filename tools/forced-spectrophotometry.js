@@ -1,7 +1,8 @@
 // Forced Spectrophotometry: SPHEREx spectra by forced ePSF photometry on every frame of a frame list, read from the IRSA archive
 // copy on Amazon S3 (or from local FITS files). ALL measurement, frame selection, target parsing and CSV logic is in
 // tools/forced-phot.js (the port of spxphot), FITS byte-range reading in tools/fits-range.js, SIA CSV reading in
-// tools/observation-csv.js and coordinate parsing in tools/xmatch.js. This file is the user interface only.
+// tools/observation-csv.js, coordinate parsing in tools/xmatch.js and the spectrum plot in tools/forced-spectrophotometry-plot.js.
+// This file is the user interface only.
 (function () {
   "use strict";
 
@@ -24,6 +25,8 @@
     verdict: query("verdict"), plot: query("plot"), resultsWrap: query("results-wrap"), resultsHead: query("results-head"), results: query("results"), report: query("report"),
     downloadIrsa: query("download-irsa"), downloadLab: query("download-lab"), exportStatus: query("export-status"),
   };
+  // The spectrum plot (tools/forced-spectrophotometry-plot.js) reports a point chosen there through selectRow.
+  const plot = AstroNotForcedSpectrumPlot.create({ figure: el.plot, onSelect: (index) => selectRow(index, { fromPlot: true }) });
   const fields = {};
   for (const input of document.querySelectorAll("[data-fs-param]")) fields[input.dataset.fsParam] = input;
   const detectorBoxes = [...document.querySelectorAll("[data-fs-detector]")];
@@ -356,7 +359,8 @@
       );
       const shape = cell("div", "", { class: "fs-target__shape", id: shapeId });
       shape.hidden = !entry.galaxy;
-      shape.append(...shapeFields.map(([key, name]) => targetInput(entry, key, name, { inputmode: "decimal" })));
+      shape.append(...shapeFields.map(([key, name]) => targetInput(entry, key, name, { inputmode: "decimal" })),
+        cell("p", "Not validated: in spxphot's test the Sérsic fluxes ran about 4 % above the IRSA tool's (NGC 7619, median ratio 1.040). Treat galaxy fluxes as indicative only; see How the flux is computed.", { class: "fs-target__caveat" }));
       const message = cell("p", "", { class: "fs-target__message", id: "fs-target-message-" + entry.id, "data-fs-target-message": "" });
 
       galaxy.addEventListener("click", () => {
@@ -454,15 +458,24 @@
     const bkgHalf = whole("bkgHalf", "Background half-size", 1, 99);
     const exclusion = Number(text("bkgExcludeR"));
     if (text("bkgExcludeR") === "" || !Number.isFinite(exclusion) || exclusion < 0) problems.push("Exclusion radius must be a number of pixels, 0 or more.");
-    const concurrencyValue = Number(text("concurrency"));
-    const concurrency = Number.isFinite(concurrencyValue) ? Math.min(12, Math.max(1, Math.trunc(concurrencyValue))) : defaultConcurrency;
+    // Concurrency never blocks a run: an empty or non-numeric field means the default, a number outside 1–12 is brought inside.
+    const notes = [];
+    const concurrencyText = text("concurrency");
+    const concurrencyValue = concurrencyText === "" ? NaN : Number(concurrencyText);
+    let concurrency = defaultConcurrency;
+    if (!Number.isFinite(concurrencyValue)) {
+      notes.push((concurrencyText === "" ? "Concurrent frames is empty" : "Concurrent frames is not a number") + ", so the run reads " + defaultConcurrency + " frames at a time.");
+    } else {
+      concurrency = Math.min(12, Math.max(1, Math.trunc(concurrencyValue)));
+      if (concurrency !== concurrencyValue) notes.push("Concurrent frames takes a whole number from 1 to 12, so the run reads " + concurrency + " frames at a time.");
+    }
 
     const params = {
       ...FP.defaultParams, fitSize, fitShape: fields.fitShape.value, bkgHalf, bkgExcludeR: exclusion, bkgStat: fields.bkgStat.value,
       skyFit: fields.skyFit.checked, astropyWave: fields.astropyWave.checked,
     };
     const filters = { deep: fields.deep.checked, detectors, mjdMin, mjdMax, wvlMin, wvlMax };
-    return { ok: problems.length === 0, problems, params, filters, concurrency };
+    return { ok: problems.length === 0, problems, notes, params, filters, concurrency };
   }
 
   // ---- Controls and staleness ---------------------------------------------------------------------------------------------------------
@@ -471,9 +484,10 @@
     const targets = readTargets();
     setDisabled(el.measure, running || !state.frames.length || !targets.targets.length);
     setDisabled(el.cancel, !running);
+    // While a run is going the results shown are the previous run's, so they cannot be downloaded as if they were current.
     const rows = state.result ? state.result.rows.length : 0;
-    setDisabled(el.downloadIrsa, !rows);
-    setDisabled(el.downloadLab, !rows);
+    setDisabled(el.downloadIrsa, running || !rows);
+    setDisabled(el.downloadLab, running || !rows);
     return targets;
   }
 
@@ -481,7 +495,7 @@
     const targets = updateControls();
     showTargetProblems(targets.checks);
     const params = readParams();
-    writeStatus(el.paramsStatus, params.problems.join(" "), !params.ok);
+    writeStatus(el.paramsStatus, [...params.problems, ...params.notes].join(" "), !params.ok);
     if (state.run) state.run.changed = true;
     else if (state.result) markStale();
   }
@@ -524,7 +538,7 @@
     state.run = { controller };
     state.params = params;
     state.filters = filters;
-    el.stale.textContent = "";
+    el.stale.textContent = state.result ? "Measuring again: the plot, table and report below are from the previous run until this one finishes, and the downloads wait for it." : "";
     el.progress.max = Math.max(1, selection.frames.length);
     el.progress.value = 0;
     el.progressText.textContent = "0 / " + selection.frames.length + " frames";
@@ -546,6 +560,7 @@
       state.run = null;
       updateControls();
       setRunStatus("The run stopped: " + (error && error.message ? error.message : String(error)), true);
+      el.stale.textContent = state.result ? "The results below are from the previous run; this run stopped before it finished." : "";
       return;
     }
     const changed = state.run.changed;
@@ -557,6 +572,7 @@
     state.selected = null;
     const line = rows.length + " spectral points, " + report.failed.length + " frame failures, " + report.epsfDownloads + " ePSF calibration downloads, " + report.seconds.toFixed(1) + " s";
     setRunStatus((report.cancelled ? "Cancelled after " + (report.measured + report.skipped.length + report.failed.length) + " of " + report.frames + " frames: " : "") + line, report.failed.length > 0);
+    el.stale.textContent = "";
     renderResults();
     if (changed) markStale();
   }
@@ -639,9 +655,11 @@
     const rows = state.result.rows;
     state.order = sortOrder();
     renderHead();
+    // Roving tabindex: one Tab stop for the whole table (the selected row, else the first), arrow keys move inside it.
+    const stop = state.order.includes(state.selected) ? state.selected : state.order[0];
     el.results.replaceChildren(...state.order.map((index) => {
       const row = rows[index];
-      const tr = cell("tr", "", { tabindex: "0", "aria-selected": String(index === state.selected), "data-index": String(index) });
+      const tr = cell("tr", "", { role: "row", tabindex: index === stop ? "0" : "-1", "aria-selected": String(index === state.selected), "data-index": String(index) });
       if (row.flags) tr.setAttribute("data-flagged", "");
       for (const column of columns) {
         const text = display(column, cellValue(row, column));
@@ -651,15 +669,32 @@
     }));
   }
 
-  // Select one result row (index into state.result.rows). The plot (Task 9) shares this selection.
-  function selectRow(index, focus = false) {
+  // Select one result row (index into state.result.rows); the table and the plot share this selection.
+  // focus: move keyboard focus to the row. fromPlot: the plot made the choice (it has already ringed the point), so the
+  // table row is scrolled into view instead.
+  function selectRow(index, { focus = false, fromPlot = false } = {}) {
     if (!state.result || !(index >= 0 && index < state.result.rows.length)) return;
     state.selected = index;
-    for (const tr of el.results.children) tr.setAttribute("aria-selected", String(Number(tr.dataset.index) === index));
-    if (focus) {
-      const tr = el.results.querySelector('tr[data-index="' + index + '"]');
-      if (tr) tr.focus();
+    let chosen = null;
+    for (const tr of el.results.children) {
+      const match = Number(tr.dataset.index) === index;
+      tr.setAttribute("aria-selected", String(match));
+      tr.setAttribute("tabindex", match ? "0" : "-1");
+      if (match) chosen = tr;
     }
+    if (!fromPlot) plot.select(index);
+    if (!chosen) return;
+    if (focus) chosen.focus({ preventScroll: true });
+    if (focus || fromPlot) scrollRowIntoView(chosen);
+  }
+
+  // Scroll the results box (not the page) so the row shows below the sticky header.
+  function scrollRowIntoView(tr) {
+    const box = el.resultsWrap.getBoundingClientRect();
+    const head = el.resultsHead.getBoundingClientRect().height;
+    const row = tr.getBoundingClientRect();
+    if (row.top < box.top + head) el.resultsWrap.scrollTop -= box.top + head - row.top;
+    else if (row.bottom > box.bottom) el.resultsWrap.scrollTop += row.bottom - box.bottom;
   }
 
   function renderReport() {
@@ -694,8 +729,10 @@
   function renderResults() {
     const result = state.result;
     el.resultsWrap.hidden = !result || !result.rows.length;
+    el.plot.hidden = !result || !result.rows.length;
     el.report.hidden = !result;
     updateControls();
+    plot.render(result ? result.rows : null, state.selected);
     if (!result) {
       el.results.replaceChildren();
       el.verdict.textContent = "Load frames and enter a target, then press Measure.";
@@ -715,6 +752,10 @@
   // ---- Downloads -------------------------------------------------------------------------------------------------------------------------
   function download(kind) {
     const result = state.result;
+    if (state.run) {
+      el.exportStatus.textContent = "A run is in progress: the results shown are from the previous run. Download after it finishes, or cancel it.";
+      return;
+    }
     if (!result || !result.rows.length) {
       el.exportStatus.textContent = "Measure first: there is no spectral point to download.";
       return;
@@ -767,16 +808,15 @@
   el.results.addEventListener("keydown", (event) => {
     const tr = event.target.closest("tr[data-index]");
     if (!tr) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      selectRow(Number(tr.dataset.index));
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      const next = event.key === "ArrowDown" ? tr.nextElementSibling : tr.previousElementSibling;
-      if (next) {
-        event.preventDefault();
-        selectRow(Number(next.dataset.index), true);
-      }
-    }
+    let next = null;
+    if (event.key === "Enter" || event.key === " ") next = tr;
+    else if (event.key === "ArrowDown") next = tr.nextElementSibling;
+    else if (event.key === "ArrowUp") next = tr.previousElementSibling;
+    else if (event.key === "Home") next = el.results.firstElementChild;
+    else if (event.key === "End") next = el.results.lastElementChild;
+    else return;
+    event.preventDefault();
+    if (next) selectRow(Number(next.dataset.index), { focus: true });
   });
   el.downloadIrsa.addEventListener("click", () => download("irsa"));
   el.downloadLab.addEventListener("click", () => download("lab"));

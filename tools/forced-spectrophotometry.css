@@ -6,16 +6,6 @@
 .fs-frames .tm-file, .fs-targets .tm-file { min-inline-size: 11rem; }
 .fs-frames .tm-actions .workspace-button[aria-disabled="true"], .fs-run .workspace-button[aria-disabled="true"], .fs-downloads .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
 
-.fs-hidden {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* Frames */
 .fs-frames-table { font-size: 0.8125rem; }
 .fs-frames-table td[data-note] { color: #f3d98f; }
@@ -47,6 +37,7 @@
 .fs-target__shape { margin-block-start: 0.6rem; }
 .fs-target__shape[hidden] { display: none; }
 .fs-target input[aria-invalid="true"] { border-color: #d9887f; }
+.fs-target__caveat { grid-column: 1 / -1; color: #f3d98f; font-size: 0.8125rem; max-inline-size: 80ch; }
 .fs-target__message { margin-block-start: 0.45rem; color: #ffd0cb; font-size: 0.8125rem; }
 .fs-target__message:empty { display: none; }
 
@@ -91,6 +82,41 @@
 .fs-results-table tbody tr:focus-visible { outline: 2px solid #f2f4f8; outline-offset: -2px; }
 .fs-results-table tbody tr[aria-selected="true"] { background: #1b2028; }
 .fs-results-table tbody tr[data-flagged] td:last-child { color: #f3d98f; }
+
+/* The results box scrolls on its own (with a sticky header), so a point chosen in the plot can bring its row into view
+   without moving the page away from the plot. */
+.fs-results-wrap { max-block-size: min(32rem, 70svh); overflow: auto; }
+.fs-results-table thead th { position: sticky; inset-block-start: 0; z-index: 1; background: var(--workspace-surface); }
+
+/* Spectrum plot (inline SVG, no animation: nothing moves, so prefers-reduced-motion needs no change). */
+.fs-plot { margin: 0.9rem 0 0; }
+.fs-plot[hidden] { display: none; }
+.fs-plot__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.fs-plot__title { font-size: 0.9375rem; font-weight: 650; }
+.fs-plot .tm-segment { align-items: center; }
+.fs-toggle-label { color: var(--workspace-muted); font-size: 0.875rem; font-weight: 600; }
+.fs-chart { margin-block-start: 0.6rem; border: 1px solid #2c3139; background: #060709; cursor: crosshair; }
+.fs-chart:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.fs-chart__svg { display: block; inline-size: 100%; block-size: auto; }
+.fs-chart__svg text { font-family: Inter, Arial, sans-serif; }
+.fs-chart__empty { margin: 0; padding: 2.5rem 1rem; color: var(--workspace-muted); font-size: 0.9375rem; text-align: center; }
+.fs-plot__summary { margin-block-start: 0.5rem; color: var(--ink); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.fs-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1.25rem; margin: 0.6rem 0 0; padding: 0; color: var(--ink); font-size: 0.875rem; list-style: none; }
+.fs-legend li { display: flex; align-items: baseline; gap: 0.4rem; }
+.fs-swatch { font-size: 1rem; line-height: 1; }
+.fs-not-drawn { margin-block-start: 0.5rem; padding: 0.5rem 0.7rem; border: 1px solid #d6b25e; border-inline-start-width: 4px; border-radius: 0.3rem; background: #19160e; }
+.fs-not-drawn[hidden], .fs-not-drawn details[hidden] { display: none; }
+.fs-not-drawn .workspace-help { margin-block-start: 0; color: #f3e4b6; }
+.fs-not-drawn summary { min-block-size: 2.5rem; display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; font-weight: 600; }
+.fs-not-drawn summary:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.fs-not-drawn__list { display: grid; gap: 0.25rem; margin: 0.3rem 0 0.4rem; padding-inline-start: 1.2rem; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.fs-not-drawn__list li { overflow-wrap: anywhere; }
+
+/* Method note */
+.fs-steps { display: grid; gap: 0.45rem; max-inline-size: 75ch; margin: 0.6rem 0 0; padding-inline-start: 1.4rem; color: var(--workspace-muted); font-size: 0.9375rem; }
+.fs-steps strong, .tm-note .workspace-help strong { color: var(--ink); }
+.fs-agreement { font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.tm-note .tm-table-wrap { margin-block-start: 0.9rem; }
 
 .fs-report { margin-block-start: 0.9rem; font-size: 0.875rem; }
 .fs-report[hidden] { display: none; }
