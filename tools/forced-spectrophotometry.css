@@ -1,0 +1,109 @@
+/* Forced Spectrophotometry workspace. Builds on workspace.css and the Time Machine table, file-button and note styles. */
+.fs-targets, .fs-params, .fs-run, .fs-results, .fs-downloads, .fs-results ~ .tm-note { margin-block-start: var(--workspace-gap); }
+.fs-frames .workspace-help, .fs-targets .workspace-help, .fs-params .workspace-help, .fs-downloads .workspace-help, .fs-aside { max-inline-size: 80ch; }
+.fs-aside { margin-block-start: 0.5rem; }
+.fs-link { text-decoration: underline; text-underline-offset: 0.18em; color: #d9e0ec; }
+.fs-frames .tm-file, .fs-targets .tm-file { min-inline-size: 11rem; }
+.fs-frames .tm-actions .workspace-button[aria-disabled="true"], .fs-run .workspace-button[aria-disabled="true"], .fs-downloads .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+
+.fs-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Frames */
+.fs-frames-table { font-size: 0.8125rem; }
+.fs-frames-table td[data-note] { color: #f3d98f; }
+
+/* Targets */
+.fs-target-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem 1.25rem; margin-block-start: 0.85rem; }
+.fs-target-tools > label { min-inline-size: 15rem; }
+.fs-target-tools .tm-actions { margin-block-start: 0; }
+.fs-target-list { display: grid; gap: 0.75rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
+
+.fs-target {
+  padding: 0.75rem;
+  border: 1px solid #292d34;
+  border-radius: 0.35rem;
+}
+
+.fs-target__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin-block-end: 0.5rem; }
+.fs-target__head h3 { font-size: 0.875rem; font-weight: 650; }
+.fs-target__head .tm-actions { margin-block-start: 0; }
+.fs-target__head .workspace-button { min-block-size: 2.25rem; padding-block: 0.2rem; font-size: 0.8125rem; }
+.fs-target__head .workspace-button[aria-disabled="true"], .fs-target-tools .workspace-button[aria-disabled="true"] { opacity: 0.56; cursor: default; }
+.fs-target__head .workspace-button[aria-pressed="true"] { border-color: #eaecf1; background: #eaecf1; color: #101216; }
+
+.fs-target__fields, .fs-target__shape, .fs-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.6rem 1rem;
+}
+.fs-target__shape { margin-block-start: 0.6rem; }
+.fs-target__shape[hidden] { display: none; }
+.fs-target input[aria-invalid="true"] { border-color: #d9887f; }
+.fs-target__message { margin-block-start: 0.45rem; color: #ffd0cb; font-size: 0.8125rem; }
+.fs-target__message:empty { display: none; }
+
+/* Filters and parameters */
+.fs-fields { margin-block-start: 0.85rem; align-items: end; }
+.fs-detectors { display: flex; flex-wrap: wrap; gap: 0 0.9rem; min-inline-size: 0; margin: 0; padding: 0; border: 0; grid-column: 1 / -1; }
+.fs-detectors legend { margin-block-end: 0.15rem; font-size: 0.875rem; font-weight: 550; }
+.fs-checks { display: grid; gap: 0.1rem; margin-block-start: 0.6rem; }
+.fs-checks .tm-check, .fs-fields .tm-check { font-weight: 450; }
+.fs-fields > .tm-check { grid-column: 1 / -1; }
+.fs-advanced { margin-block-start: 0.9rem; }
+.fs-advanced summary { min-block-size: 2.75rem; display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; font-weight: 600; }
+.fs-advanced summary:focus-visible, .fs-report summary:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+/* Run */
+.fs-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-block-start: 0.75rem; font-variant-numeric: tabular-nums; }
+.fs-progress[hidden] { display: none; }
+.fs-progress progress { inline-size: min(28rem, 100%); block-size: 0.75rem; accent-color: #eaecf1; }
+.fs-stale { color: #f3d98f; font-size: 0.875rem; }
+.fs-stale:empty { display: none; }
+
+/* Results */
+.fs-results .tm-pair__verdict { max-inline-size: 85ch; }
+.fs-results-table { font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.fs-results-table th, .fs-results-table td { white-space: nowrap; }
+.fs-results-table td[data-empty] { color: var(--workspace-muted); }
+.fs-results-table thead th[aria-sort] button { font-weight: 700; color: var(--ink); }
+.fs-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fs-sort:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.fs-results-table tbody tr { cursor: pointer; }
+.fs-results-table tbody tr:focus-visible { outline: 2px solid #f2f4f8; outline-offset: -2px; }
+.fs-results-table tbody tr[aria-selected="true"] { background: #1b2028; }
+.fs-results-table tbody tr[data-flagged] td:last-child { color: #f3d98f; }
+
+.fs-report { margin-block-start: 0.9rem; font-size: 0.875rem; }
+.fs-report[hidden] { display: none; }
+.fs-report dl { margin-block: 0; }
+.fs-report details { margin-block-start: 0.5rem; }
+.fs-report summary { min-block-size: 2.5rem; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.fs-report ul { margin: 0.3rem 0 0; padding-inline-start: 1.2rem; display: grid; gap: 0.25rem; }
+.fs-report li { overflow-wrap: anywhere; }
+
+@media (max-width: 750px) {
+  .fs-frames .tm-actions .workspace-button, .fs-frames .tm-file { flex: 1 1 auto; }
+}
+
+@media (pointer: coarse) {
+  .fs-fields input, .fs-fields select, .fs-target input { font-size: 1rem; }
+}

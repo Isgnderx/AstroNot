@@ -84,6 +84,15 @@ const scientificTools = [
     available: true,
   },
   {
+    id: "forced-spectrophotometry",
+    route: "forced-spectrophotometry",
+    name: "Forced Spectrophotometry",
+    category: "analysis",
+    description: "Measure SPHEREx spectra by forced ePSF photometry on every spectral image covering a position, read directly from the IRSA archive — the IRSA Spectrophotometry Tool's method, in your browser.",
+    diagram: "flux",
+    available: true,
+  },
+  {
     id: "source-detection",
     route: "source-detection",
     name: "Source Detection",

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Forced Spectrophotometry — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../tools/workspace.css">
+    <link rel="stylesheet" href="../../tools/time-machine.css">
+    <link rel="stylesheet" href="../../tools/forced-spectrophotometry.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/wcs.js" defer></script>
+    <script src="../../tools/fits-range.js" defer></script>
+    <script src="../../tools/epsf.js" defer></script>
+    <script src="../../tools/forced-phot.js" defer></script>
+    <script src="../../tools/observation-csv.js" defer></script>
+    <script src="../../tools/xmatch.js" defer></script>
+    <script src="../../tools/forced-spectrophotometry.js" defer></script>
+  </head>
+  <body class="workspace-page" data-workspace-id="forced-spectrophotometry">
+    <a class="skip-link" href="#workspace-main">Skip to workspace</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../../tools/index.html" data-route="/tools">Tools</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" data-workspace-crumb>Forced Spectrophotometry</span>
+          </nav>
+        </div>
+        <span class="workspace-bar__label">Scientific workspace</span>
+      </div>
+    </header>
+
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+      <header class="workspace-heading">
+        <p class="workspace-category" data-workspace-category>Analysis</p>
+        <h1 data-workspace-title>Forced Spectrophotometry</h1>
+        <p class="workspace-description" data-workspace-description>Measure SPHEREx spectra by forced ePSF photometry on every spectral image covering a position, read directly from the IRSA archive — the IRSA Spectrophotometry Tool's method, in your browser.</p>
+        <p class="workspace-help fs-aside">For aperture photometry of calibrated images you already have, use <a class="fs-link" href="../../tools/spectrophotometry/index.html" data-route="/tools/spectrophotometry">Spectrophotometry</a>.</p>
+      </header>
+
+      <section class="workspace-panel fs-frames" aria-labelledby="fs-frames-title">
+        <h2 id="fs-frames-title">Frames</h2>
+        <p class="workspace-help">Import one or more IRSA SIA result files (CSV) saved from <strong>Observation Search</strong>: every SPHEREx level 2 image in them is a frame, read from the IRSA archive copy on Amazon S3 a few kilobytes at a time. You can also choose SPHEREx level 2 FITS files on this device; a file needs its <strong>EPSF</strong> extension (QR3, DR1 and later) to be measured. A frame listed twice is measured once.</p>
+        <div class="tm-actions">
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".csv,text/csv" multiple disabled data-fs-csv>
+            <span class="workspace-button workspace-button--primary tm-file__button">Import SIA CSV files</span>
+          </label>
+          <label class="tm-file">
+            <input class="tm-file__input" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" multiple disabled data-fs-fits>
+            <span class="workspace-button tm-file__button">Choose FITS files</span>
+          </label>
+          <button class="workspace-button" type="button" disabled data-fs-example>Use the BD+17 4708 example</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-fs-clear>Remove all frames</button>
+        </div>
+        <p class="workspace-status" role="status" data-fs-status></p>
+        <div class="tm-table-wrap" data-fs-frames-wrap hidden>
+          <table class="tm-table fs-frames-table">
+            <caption data-fs-frames-caption>Loaded frames</caption>
+            <thead>
+              <tr><th scope="col">Source</th><th scope="col">Collection</th><th scope="col">Detector</th><th scope="col">MJD</th><th scope="col">Reads from</th></tr>
+            </thead>
+            <tbody data-fs-frames></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="workspace-panel fs-targets" aria-labelledby="fs-targets-title">
+        <h2 id="fs-targets-title">Targets</h2>
+        <p class="workspace-help">Up to 20 sky positions (ICRS). Every target is fitted on every frame it falls on; targets close together are fitted jointly. A target is a point source unless you switch on its <strong>Galaxy model</strong> (a Sérsic profile convolved with the ePSF; an effective radius below 1 arcsec is treated as a point source, as IRSA does). A targets CSV has the columns <strong>ra, dec</strong> and optionally <strong>name, sersic_n, re_arcsec, axis_ratio, pa_deg</strong>, in degrees.</p>
+        <div class="fs-target-tools">
+          <label>Coordinate unit
+            <select data-fs-unit>
+              <option value="deg">Decimal degrees</option>
+              <option value="sexagesimal">Sexagesimal (RA h:m:s, Dec d:m:s)</option>
+            </select>
+          </label>
+          <div class="tm-actions">
+            <button class="workspace-button" type="button" data-fs-add-target>Add target</button>
+            <label class="tm-file">
+              <input class="tm-file__input" type="file" accept=".csv,text/csv" disabled data-fs-targets-csv>
+              <span class="workspace-button tm-file__button">Upload targets CSV</span>
+            </label>
+          </div>
+        </div>
+        <ol class="fs-target-list" data-fs-targets></ol>
+        <p class="workspace-status" role="status" data-fs-targets-status></p>
+      </section>
+
+      <section class="workspace-panel fs-params" aria-labelledby="fs-params-title">
+        <h2 id="fs-params-title">Filters and parameters</h2>
+        <p class="workspace-help">Filters choose which loaded frames are measured (MJD is the frame start time) and which spectral points are kept (wavelength in μm). Leave a bound empty for no limit. The defaults are spxphot's.</p>
+        <div class="fs-fields">
+          <label class="tm-check"><input type="checkbox" data-fs-param="deep"> <span>Include deep-field frames</span></label>
+          <fieldset class="fs-detectors">
+            <legend>Detectors</legend>
+            <label class="tm-check"><input type="checkbox" checked value="1" data-fs-detector> <span>1</span></label>
+            <label class="tm-check"><input type="checkbox" checked value="2" data-fs-detector> <span>2</span></label>
+            <label class="tm-check"><input type="checkbox" checked value="3" data-fs-detector> <span>3</span></label>
+            <label class="tm-check"><input type="checkbox" checked value="4" data-fs-detector> <span>4</span></label>
+            <label class="tm-check"><input type="checkbox" checked value="5" data-fs-detector> <span>5</span></label>
+            <label class="tm-check"><input type="checkbox" checked value="6" data-fs-detector> <span>6</span></label>
+          </fieldset>
+          <label>MJD minimum <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-fs-param="mjdMin"></label>
+          <label>MJD maximum <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-fs-param="mjdMax"></label>
+          <label>Wavelength minimum (μm) <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-fs-param="wvlMin"></label>
+          <label>Wavelength maximum (μm) <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-fs-param="wvlMax"></label>
+        </div>
+        <details class="fs-advanced">
+          <summary>Advanced</summary>
+          <div class="fs-fields">
+            <label>Fit size (px) <input type="text" inputmode="numeric" autocomplete="off" value="13" data-fs-param="fitSize"></label>
+            <label>Fit shape
+              <select data-fs-param="fitShape">
+                <option value="circle">Circle (diameter = fit size)</option>
+                <option value="box">Box (side = fit size)</option>
+              </select>
+            </label>
+            <label>Background half-size (px) <input type="text" inputmode="numeric" autocomplete="off" value="10" data-fs-param="bkgHalf"></label>
+            <label>Exclusion radius around sources (px) <input type="text" inputmode="decimal" autocomplete="off" value="3" data-fs-param="bkgExcludeR"></label>
+            <label>Background statistic
+              <select data-fs-param="bkgStat">
+                <option value="median">Sigma-clipped median</option>
+                <option value="mean">Sigma-clipped mean</option>
+                <option value="mode">Mode (2.5 median − 1.5 mean)</option>
+                <option value="none">None (sky from the fit only)</option>
+              </select>
+            </label>
+            <label>Concurrent frames (1–12) <input type="text" inputmode="numeric" autocomplete="off" value="6" data-fs-param="concurrency"></label>
+          </div>
+          <div class="fs-checks">
+            <label class="tm-check"><input type="checkbox" checked data-fs-param="skyFit"> <span>Fit a residual sky level together with the fluxes</span></label>
+            <label class="tm-check"><input type="checkbox" data-fs-param="astropyWave"> <span>Apply the image SIP distortion in the wavelength lookup (spxphot --astropy-wave)</span></label>
+          </div>
+        </details>
+        <p class="workspace-status" role="status" data-fs-params-status></p>
+      </section>
+
+      <section class="workspace-panel fs-run" aria-labelledby="fs-run-title">
+        <h2 id="fs-run-title">Run</h2>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-fs-measure>Measure</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-fs-cancel>Cancel</button>
+        </div>
+        <div class="fs-progress" data-fs-progress-wrap hidden>
+          <progress max="1" value="0" aria-labelledby="fs-progress-text" data-fs-progress></progress>
+          <span id="fs-progress-text" data-fs-progress-text>0 / 0 frames</span>
+        </div>
+        <p class="workspace-status" role="status" data-fs-run-status></p>
+        <p class="fs-stale" role="status" data-fs-stale></p>
+      </section>
+
+      <section class="workspace-panel fs-results" aria-labelledby="fs-results-title" data-fs-results-section>
+        <h2 id="fs-results-title">Results</h2>
+        <p class="tm-pair__verdict" data-fs-verdict>Load frames and enter a target, then press Measure.</p>
+        <div class="fs-plot" data-fs-plot hidden></div>
+        <div class="tm-table-wrap" data-fs-results-wrap hidden>
+          <table class="tm-table fs-results-table">
+            <caption>One row per target and frame, sorted by label and wavelength until you sort by a column. Wavelength and width in μm, flux in μJy, background in MJy/sr, positions in full-frame pixels. Select a row with Enter or a click.</caption>
+            <thead><tr data-fs-results-head></tr></thead>
+            <tbody data-fs-results></tbody>
+          </table>
+        </div>
+        <div class="fs-report" data-fs-report hidden></div>
+      </section>
+
+      <section class="workspace-panel fs-downloads" aria-labelledby="fs-downloads-title">
+        <h2 id="fs-downloads-title">Downloads</h2>
+        <p class="workspace-help">The <strong>IRSA-format CSV</strong> has spxphot's 19 columns with the IRSA table's names (label, ra, dec, lambda, lambda_width, flux, flux_err, flux_err_tractor, flags, fit_ql, flux_bkg, lvf_id, det_id, deep_flg, mjd, data_collection, x_image, y_image, n_pix). The <strong>Spectrum Lab CSV</strong> has the Spectrum Lab columns (wavelength in μm, flux in μJy) with method <strong>forced-epsf</strong>.</p>
+        <div class="tm-actions">
+          <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-fs-download-irsa>Download IRSA-format CSV</button>
+          <button class="workspace-button" type="button" aria-disabled="true" data-fs-download-lab>Download Spectrum Lab CSV</button>
+          <a class="workspace-source" href="../../tools/spectrum/index.html" data-route="/tools/spectrum">Open Spectrum Lab</a>
+        </div>
+        <p class="workspace-status" role="status" data-fs-export-status></p>
+      </section>
+
+      <section class="workspace-panel tm-note" aria-labelledby="fs-note-title">
+        <h2 id="fs-note-title">How the flux is computed</h2>
+      </section>
+      <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
+    </main>
+  </body>
+</html>
