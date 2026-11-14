@@ -97,7 +97,8 @@
 .fs-toggle-label { color: var(--workspace-muted); font-size: 0.875rem; font-weight: 600; }
 .fs-chart { margin-block-start: 0.6rem; border: 1px solid #2c3139; background: #060709; cursor: crosshair; }
 .fs-chart:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
-.fs-chart__svg { display: block; inline-size: 100%; block-size: auto; }
+/* styles.css gives every svg an icon stroke (currentColor, 1.8); the plot sets its own strokes per element. */
+.fs-chart__svg { display: block; inline-size: 100%; block-size: auto; fill: none; stroke: none; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; }
 .fs-chart__svg text { font-family: Inter, Arial, sans-serif; }
 .fs-chart__empty { margin: 0; padding: 2.5rem 1rem; color: var(--workspace-muted); font-size: 0.9375rem; text-align: center; }
 .fs-plot__summary { margin-block-start: 0.5rem; color: var(--ink); font-size: 0.875rem; font-variant-numeric: tabular-nums; }

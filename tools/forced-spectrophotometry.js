@@ -696,11 +696,14 @@
 
   // Scroll the results box (not the page) so the row shows below the sticky header.
   function scrollRowIntoView(tr) {
-    const box = el.resultsWrap.getBoundingClientRect();
-    const head = el.resultsHead.getBoundingClientRect().height;
+    // clientHeight leaves out the horizontal scrollbar, which would otherwise cover the last visible row.
+    const wrap = el.resultsWrap;
+    const inner = wrap.getBoundingClientRect().top + wrap.clientTop;
+    const top = inner + el.resultsHead.getBoundingClientRect().height;
+    const bottom = inner + wrap.clientHeight;
     const row = tr.getBoundingClientRect();
-    if (row.top < box.top + head) el.resultsWrap.scrollTop -= box.top + head - row.top;
-    else if (row.bottom > box.bottom) el.resultsWrap.scrollTop += row.bottom - box.bottom;
+    if (row.top < top) wrap.scrollTop -= Math.ceil(top - row.top);
+    else if (row.bottom > bottom) wrap.scrollTop += Math.ceil(row.bottom - bottom);
   }
 
   function renderReport() {

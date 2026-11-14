@@ -10,7 +10,7 @@
   const palette = ["#7fb4ff", "#ffb454", "#6fd3a6", "#f08bc0", "#c3a6ff", "#e8e45f"];
   const shapes = ["circle", "square", "diamond", "triangle", "down"];
   const glyphs = { circle: "●", square: "■", diamond: "◆", triangle: "▲", down: "▼" };
-  const margin = { left: 74, right: 16, top: 14, bottom: 50 };
+  const margin = { left: 80, right: 16, top: 14, bottom: 50 };
   const colors = { background: "#060709", ink: "#dce0e8", muted: "#a9b1be", grid: "#252a32", frame: "#5b6270", zero: "#8a93a3" };
   const hollowFlags = ["CONTAINS_BAD_PIXEL", "FIT_ERROR"]; // the fit's own quality bits (32 and 33); SOURCE is set on every target
   const pickRadius = 18;
@@ -139,7 +139,7 @@
         axes.append(node("line", { x1: plot.x, x2: plot.x + plot.w, y1: zero, y2: zero, stroke: colors.zero, "stroke-dasharray": "5 4" }));
       }
       axes.append(node("text", { x: plot.x + plot.w / 2, y: height - 10, "text-anchor": "middle", fill: colors.ink }, "Wavelength (μm)"));
-      axes.append(node("text", { transform: "translate(16 " + (plot.y + plot.h / 2) + ") rotate(-90)", "text-anchor": "middle", "dominant-baseline": "middle", fill: colors.ink },
+      axes.append(node("text", { transform: "translate(14 " + (plot.y + plot.h / 2) + ") rotate(-90)", "text-anchor": "middle", "dominant-baseline": "middle", fill: colors.ink },
         logY ? "Flux density (μJy), log scale" : "Flux density (μJy)"));
       svg.append(axes);
 
