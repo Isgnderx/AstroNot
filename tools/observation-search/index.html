@@ -52,6 +52,8 @@
                   <option value="dr1" selected>SPHEREx DR1</option>
                   <option value="qr3">SPHEREx QR3</option>
                   <option value="qr2">SPHEREx QR2 (archived, may return no rows)</option>
+                  <option value="dr1_deep">SPHEREx DR1 deep fields</option>
+                  <option value="qr3_deep">SPHEREx QR3 deep fields</option>
                 </select>
               </label>
             </div>
@@ -90,7 +92,7 @@
           <dl class="workspace-facts">
             <div><dt>Collection</dt><dd data-query-collection>SPHEREx DR1 (spherex_dr1)</dd></div>
             <div><dt>Service</dt><dd>Simple Image Access (SIA 2)</dd></div>
-            <div><dt>Result format</dt><dd>CSV · up to 100 records</dd></div>
+            <div><dt>Result format</dt><dd>CSV · up to 2000 records</dd></div>
           </dl>
           <p class="workspace-help" data-query-empty>Prepare a search to generate a link to the archive results.</p>
           <div class="observation-query__result" data-query-result hidden>
@@ -130,6 +132,9 @@
             </div>
           </fieldset>
           <ul class="observation-rows" data-results-list></ul>
+          <div class="workspace-actions">
+            <a class="workspace-button workspace-button--primary" data-results-handoff hidden>Measure these frames in Forced Spectrophotometry</a>
+          </div>
         </section>
       </div>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>

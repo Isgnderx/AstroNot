@@ -13,10 +13,13 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const sandbox = vm.createContext({ URL, URLSearchParams, Date, Number, Math });
+// observation.js builds links to other tools with sitePage() from routes.js, which needs a document. This stand-in keeps the
+// language query the real one adds on a translated page, so the tests can check that other parameters are appended correctly.
+const sitePageStub = 'function sitePage(route) { return "https://astronot.example" + route + "/?lang=az"; }\n';
 const lib = vm.runInContext(
-  readFileSync(join(root, "tools/observation-csv.js"), "utf8") + "\n" +
+  readFileSync(join(root, "tools/observation-csv.js"), "utf8") + "\n" + sitePageStub +
   readFileSync(join(root, "tools/observation.js"), "utf8") +
-  "\n({ parseCsv, parseIrsaResults, validateIrsaProductUrl, irsaCutoutUrl, irsaFootprint, irsaFootprintContains, irsaMjdToUtc, buildObservationQuery, irsaMaxRecords, irsaEmptyMessage, irsaReleaseOfUrl, irsaReleases, irsaDefaultRelease });",
+  "\n({ parseCsv, parseIrsaResults, validateIrsaProductUrl, irsaCutoutUrl, irsaFootprint, irsaFootprintContains, irsaMjdToUtc, buildObservationQuery, irsaMaxRecords, irsaEmptyMessage, irsaReleaseOfUrl, irsaReleases, irsaDefaultRelease, observationForcedPhotometryUrl });",
   sandbox,
 );
 
@@ -201,9 +204,12 @@ test("Two consecutive searches build independent queries", () => {
   assert.equal(first.url.searchParams.get("POS"), "CIRCLE 1 1 0.1");
 });
 
-test("SIA query: each data release selects its own IRSA collection, and DR1 is the default", () => {
+test("SIA query: each data release selects its own IRSA collection (five, deep fields included), and DR1 is the default", () => {
   const base = { ra: "156.09328159", dec: "-41.64466331", radius: "0.02" };
-  for (const [release, collection] of [["dr1", "spherex_dr1"], ["qr3", "spherex_qr3"], ["qr2", "spherex_qr2"]]) {
+  for (const [release, collection] of [
+    ["dr1", "spherex_dr1"], ["qr3", "spherex_qr3"], ["qr2", "spherex_qr2"],
+    ["dr1_deep", "spherex_dr1_deep"], ["qr3_deep", "spherex_qr3_deep"],
+  ]) {
     const query = lib.buildObservationQuery({ ...base, release });
     assert.equal(query.url.searchParams.get("COLLECTION"), collection);
     assert.equal(query.release, release);
@@ -264,21 +270,82 @@ test("IRSA results: rows from each release import with their release, and a mixe
   const only = lib.parseIrsaResults(header + "\n" + line("2025W21_2C_0280_1", productDr1) + "\n");
   assert.equal(only.rows[0].product.href, productDr1);
   assert.equal(only.rows[0].detector, 2);
+  // Without an obs_collection column the collection comes from the release in the URL, and nothing is a deep field.
+  same(parsed.rows.map((row) => row.collection), ["spherex_dr1", "spherex_qr3", "spherex_qr2"]);
+  same(parsed.rows.map((row) => row.deep), [false, false, false]);
+
+  // A deep-field file lives under dr1/level2/ too: only the obs_collection column says it is a deep field.
+  const withCollection = header + ",obs_collection\n" + [
+    line("2025W21_2C_0280_1", productDr1) + ",spherex_dr1",
+    line("2025W22_1B_0100_2", productDr1.replace("2025W21_2C_0280_1D2", "2025W22_1B_0100_2D2")) + ",spherex_dr1_deep",
+  ].join("\n") + "\n";
+  const deep = lib.parseIrsaResults(withCollection);
+  assert.equal(deep.ok, true);
+  same(deep.rows.map((row) => row.release), ["dr1", "dr1"]);
+  same(deep.rows.map((row) => row.collection), ["spherex_dr1", "spherex_dr1_deep"]);
+  same(deep.rows.map((row) => row.deep), [false, true]);
+});
+
+test("Deep-field rows keep their collection and deep flag; MAXREC is 2000", () => {
+  assert.equal(lib.irsaMaxRecords, 2000);
+  assert.equal(lib.buildObservationQuery({ ra: "1", dec: "1", radius: "0.1" }).url.searchParams.get("MAXREC"), "2000");
+  same(lib.irsaReleases.dr1_deep, { collection: "spherex_dr1_deep", label: "SPHEREx DR1 deep fields" });
+  same(lib.irsaReleases.qr3_deep, { collection: "spherex_qr3_deep", label: "SPHEREx QR3 deep fields" });
+  same(Object.keys(lib.irsaReleases), ["dr1", "qr3", "qr2", "dr1_deep", "qr3_deep"]);
+
+  const qr3Deep = productQr3.replace("2026W20_2A_0436_3D3", "2026W20_2A_0436_4D3");
+  const qr3Empty = productQr3.replace("2026W20_2A_0436_3D3", "2026W20_2A_0436_5D3");
+  const csv = header + ",obs_collection\n" + [
+    line("2026W20_2A_0436_4", qr3Deep) + ",spherex_qr3_deep",
+    line("2026W20_2A_0436_3", productQr3) + ",spherex_qr3",
+    line("2026W20_2A_0436_5", qr3Empty) + ",",
+  ].join("\n") + "\n";
+  const parsed = lib.parseIrsaResults(csv);
+  assert.equal(parsed.ok, true);
+  same(parsed.rows.map((row) => row.collection), ["spherex_qr3_deep", "spherex_qr3", "spherex_qr3"]);
+  same(parsed.rows.map((row) => row.deep), [true, false, false]);
+  // The deep file reads as QR3 by URL (it is validated like any QR3 product) but is labelled by its collection.
+  same(parsed.rows.map((row) => row.release), ["qr3", "qr3", "qr3"]);
+
+  // The record limit shown in the page matches the constant, and the page offers the five releases in order, DR1 selected.
+  const page = readFileSync(join(root, "tools/observation-search/index.html"), "utf8");
+  assert.ok(page.includes("CSV · up to " + lib.irsaMaxRecords + " records"));
+  const options = [...page.matchAll(/<option value="(\w+)"( selected)?>([^<]*)<\/option>/g)].map((m) => [m[1], Boolean(m[2]), m[3]]);
+  same(options.map((option) => option[0]), Object.keys(lib.irsaReleases));
+  same(options.filter((option) => option[1]).map((option) => option[0]), ["dr1"]);
+  assert.equal(options.find((option) => option[0] === "dr1_deep")[2], "SPHEREx DR1 deep fields");
+  assert.equal(options.find((option) => option[0] === "qr3_deep")[2], "SPHEREx QR3 deep fields");
+});
+
+test("Hand-off to Forced Spectrophotometry carries the prepared position and keeps the page's language", () => {
+  const url = new URL(lib.observationForcedPhotometryUrl({ ra: 156.09328159, dec: -41.64466331 }));
+  assert.equal(url.origin + url.pathname, "https://astronot.example/tools/forced-spectrophotometry/");
+  assert.equal(url.searchParams.get("ra"), "156.09328159");
+  assert.equal(url.searchParams.get("dec"), "-41.64466331");
+  assert.equal(url.searchParams.get("lang"), "az");
+  assert.ok(lib.observationForcedPhotometryUrl({ ra: 0, dec: 0 }).includes("ra=0&dec=0"));
+  // The position is the one buildObservationQuery normalized (RA 360 becomes 0).
+  const query = lib.buildObservationQuery({ ra: "360", dec: "-5", radius: "0.1" });
+  assert.equal(new URL(lib.observationForcedPhotometryUrl(query)).searchParams.get("ra"), "0");
 });
 
 test("Zero rows: the message names the release and suggests the others", () => {
   assert.equal(lib.parseIrsaResults(header + "\n").rows.length, 0);
   const dr1 = lib.irsaEmptyMessage("dr1");
   assert.match(dr1, /No SPHEREx DR1 observations matched/);
-  assert.match(dr1, /another data release \(SPHEREx QR3 or SPHEREx QR2\)/);
+  assert.match(dr1, /another data release \(SPHEREx QR3 or SPHEREx QR2 or SPHEREx DR1 deep fields or SPHEREx QR3 deep fields\)/);
   assert.doesNotMatch(dr1, /archived/);
   const qr3 = lib.irsaEmptyMessage("qr3");
   assert.match(qr3, /No SPHEREx QR3 observations/);
-  assert.match(qr3, /SPHEREx DR1 or SPHEREx QR2/);
+  assert.match(qr3, /SPHEREx DR1 or SPHEREx QR2 or SPHEREx DR1 deep fields/);
   const qr2 = lib.irsaEmptyMessage("qr2");
   assert.match(qr2, /No SPHEREx QR2 observations/);
   assert.match(qr2, /archived and may return no rows/);
-  assert.match(qr2, /SPHEREx DR1 or SPHEREx QR3/);
+  assert.match(qr2, /SPHEREx DR1 or SPHEREx QR3 or SPHEREx DR1 deep fields/);
+  const deep = lib.irsaEmptyMessage("qr3_deep");
+  assert.match(deep, /No SPHEREx QR3 deep fields observations matched/);
+  assert.doesNotMatch(deep, /archived/);
+  assert.match(deep, /SPHEREx DR1 or SPHEREx QR3 or SPHEREx QR2 or SPHEREx DR1 deep fields\)/);
   for (const unknown of [null, undefined, "qr1", "__proto__"]) {
     assert.match(lib.irsaEmptyMessage(unknown), /choose another data release/);
   }

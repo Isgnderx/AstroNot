@@ -8,16 +8,20 @@
 // - The cloud_access column holds JSON with commas and is NOT quoted, so a raw row has more fields than
 //   the header. joinUnquotedJson() puts those fields back together.
 // - Each SPHEREx release is its own SIA collection (spherex_dr1, spherex_qr3, spherex_qr2) with the same columns.
+//   The deep fields are separate collections (spherex_dr1_deep, spherex_qr3_deep) whose files sit under the same
+//   dr1/level2 or qr3/level2 paths, so the CSV's obs_collection column is what marks a row as a deep-field row.
 //   On 2026-11-14 spherex_qr2 answered with the header only (0 rows) while DR1 and QR3 returned rows. The same
 //   observation can appear in several releases with different processing versions in the file path.
 // - Cutouts are requested by appending ?center=RA,Dec&size=<value><unit> to a product URL.
 
-const irsaMaxRecords = 100;
+const irsaMaxRecords = 2000;
 const irsaHost = "irsa.ipac.caltech.edu";
 const irsaReleases = {
   dr1: { collection: "spherex_dr1", label: "SPHEREx DR1" },
   qr3: { collection: "spherex_qr3", label: "SPHEREx QR3" },
   qr2: { collection: "spherex_qr2", label: "SPHEREx QR2" },
+  dr1_deep: { collection: "spherex_dr1_deep", label: "SPHEREx DR1 deep fields" },
+  qr3_deep: { collection: "spherex_qr3_deep", label: "SPHEREx QR3 deep fields" },
 };
 const irsaDefaultRelease = "dr1";
 const irsaProductPath = /^\/ibe\/data\/spherex\/(dr1|qr3|qr2)\/level2\/[A-Za-z0-9._/-]+\.fits$/;
@@ -250,10 +254,15 @@ function parseIrsaResults(text) {
       return;
     }
     seen.add(url.href);
+    const release = irsaReleaseOfUrl(url);
+    // Deep-field files sit under dr1/level2 or qr3/level2 like the wide survey, so only obs_collection tells them apart.
+    const collection = get("obs_collection") || irsaReleases[release].collection;
     rows.push({
       obsId,
       product: url,
-      release: irsaReleaseOfUrl(url),
+      release,
+      collection,
+      deep: collection.endsWith("_deep"),
       detector: irsaDetector(url, get("energy_bandpassname")),
       bandpass: get("energy_bandpassname"),
       format: format || "",

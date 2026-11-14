@@ -57,6 +57,19 @@ function observationViewerUrl(row, center) {
   return url.href;
 }
 
+// "SPHEREx DR1 deep fields" for a deep-field row, "SPHEREx DR1" for a wide-survey one. Named by collection, not by URL.
+function observationCollectionLabel(row) {
+  return Object.values(irsaReleases).find((entry) => entry.collection === row.collection)?.label ?? row.collection;
+}
+
+// Link to Forced Spectrophotometry, which takes the imported frame list and the position to measure.
+function observationForcedPhotometryUrl(position) {
+  const url = new URL(sitePage("/tools/forced-spectrophotometry"));
+  url.searchParams.set("ra", String(position.ra));
+  url.searchParams.set("dec", String(position.dec));
+  return url.href;
+}
+
 function setupObservationSearch() {
   const form = document.querySelector("[data-observation-form]");
   const submit = form.querySelector("[data-observation-submit]");
@@ -82,10 +95,12 @@ function setupObservationSearch() {
     size: cutoutBox.querySelector("[name=cutoutSize]"),
   };
   const list = results.querySelector("[data-results-list]");
+  const handoff = results.querySelector("[data-results-handoff]");
   const maxImportBytes = 20 * 1024 * 1024;
   let importVersion = 0;
   let rowViews = [];
   let preparedRelease = null;
+  let preparedPosition = null;
 
   function setImportStatus(message, error = false) {
     importStatus.toggleAttribute("data-error", error);
@@ -96,7 +111,10 @@ function setupObservationSearch() {
     importVersion++;
     rowViews = [];
     preparedRelease = null;
+    preparedPosition = null;
     results.hidden = true;
+    handoff.hidden = true;
+    handoff.removeAttribute("href");
     list.replaceChildren();
     resultsNotes.replaceChildren();
     skippedList.replaceChildren();
@@ -184,7 +202,7 @@ function setupObservationSearch() {
     const facts = document.createElement("dl");
     facts.className = "workspace-facts";
     const size = row.sizeKilobytes ? (row.sizeKilobytes / 1000).toFixed(1) + " MB" : "";
-    const releaseLabel = row.release ? irsaReleases[row.release].label : "";
+    const releaseLabel = observationCollectionLabel(row);
     const footprint = text("dd", "");
     const footprintRow = document.createElement("div");
     footprintRow.append(text("dt", "Cutout footprint check"), footprint);
@@ -219,7 +237,7 @@ function setupObservationSearch() {
         return;
       }
       const { ra, dec, size: width } = cutoutParameters();
-      rowStatus.textContent = "Cutout of " + row.obsId + (row.release ? " (" + irsaReleases[row.release].label + ")" : "") + " requested from IRSA (center " + ra + "°, " + dec + "°, size " + width +
+      rowStatus.textContent = "Cutout of " + row.obsId + " (" + observationCollectionLabel(row) + ")" + " requested from IRSA (center " + ra + "°, " + dec + "°, size " + width +
         "°). Your browser saves the file. Then choose it in FITS Viewer.";
     });
     full.addEventListener("click", () => {
@@ -250,14 +268,17 @@ function setupObservationSearch() {
         ? irsaEmptyMessage(preparedRelease)
         : "No usable observations in " + fileName + ". Every row was skipped.";
     } else {
-      const releases = [...new Set(rows.map((row) => row.release))].map((key) => irsaReleases[key].label).join(", ");
+      // Name the collection, not the release in the URL, so a deep-field file does not read as a wide-survey one.
+      const labels = [...new Set(rows.map(observationCollectionLabel))].join(", ");
       resultsStatus.textContent = rows.length + (rows.length === 1 ? " observation" : " observations") + " from " + fileName +
-        " (" + releases + "). Open a row to download its FITS file.";
+        " (" + labels + "). Open a row to download its FITS file.";
     }
     if (total >= irsaMaxRecords) {
       resultsNotes.append(text("p", "The generated search asks IRSA for at most " + irsaMaxRecords +
         " records and this file has " + total + ". More observations may exist. Narrow the position, dates, or wavelengths.", "workspace-help"));
     }
+    if (preparedPosition) handoff.href = observationForcedPhotometryUrl(preparedPosition);
+    handoff.hidden = !preparedPosition;
     results.hidden = false;
   }
 
@@ -296,6 +317,7 @@ function setupObservationSearch() {
       const fields = Object.fromEntries(new FormData(form));
       const { url, ra, dec, radius, release } = buildObservationQuery(fields);
       preparedRelease = release;
+      preparedPosition = { ra, dec };
       summary.textContent = irsaReleases[release].label + " · ICRS " + ra + "°, " + dec + "° · " + radius + "° search radius";
       link.href = url.href;
       cutout.ra.value = ra;
