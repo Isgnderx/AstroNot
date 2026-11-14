@@ -2,7 +2,7 @@
 import { writeFileSync } from "node:fs";
 
 const TARGET = { label: "BD+17_4708", ra: 332.882637, dec: 18.093128 };
-const KEEP = ["obs_id", "access_url", "access_format", "energy_bandpassname", "obs_collection", "t_min", "t_max", "em_min", "em_max", "s_region"];
+const KEEP = ["obs_id", "access_url", "access_format", "energy_bandpassname", "obs_collection", "t_min", "t_max", "em_min", "em_max"];
 const OUT = new URL("../assets/tools/spherex-bd17-frames.js", import.meta.url);
 
 function parseCsv(text) {

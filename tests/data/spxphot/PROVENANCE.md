@@ -43,4 +43,4 @@ spxphot.exe cutout --file dr1/level2/2025W21_2C/l2b-v27-2026-199/1/level2_2025W2
 
 ## `assets/tools/spherex-bd17-frames.js`
 
-Written by `node scripts/make-bd17-frames.mjs` on 2026-11-14: spherex_dr1 239 rows, spherex_qr3 113 rows, columns trimmed to obs_id, access_url, access_format, energy_bandpassname, obs_collection, t_min, t_max, em_min, em_max, s_region.
+Written by `node scripts/make-bd17-frames.mjs` on 2026-11-14: spherex_dr1 239 rows, spherex_qr3 113 rows, columns trimmed to obs_id, access_url, access_format, energy_bandpassname, obs_collection, t_min, t_max, em_min, em_max (s_region is dropped: the tool never uses footprints).
