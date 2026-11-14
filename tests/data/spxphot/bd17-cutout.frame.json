@@ -1,0 +1,9 @@
+{
+  "access_url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W21_2C/l2b-v27-2026-199/1/level2_2025W21_2C_0321_1D1_spx_l2b-v27-2026-199.fits",
+  "obs_id": "2025W21_2C_0321_1",
+  "obs_collection": "spherex_dr1",
+  "energy_bandpassname": "SPHEREx-D1",
+  "t_min": "60819.418091",
+  "lvf_id": 202521203032111,
+  "target": { "label": "BD+17_4708", "ra": 332.882637, "dec": 18.093128 }
+}
