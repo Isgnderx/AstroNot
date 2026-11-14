@@ -74,3 +74,26 @@ test("createTanSip rejects non-TAN projections and LONPOLE other than 180", () =
   assert.throws(() => ForcedPhot.createTanSip({ ...fields, CTYPE1: "RA---SIN" }), /unsupported projection RA---SIN/);
   assert.throws(() => ForcedPhot.createTanSip({ ...fields, LONPOLE: "0" }), /LONPOLE != 180 is not supported/);
 });
+
+test("pixToWorld wraps RA like Rust rem_euclid: exact for small positive RA, just under 360 for small negative RA", () => {
+  // CRVAL1 = CRVAL2 = 0 on the vector header's other cards: on the equator at the reference point xi = cd * t * D2R, eta = 0.
+  const f = { ...fields, CRVAL1: 0, CRVAL2: 0, CRPIX1: 1, CRPIX2: 1, CD1_1: 1, CD1_2: 0, CD2_1: 0, CD2_2: 1 };
+  for (const key of Object.keys(f)) if (/^(A|B|AP|BP)_/.test(key)) delete f[key];
+  const w = ForcedPhot.createTanSip(f);
+  const D2R = Math.PI / 180;
+  const rawRa = (t) => Math.atan2((t + 1 - 1) * D2R, 1) / D2R; // unwrapped RA in degrees for a pixel at x = t (y = 0), u = x + 1 - CRPIX1
+  for (const t of [1e-6, 0.123456789, 5e-13]) {
+    const [ra] = w.pixToWorld(t, 0);
+    assert.equal(ra, rawRa(t) % 360, "positive RA is returned unchanged for t = " + t);
+    assert.ok(ra > 0 && ra < 1);
+  }
+  const [negative] = w.pixToWorld(-1e-12, 0);
+  assert.equal(negative, rawRa(-1e-12) + 360);
+  assert.ok(negative > 359.99999999 && negative < 360, "tiny negative RA maps to just under 360: " + negative);
+  // x = -1 makes x + 1 exact, so with CRPIX1 = +/-1e-17 the plane offset is exactly -/+1e-17 pixel.
+  const wTiny = ForcedPhot.createTanSip({ ...f, CRPIX1: 1e-17 });
+  assert.equal(wTiny.pixToWorld(-1, 0)[0], 360, "-1e-17 deg maps to 360 (-1e-17 + 360 rounds to 360), as in Rust");
+  const wTinyPositive = ForcedPhot.createTanSip({ ...f, CRPIX1: -1e-17 });
+  assert.ok(wTinyPositive.pixToWorld(-1, 0)[0] > 0 && wTinyPositive.pixToWorld(-1, 0)[0] < 1e-16, "+1e-17 deg stays 1e-17");
+  assert.equal(w.pixToWorld(0, 0)[0], 0);
+});

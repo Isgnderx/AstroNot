@@ -39,8 +39,10 @@
     return number === null ? fallback : number;
   }
   function f64(fields, key) {
-    const number = parseNumber(get(fields, key));
-    if (number === null) throw new Error("missing or invalid header keyword " + key);
+    const value = get(fields, key);
+    if (value === undefined) throw new Error("missing header key " + key);
+    const number = parseNumber(value);
+    if (number === null) throw new Error("header key " + key + " is not a number");
     return number;
   }
 
@@ -55,6 +57,12 @@
       }
     }
     return v;
+  }
+
+  // Rust f64::rem_euclid: x % m, plus m when that is negative (so -1e-17 maps to 360, and non-negative x is returned exactly).
+  function remEuclid(x, m) {
+    const r = x % m;
+    return r < 0 ? r + m : r;
   }
 
   function poly(terms, u, v) {
@@ -108,8 +116,7 @@
       const den = c0 - eta * s0;
       const ra = ra0 + Math.atan2(xi, den);
       const dec = Math.atan2(s0 + eta * c0, Math.sqrt(xi * xi + den * den));
-      const raDeg = ra / D2R;
-      return [((raDeg % 360) + 360) % 360, dec / D2R]; // rem_euclid(360)
+      return [remEuclid(ra / D2R, 360), dec / D2R];
     }
 
     function worldToPlane(raDeg, decDeg) {
