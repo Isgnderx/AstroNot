@@ -36,9 +36,16 @@
   const state = { frames: [], targets: [], params: null, filters: null, run: null, result: null, selected: null, sort: null, order: [], nextTarget: 1, exampleScripts: {} };
 
   // ---- Small helpers --------------------------------------------------------------------------------------------------------------
+  // message is a sentence or a list of sentences. Each sentence gets its own text node, so the site's translation catalogue
+  // can match it on its own (assets/i18n/site-language.js translates whole text nodes).
+  function writeParts(node, message) {
+    const parts = (Array.isArray(message) ? message : [message]).filter(Boolean);
+    node.replaceChildren(...parts.flatMap((part, index) => (index ? [" ", cell("span", part)] : [cell("span", part)])));
+  }
+
   function writeStatus(node, message, error = false) {
     node.toggleAttribute("data-error", error);
-    node.textContent = message;
+    writeParts(node, message);
   }
   const setStatus = (message, error) => writeStatus(el.status, message, error);
   const setRunStatus = (message, error) => writeStatus(el.runStatus, message, error);
@@ -54,10 +61,6 @@
     else node.textContent = content;
     for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
     return node;
-  }
-
-  function plural(count, word) {
-    return count + " " + word + (count === 1 ? "" : "s");
   }
 
   function sentence(text) {
@@ -112,17 +115,20 @@
     }
   }
 
-  function collectionCounts() {
-    const counts = new Map();
-    for (const frame of state.frames) {
-      const key = frame.collection || "local, no collection";
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return [...counts].map(([name, count]) => name + " " + count).join(", ");
-  }
-
+  // The loaded frames as sentences: the total with the count per collection, and local files without a collection apart.
   function loadedSummary() {
-    return state.frames.length ? plural(state.frames.length, "frame") + " loaded (" + collectionCounts() + ")." : "No frame loaded.";
+    if (!state.frames.length) return ["No frame loaded."];
+    const counts = new Map();
+    let unlinked = 0;
+    for (const frame of state.frames) {
+      if (!frame.collection) unlinked++;
+      else counts.set(frame.collection, (counts.get(frame.collection) ?? 0) + 1);
+    }
+    const parts = [counts.size
+      ? "Frames loaded: " + state.frames.length + " (" + [...counts].map(([name, count]) => name + " " + count).join(", ") + ")."
+      : "Frames loaded: " + state.frames.length + "."];
+    if (unlinked) parts.push("Local frames without a collection: " + unlinked + ".");
+    return parts;
   }
 
   // Read SIA CSV texts ([{ name, text }]) into frames.
@@ -142,18 +148,18 @@
         else incoming.push({ ...frame, sourceName: name, local: false, memory: null, hasEpsf: null });
       }
       const left = parsed.skipped.length + notFrames;
-      if (left) notes.push(name + ": " + plural(left, "row") + " of " + parsed.total + " left out (not a SPHEREx level 2 FITS file on IRSA, or unreadable).");
+      if (left) notes.push(name + ": rows left out: " + left + " of " + parsed.total + " (not a SPHEREx level 2 FITS file on IRSA, or unreadable).");
     }
     const { added, duplicates } = addFrames(incoming);
     renderFrames();
     afterInputsChanged();
-    const head = plural(added, "frame") + " added, " + plural(duplicates, "duplicate") + " left out. ";
-    setStatus((head + loadedSummary() + " " + notes.join(" ")).trim(), added === 0 && notes.length > 0);
-    return added;
+    const parts = ["Frames added: " + added + ", duplicates left out: " + duplicates + ".", ...loadedSummary(), ...notes];
+    setStatus(parts, added === 0 && notes.length > 0);
+    return { added, parts };
   }
 
   async function importCsvFiles(files) {
-    setStatus("Reading " + plural(files.length, "CSV file") + "…");
+    setStatus("Reading CSV files: " + files.length + "…");
     const texts = [];
     const failed = [];
     for (const file of files) {
@@ -163,8 +169,8 @@
         failed.push(file.name + " could not be read: " + error.message);
       }
     }
-    importCsvTexts(texts);
-    if (failed.length) setStatus(el.status.textContent + " " + failed.join(" "), true);
+    const { parts } = importCsvTexts(texts);
+    if (failed.length) setStatus([...parts, ...failed], true);
   }
 
   // A local FITS file: the IMAGE header gives the observation ID, detector and mid-exposure MJD; the run reads it from memory.
@@ -186,7 +192,7 @@
   }
 
   async function addLocalFiles(files) {
-    setStatus("Reading " + plural(files.length, "FITS file") + "…");
+    setStatus("Reading FITS files: " + files.length + "…");
     const incoming = [];
     const notes = [];
     for (const file of files) {
@@ -201,8 +207,7 @@
     const { added, duplicates } = addFrames(incoming);
     renderFrames();
     afterInputsChanged();
-    const head = plural(added, "local frame") + " added, " + plural(duplicates, "duplicate") + " left out. ";
-    setStatus((head + loadedSummary() + " " + notes.join(" ")).trim(), added === 0 && notes.length > 0);
+    setStatus(["Local frames added: " + added + ", duplicates left out: " + duplicates + ".", ...loadedSummary(), ...notes], added === 0 && notes.length > 0);
   }
 
   async function useExample() {
@@ -213,13 +218,13 @@
       return;
     }
     const example = window.spherexBd17Frames;
-    const added = importCsvTexts(example.files);
+    const { added, parts } = importCsvTexts(example.files);
     state.targets[0] = { ...blankTarget(), label: example.target.label, ra: String(example.target.ra), dec: String(example.target.dec) };
     el.unit.value = "deg";
     renderTargets();
     afterInputsChanged();
     writeStatus(el.targetsStatus, "Target 1 is the example's position, " + example.target.label + " (frame lists retrieved from IRSA on " + example.fetched + ").");
-    setStatus(el.status.textContent + (added ? " The run reads these frames from the IRSA archive copy on Amazon S3, so it needs network access (about two minutes at 6 concurrent frames)." : ""));
+    setStatus([...parts, added ? "The run reads these frames from the IRSA archive copy on Amazon S3, so it needs network access (about two minutes at 6 concurrent frames)." : ""]);
   }
 
   function removeAllFrames() {
@@ -242,7 +247,7 @@
     const count = state.frames.length;
     el.framesWrap.hidden = !count;
     setDisabled(el.clear, !count);
-    el.framesCaption.textContent = count > maxListedFrames ? "Loaded frames (the first " + maxListedFrames + " of " + count + " are listed)" : "Loaded frames (" + count + ")";
+    el.framesCaption.textContent = count > maxListedFrames ? "Loaded frames: " + count + " (the first " + maxListedFrames + " are listed)" : "Loaded frames: " + count;
     el.frames.replaceChildren(...state.frames.slice(0, maxListedFrames).map((frame) => {
       const row = document.createElement("tr");
       const reads = cell("td", readsFrom(frame));
@@ -304,7 +309,7 @@
     const targets = checks.filter((check) => check.target).map((check) => check.target);
     const problems = [];
     checks.forEach((check, index) => {
-      if (check.problems.length) problems.push("Target " + (index + 1) + ": " + check.problems.map((problem) => problem.message).join(" "));
+      for (const problem of check.problems) problems.push("Target " + (index + 1) + ": " + problem.message);
     });
     return { checks, targets, problems };
   }
@@ -320,7 +325,7 @@
         if (bad.has(key)) input.setAttribute("aria-invalid", "true");
         else input.removeAttribute("aria-invalid");
       }
-      query("target-message", item).textContent = check.problems.map((problem) => problem.message).join(" ");
+      writeParts(query("target-message", item), check.problems.map((problem) => problem.message));
     }
   }
 
@@ -377,7 +382,7 @@
         state.targets = state.targets.filter((other) => other !== entry);
         renderTargets();
         afterInputsChanged();
-        writeStatus(el.targetsStatus, "Target removed. " + plural(state.targets.length, "target row") + " left.");
+        writeStatus(el.targetsStatus, ["Target removed.", "Target rows: " + state.targets.length + "."]);
         el.addTarget.focus();
       });
       item.append(head, main, shape, message);
@@ -395,7 +400,7 @@
     state.targets.push(blankTarget());
     renderTargets();
     afterInputsChanged();
-    writeStatus(el.targetsStatus, plural(state.targets.length, "target row") + ".");
+    writeStatus(el.targetsStatus, "Target rows: " + state.targets.length + ".");
     const inputs = el.targets.lastElementChild.querySelectorAll("input");
     if (inputs.length > 1) inputs[1].focus();
   }
@@ -420,7 +425,7 @@
     el.unit.value = "deg";
     renderTargets();
     afterInputsChanged();
-    writeStatus(el.targetsStatus, plural(state.targets.length, "target") + " read from " + file.name + " (coordinates in degrees).");
+    writeStatus(el.targetsStatus, "Targets read from " + file.name + ": " + state.targets.length + " (coordinates in degrees).");
   }
 
   // ---- Filters and parameters ------------------------------------------------------------------------------------------------------
@@ -495,7 +500,7 @@
     const targets = updateControls();
     showTargetProblems(targets.checks);
     const params = readParams();
-    writeStatus(el.paramsStatus, [...params.problems, ...params.notes].join(" "), !params.ok);
+    writeStatus(el.paramsStatus, [...params.problems, ...params.notes], !params.ok);
     if (state.run) state.run.changed = true;
     else if (state.result) markStale();
   }
@@ -513,10 +518,10 @@
     if (state.run) return "A run is already in progress. Cancel it first to start another.";
     if (!state.frames.length) return "Load at least one frame first: import an SIA CSV file, choose FITS files or use the BD+17 4708 example.";
     const targets = readTargets();
-    if (targets.problems.length) return "Fix the targets first. " + targets.problems.join(" ");
+    if (targets.problems.length) return ["Fix the targets first.", ...targets.problems];
     if (!targets.targets.length) return "Enter at least one target (RA and Dec).";
     const params = readParams();
-    if (!params.ok) return "Fix the filters and parameters first. " + params.problems.join(" ");
+    if (!params.ok) return ["Fix the filters and parameters first.", ...params.problems];
     return null;
   }
 
@@ -531,7 +536,7 @@
     const selection = FP.selectFrames(state.frames, filters);
     if (!selection.frames.length) {
       const x = selection.excluded;
-      setRunStatus("No frame passes the filters (" + x.deep + " deep-field, " + x.detector + " by detector, " + x.mjd + " by MJD left out). Change the filters or load more frames.", true);
+      setRunStatus(["No frame passes the filters. Left out: deep-field " + x.deep + ", by detector " + x.detector + ", by MJD " + x.mjd + ".", "Change the filters or load more frames."], true);
       return;
     }
     const controller = new AbortController();
@@ -541,10 +546,10 @@
     el.stale.textContent = state.result ? "Measuring again: the plot, table and report below are from the previous run until this one finishes, and the downloads wait for it." : "";
     el.progress.max = Math.max(1, selection.frames.length);
     el.progress.value = 0;
-    el.progressText.textContent = "0 / " + selection.frames.length + " frames";
+    el.progressText.textContent = "Frames: 0 / " + selection.frames.length;
     el.progressWrap.hidden = false;
     updateControls();
-    setRunStatus("Measuring " + plural(targets.length, "target") + " on " + plural(selection.frames.length, "frame") + ", " + concurrency + " at a time…");
+    setRunStatus("Measuring. Targets: " + targets.length + ", frames: " + selection.frames.length + ", read " + concurrency + " at a time…");
 
     let outcome;
     try {
@@ -553,7 +558,7 @@
         onProgress({ done, total, failed }) {
           el.progress.max = Math.max(1, total);
           el.progress.value = done;
-          el.progressText.textContent = done + " / " + total + " frames" + (failed ? " (" + failed + " failed)" : "");
+          el.progressText.textContent = failed ? "Frames: " + done + " / " + total + ", failed: " + failed : "Frames: " + done + " / " + total;
         },
       });
     } catch (error) {
@@ -571,7 +576,7 @@
     state.sort = null;
     state.selected = null;
     const line = rows.length + " spectral points, " + report.failed.length + " frame failures, " + report.epsfDownloads + " ePSF calibration downloads, " + report.seconds.toFixed(1) + " s";
-    setRunStatus((report.cancelled ? "Cancelled after " + (report.measured + report.skipped.length + report.failed.length) + " of " + report.frames + " frames: " : "") + line, report.failed.length > 0);
+    setRunStatus([report.cancelled ? "Cancelled after " + (report.measured + report.skipped.length + report.failed.length) + " of " + report.frames + " frames." : "", line], report.failed.length > 0);
     el.stale.textContent = "";
     renderResults();
     if (changed) markStale();
@@ -632,7 +637,8 @@
     el.resultsHead.replaceChildren(...columns.map((column) => {
       const th = cell("th", "", { scope: "col" });
       const name = column === "flag_names" ? "Flag names" : column;
-      const button = cell("button", name, { type: "button", class: "fs-sort" });
+      // Column names are the IRSA table's own and stay untranslated; only "Flag names" is a label.
+      const button = cell("button", name, column === "flag_names" ? { type: "button", class: "fs-sort" } : { type: "button", class: "fs-sort", translate: "no" });
       if (state.sort && state.sort.column === column) {
         th.setAttribute("aria-sort", state.sort.direction > 0 ? "ascending" : "descending");
         button.append(cell("span", state.sort.direction > 0 ? " ▲" : " ▼", { "aria-hidden": "true" }));
@@ -706,7 +712,9 @@
       facts.append(row);
     };
     const left = excluded.deep + excluded.detector + excluded.mjd;
-    fact("Frames found", report.frames + (left ? " of " + loaded + " loaded (" + excluded.deep + " deep-field, " + excluded.detector + " by detector, " + excluded.mjd + " by MJD left out by the filters)" : " (every loaded frame)"));
+    fact("Frames found", left
+      ? report.frames + " of " + loaded + " loaded. Left out by the filters: deep-field " + excluded.deep + ", by detector " + excluded.detector + ", by MJD " + excluded.mjd + "."
+      : report.frames + " (every loaded frame)");
     fact("Measured", String(report.measured));
     fact("Skipped", String(report.skipped.length));
     fact("Failed", String(report.failed.length));
@@ -717,7 +725,8 @@
       if (!entries.length) return;
       const details = document.createElement("details");
       details.append(cell("summary", title + " (" + entries.length + ")"), cell("ul", ""));
-      details.lastChild.append(...entries.map((entry) => cell("li", text(entry))));
+      // The reasons are the engine's (spxphot's) own messages and file names, shown as they are.
+      details.lastChild.append(...entries.map((entry) => cell("li", text(entry), { translate: "no" })));
       parts.push(details);
     };
     list("Skipped frames and reasons", report.skipped, (entry) => entry.uri + ": " + entry.reason);
@@ -741,12 +750,12 @@
     }
     const points = result.rows.length;
     el.verdict.textContent = points
-      ? plural(points, "spectral point") + " for " + plural(result.targets.length, "target") + " from " + plural(result.report.measured, "measured frame") + "."
+      ? "Spectral points: " + points + ", targets: " + result.targets.length + ", measured frames: " + result.report.measured + "."
       : "No spectral point: no target fell on a measured frame" + (result.report.failed.length ? ", and some frames failed (see below)." : ".");
     if (points) renderTable();
     else el.results.replaceChildren();
     renderReport();
-    el.exportStatus.textContent = points ? plural(points, "row") + " ready to download." : "No spectral point to export.";
+    el.exportStatus.textContent = points ? "Rows ready to download: " + points + "." : "No spectral point to export.";
   }
 
   // ---- Downloads -------------------------------------------------------------------------------------------------------------------------
@@ -772,7 +781,7 @@
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    el.exportStatus.textContent = name + " downloaded with " + plural(result.rows.length, "row") + "." + (lab ? " Open Spectrum Lab and choose this file there." : "");
+    writeParts(el.exportStatus, [name + " downloaded (rows: " + result.rows.length + ").", lab ? "Open Spectrum Lab and choose this file there." : ""]);
   }
 
   // ---- Wiring ------------------------------------------------------------------------------------------------------------------------------
