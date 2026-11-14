@@ -31,11 +31,19 @@
   - [ ] Observation Search: IRSA formatlı kəsikləri S3-dən lokal qurmaq (spxphot `search --download cutout` kimi; IRSA kəsik xidməti CORS göndərmir və 503 qaytarır).
   - [ ] Yeni alətin tr/ru/es/zh sətirləri (hazırda yalnız az var).
   - [ ] Sérsic (qalaktika modeli) rejimini IRSA nəticələri ilə yoxlamaq: spxphot-da NGC 7619 üçün median nisbət 1.040-dır, səbəb təsdiqlənməyib.
+  - Yekun kod rəyinin (14 noyabr 2026) açıq qalan tapıntıları — birləşdirmədən əvvəl düzəldilməyib, sahibin qərarı ilə sonraya saxlanıb:
+    - [ ] Arxiv əlçatmaz olanda (oflayn, CORS, 403/404) icra hər kadr üçün 7 dəfə təkrar edir (~47 s), `Cancel` `fetch`-ə və gözləməyə çatmır, sorğu vaxt limiti yoxdur, xəta mətni "Failed to fetch"-dir. Həll: `AbortSignal`-ı `createHttpSource`-a ötürmək, 408/429-dan başqa 4xx-i təkrar etməmək, sorğu başına vaxt limiti, aydın mesaj, ilk N kadr hamısı şəbəkə xətası verəndə icranı erkən dayandırmaq (`tools/fits-range.js`, `tools/forced-phot.js`).
+    - [ ] Lokal fayl və onun idxal edilmiş S3 əkizi (eyni OBSID + detektor) hər ikisi ölçülür → eyni `lvf_id` iki dəfə; lokal fayl qalib gəlməli, əkiz icradan çıxarılmalıdır; eyni adlı iki lokal fayl səssiz atılmamalıdır (`tools/forced-spectrophotometry.js` `linkLocalFrames`).
+    - [ ] Sérsic və birgə (joint) fit yolları üçün spxphot oracle-ı yoxdur: nümunə kadrda `spxphot phot --targets` ilə (ulduz Sérsic modeli + 30″ qonşu, `--detectors 1 --mjd-min/--mjd-max 60819.418091`) ikinci oracle yaradıb 1e-9 paritet testi əlavə etmək.
+    - [ ] Kadr cədvəli hündürlükcə məhdudlaşdırılmayıb (nümunədə 500 sətir səhifəni ~10 000 px aşağı itələyir) və S3 sətirlərində müşahidə adı göstərilmir (`.fs-results-wrap` kimi `max-block-size` + "Observation" sütunu).
+    - [ ] Qrafikdə içiboş marker praktikada yalnız CONTAINS_BAD_PIXEL deməkdir (BD+17 4708-də bütün nöqtələr içiboşdur). Qərar: içiboş = fit-in nəzərə almadığı piksellər (FIT_IGNORE bitləri) və ya FIT_ERROR; `hollowFlags` sabiti və lejend mətni dəyişməlidir.
+    - [ ] az.js: `validateShape`-in 4 rədd mesajı (Sérsic indeksi, ox nisbəti, mövqe bucağı, effektiv radius) üçün açar yoxdur; "bunu" → "bunları" (loqarifmik ox cümləsinin cəm şablonu).
+    - [ ] Dalğa uzunluğu filtrinin atdığı nöqtələr hesabatda sayılmır; MJD mənası S3 kadrlarında `t_min`, lokal fayllarda `MJD-AVG`-dir (kömək mətnində bir söz).
 
 ## Hazırdır
 
 - [x] Hərəkətli qalaktikası olan ana səhifə, dörd seçilmiş alət və **Show All** keçidi.
-- [x] 12 alətin yer aldığı ayrıca Tools səhifəsi və hazırlanmaqda olan iş sahələrinin önizləmələri.
+- [x] 13 alətin yer aldığı ayrıca Tools səhifəsi və hazırlanmaqda olan iş sahələrinin önizləmələri.
 - [x] SPHEREx arxivində axtarış üçün Observation Search.
 - [x] Yerli FITS fayllarını açan FITS Viewer və real SPHEREx nümunəsi.
 - [x] Explore, Learn və About üçün ayrıca səhifələr.
