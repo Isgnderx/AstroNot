@@ -316,12 +316,19 @@
   }
 
   // ---- Byte sources ------------------------------------------------------------------------------------------------------------
+  // End of file is a condition of its own (error.code === "EOF"): it is never retried, and walkHdus may end a walk on it.
+  function endOfFile(message) {
+    const e = new Error(message);
+    e.code = "EOF";
+    return e;
+  }
+
   function createMemorySource(bytes) {
     return {
       kind: "memory",
       async read(off, len) {
         const end = Math.min(off + len, bytes.length);
-        if (off >= end) throw new Error("read past end of buffer");
+        if (off >= end) throw endOfFile("read past end of buffer");
         return bytes.slice(off, end);
       }
     };
@@ -335,7 +342,7 @@
       try {
         return await f();
       } catch (e) {
-        if (attempt >= attempts - 1) throw e;
+        if (e.code === "EOF" || attempt >= attempts - 1) throw e;
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay *= 2;
       }
@@ -349,8 +356,19 @@
         return retry(
           async () => {
             const r = await fetch(url, { headers: { Range: "bytes=" + off + "-" + (off + len - 1) } });
-            if (!r.ok) throw new Error("HTTP status " + r.status + " for " + url);
-            if (r.status !== 206) throw new Error("server ignored Range request (" + r.status + ")");
+            if (r.status === 416) {
+              // Range Not Satisfiable: the offset is at or past the end of the file.
+              r.body?.cancel();
+              throw endOfFile("read past end of file (416)");
+            }
+            if (!r.ok) {
+              r.body?.cancel();
+              throw new Error("HTTP status " + r.status + " for " + url);
+            }
+            if (r.status !== 206) {
+              r.body?.cancel();
+              throw new Error("server ignored Range request (" + r.status + ")");
+            }
             return new Uint8Array(await r.arrayBuffer());
           },
           retries,
@@ -444,8 +462,8 @@
     return source.read(hdu.dataOffset, hdu.header.int("NAXIS1") * hdu.header.int("NAXIS2"));
   }
 
-  // Walk the HDUs from `offset` until the one named `until` (inclusive) or `max` HDUs. As in the Rust tail walk, an HDU that cannot
-  // be read after the first ends the walk instead of failing it.
+  // Walk the HDUs from `offset` until the one named `until` (inclusive), `max` HDUs, or the end of the file. Only a genuine end of file
+  // (a read past the end of a memory buffer, or an HTTP 416) ends the walk quietly after the first HDU; every other error propagates.
   async function walkHdus(source, { offset = 0, until = "WCS-WAVE", max = 8 } = {}) {
     const hdus = [];
     let off = offset;
@@ -454,7 +472,7 @@
       try {
         hdu = await hduAt(source, off);
       } catch (e) {
-        if (i === 0) throw e;
+        if (i === 0 || e.code !== "EOF") throw e;
         break;
       }
       hdus.push(hdu);

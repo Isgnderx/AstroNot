@@ -278,11 +278,21 @@ test("createBinTable reads EPSF zones and the WCS-WAVE table", async () => {
 });
 
 // ---- HTTP -----------------------------------------------------------------------------------------------------------------
-function startServer() {
+function startServer({ failAt } = {}) {
   let flakyCalls = 0;
   const server = createServer((req, res) => {
     const total = fixture.length;
     const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || "");
+    if (range && Number(range[1]) === failAt) {
+      res.writeHead(500);
+      res.end("broken");
+      return;
+    }
+    if (range && Number(range[1]) >= total) {
+      res.writeHead(416, { "Content-Range": "bytes */" + total });
+      res.end();
+      return;
+    }
     if (req.url === "/ignores-range") {
       res.writeHead(200, { "Content-Length": 100 });
       res.end(Buffer.from(fixture.subarray(0, 100)));
@@ -343,8 +353,10 @@ test("HttpSource: range reads, 206 required, retry then success", async () => {
     await assert.rejects(deaf.read(0, 80), /ignored Range/);
     assert.equal(calls.length, 3, "retried `retries` times in all");
 
-    const failing = createHttpSource(base + "/x", { fetch: () => Promise.reject(new Error("offline")), retries: 2, firstDelayMs: 1 });
-    await assert.rejects(failing.read(0, 10), /offline/);
+    let attempt = 0;
+    const failing = createHttpSource(base + "/x", { fetch: () => Promise.reject(new Error("offline " + ++attempt)), retries: 3, firstDelayMs: 1 });
+    await assert.rejects(failing.read(0, 10), /offline 3/);
+    assert.equal(attempt, 3);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -356,4 +368,46 @@ test("MemorySource: clamps to the end, throws past it", async () => {
   assert.deepEqual(Array.from(await source.read(3, 10)), [4, 5]);
   assert.deepEqual(Array.from(await source.read(0, 2)), [1, 2]);
   await assert.rejects(source.read(5, 1), /read past end of buffer/);
+});
+
+test("walkHdus: ends quietly only at a real end of file, propagates every other error", async () => {
+  const hdus = await walkHdus(createMemorySource(fixture));
+  const variance = hdus.find((h) => h.name === "VARIANCE");
+  const flags = hdus.find((h) => h.name === "FLAGS");
+
+  // (a) a memory source that stops after VARIANCE: the walk returns what is there
+  const truncated = await walkHdus(createMemorySource(fixture.subarray(0, variance.end)));
+  assert.deepEqual(truncated.map((h) => h.name), ["PRIMARY", "IMAGE", "FLAGS", "VARIANCE"]);
+  // a file that ends inside a header is not a clean end
+  await assert.rejects(walkHdus(createMemorySource(fixture.subarray(0, variance.end + 800))), /no END card/);
+  // the first HDU is never optional
+  await assert.rejects(walkHdus(createMemorySource(new Uint8Array(0))), /read past end/);
+
+  // (b) a server error at the FLAGS header fails the walk with that error
+  const broken = await startServer({ failAt: flags.dataOffset - flags.header.size });
+  try {
+    const source = createHttpSource("http://127.0.0.1:" + broken.address().port + "/frame.fits", { retries: 3, firstDelayMs: 1 });
+    await assert.rejects(walkHdus(source), /HTTP status 500/);
+  } finally {
+    await new Promise((resolve) => broken.close(resolve));
+  }
+
+  // (c) an HTTP walk that never meets `until` ends after the last HDU; the 416 past the end is not retried
+  const server = await startServer();
+  try {
+    const statuses = [];
+    const recording = async (url, init) => {
+      const r = await fetch(url, init);
+      statuses.push(r.status);
+      return r;
+    };
+    const source = createHttpSource("http://127.0.0.1:" + server.address().port + "/frame.fits", { fetch: recording, retries: 7, firstDelayMs: 1 });
+    const all = await walkHdus(source, { until: "NOPE" });
+    assert.deepEqual(all.map((h) => h.name), hdus.map((h) => h.name));
+    assert.equal(statuses.filter((s) => s === 416).length, 1);
+    assert.equal(statuses.at(-1), 416); // the walk ended on it, with no retry after it
+    assert.ok(statuses.slice(0, -1).every((s) => s === 206));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
