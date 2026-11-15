@@ -145,7 +145,7 @@ const nonResearcherTools = [
     route: "constellation-finder",
     name: "Constellation Finder",
     category: "observation",
-    description: "Find familiar constellations and learn how to spot them in the night sky.",
+    description: "Find any of the 88 constellations in the night sky and see your zodiac sign on the map.",
     image: "assets/tools/public-previews/constellation-finder.jpg",
     caption: "Interactive sky map",
     available: true,

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0b0c0e">
-    <meta name="description" content="Pick a city and time, then turn the sky to find familiar star patterns.">
+    <meta name="description" content="Pick a city and time, then turn the sky to find any of the 88 constellations — and see where the Sun stood on your birthday.">
     <title>Constellation Finder — AstroNot</title>
     <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
@@ -14,6 +14,8 @@
     <script src="../../assets/i18n/site-language.js" defer></script>
     <script src="../public-astronomy.js" defer></script>
     <script src="../../assets/tools/bright-stars.js" defer></script>
+    <script src="../../assets/tools/constellations.js" defer></script>
+    <script src="../public-zodiac.js" defer></script>
     <script src="../public-scenes.js" defer></script>
     <script src="../public-tools.js" defer></script>
   </head>
@@ -36,7 +38,7 @@
     <main class="workspace-frame outreach__main" id="page-content" tabindex="-1">
       <header class="outreach__heading">
         <h1>Constellation Finder</h1>
-        <p>Pick a city and time, then turn the sky to find familiar star patterns.</p>
+        <p>Pick a city and time, then turn the sky to find any of the 88 constellations — and see where the Sun stood on your birthday.</p>
       </header>
       <div data-public-tool="constellation-finder" hidden></div>
       <noscript><p>Enable JavaScript to use this interactive tool.</p></noscript>
@@ -45,7 +47,10 @@
         <ul>
           <li><span>Star positions</span> <a href="https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html">Yale Bright Star Catalogue via NASA HEASARC</a></li>
           <li><span>Direction calculation</span> <a href="https://aa.usno.navy.mil/faq/alt_az">U.S. Naval Observatory</a></li>
+          <li><span>Constellation boundaries and names</span> <a href="https://github.com/ofrohn/d3-celestial">IAU boundaries (Roman 1987) via d3-celestial, BSD-3-Clause</a></li>
+          <li><span>Sun position</span> <a href="https://www.willbell.com/math/mc1.htm">Meeus, Astronomical Algorithms, chapter 25 (about 0.01°)</a></li>
         </ul>
+        <p>The outlines follow the IAU lines to within 0.05° in the zodiac and 0.5° near the celestial poles. The astrological sign is the familiar convention; the constellation is where the Sun really was, by the IAU boundaries, Ophiuchus included.</p>
       </footer>
     </main>
   </body>

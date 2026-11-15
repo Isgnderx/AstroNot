@@ -185,8 +185,11 @@
   const meridians = Array.from({ length: 12 }, (_, i) =>
     Array.from({ length: 21 }, (_, j) => direction(i * Math.PI / 6, (-10 + 5 * j) * degrees)));
 
-  function sky(ctx, w, h, view, stars, guides, selected) {
+  // `extras` (optional): { boundaries: [{ rings: [[x,y,z], …][], selected, label: { point, text } }], highlight: Set of star
+  // indices to brighten, marker: { point, text } | null } — the constellation outlines, member stars and the birthday Sun.
+  function sky(ctx, w, h, view, stars, guides, selected, extras = {}) {
     const project = cameraProjection(w, h, view.az, view.alt, view.zoom);
+    const onScreen = (p) => p && p[0] >= -40 && p[0] <= w + 40 && p[1] >= -40 && p[1] <= h + 40;
     // The horizon is a straight line in a perspective projection.
     const horizonY = h * 0.49 + Math.tan(view.alt) * Math.min(w * 0.78, h * 0.78) * view.zoom;
     const skyLight = ctx.createLinearGradient(0, 0, 0, h);
@@ -222,13 +225,39 @@
     ctx.strokeStyle = "#63728a";
     ctx.stroke();
 
-    for (const [point, mag, bv] of stars) {
+    // Constellation boundaries: faint neighbours first, the selected one filled and outlined.
+    const boundaries = extras.boundaries ?? [];
+    for (const pass of [false, true]) {
+      for (const boundary of boundaries) {
+        if (boundary.selected !== pass) continue;
+        ctx.lineWidth = pass ? 1.4 : 1;
+        ctx.strokeStyle = pass ? "#96caff" : "#2b3a4f";
+        for (const ring of boundary.rings) {
+          const projected = ring.map(project);
+          if (pass && projected.every(Boolean)) {
+            ctx.beginPath();
+            projected.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
+            ctx.closePath();
+            ctx.fillStyle = "rgba(150, 202, 255, 0.07)";
+            ctx.fill();
+          }
+          ctx.beginPath();
+          line(ring);
+          ctx.stroke();
+        }
+      }
+    }
+
+    const highlight = extras.highlight ?? new Set();
+    for (let index = 0; index < stars.length; index++) {
+      const [point, mag, bv] = stars[index];
       const p = project(point);
       if (!p || p[0] < 0 || p[0] > w || p[1] < 0 || p[1] > h) continue;
+      const bright = highlight.has(index);
       const light = clamp((6.1 - mag) / 5.9, 0.14, 1);
-      ctx.globalAlpha = point[2] >= 0 ? 0.22 + 0.77 * light : 0.26 * light;
-      ctx.fillStyle = bv > 1.15 ? "#ffd0a8" : bv < 0.12 ? "#c6dbff" : "#f0f1ee";
-      const radius = clamp((5.7 - mag) * 0.36, 0.58, 2.8);
+      ctx.globalAlpha = bright ? 1 : point[2] >= 0 ? 0.22 + 0.77 * light : 0.26 * light;
+      ctx.fillStyle = bright ? "#ffffff" : bv > 1.15 ? "#ffd0a8" : bv < 0.12 ? "#c6dbff" : "#f0f1ee";
+      const radius = clamp((5.7 - mag) * 0.36, 0.58, 2.8) + (bright ? 0.6 : 0);
       ctx.beginPath();
       ctx.arc(p[0], p[1], radius, 0, turn);
       ctx.fill();
@@ -270,6 +299,34 @@
       ctx.stroke();
       ctx.font = "600 12px Inter, Arial, sans-serif";
       ctx.fillText(name, p[0] + 14, p[1] - 8);
+    }
+
+    // The selected constellation's name at its label point, and the birthday Sun.
+    for (const boundary of boundaries) {
+      if (!boundary.selected || !boundary.label) continue;
+      const p = project(boundary.label.point);
+      if (!onScreen(p)) continue;
+      ctx.font = "600 13px Inter, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#cfe3ff";
+      ctx.fillText(boundary.label.text, p[0], p[1]);
+      ctx.textAlign = "start";
+    }
+    if (extras.marker) {
+      const p = project(extras.marker.point);
+      if (onScreen(p)) {
+        ctx.fillStyle = "#ffd36b";
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], 5, 0, turn);
+        ctx.fill();
+        ctx.strokeStyle = "#ffd36b";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], 10, 0, turn);
+        ctx.stroke();
+        ctx.font = "600 12px Inter, Arial, sans-serif";
+        ctx.fillText(extras.marker.text, p[0] + 15, p[1] + 4);
+      }
     }
 
     ctx.font = "600 12px Inter, Arial, sans-serif";

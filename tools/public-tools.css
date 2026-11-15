@@ -643,3 +643,18 @@ html:has(body.outreach) {
   .outreach__days button, .outreach__segments button, .outreach__upcoming button { min-block-size: 2.75rem; }
   .outreach__range-label input { min-block-size: 2.25rem; }
 }
+
+/* Constellation Finder: the zodiac result block */
+.outreach__zodiac {
+  margin: 0.75rem 0 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(150, 202, 255, 0.25);
+  border-radius: 0.75rem;
+  background: rgba(150, 202, 255, 0.06);
+  display: grid;
+  gap: 0.5rem;
+}
+.outreach__zodiac p { margin: 0; line-height: 1.45; }
+.outreach__zodiac strong { color: #e0edff; }
+.outreach__zodiac-label { display: block; font-size: 0.8rem; letter-spacing: 0.02em; text-transform: uppercase; color: #a8b6ca; }
+.outreach__zodiac .outreach__button { justify-self: start; margin-top: 0.25rem; }
