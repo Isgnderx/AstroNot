@@ -17,6 +17,14 @@ test("package holds only public files and records the version", async () => {
     assert.equal(manifest.base, "/AstroNot/");
     assert.ok(paths.includes("index.html") && paths.includes("404.html"));
     assert.ok(paths.includes("assets/tools/spherex-example.js") && paths.includes("assets/inter-latin.woff2"));
+    for (const route of ["constellation-finder", "moon-phase-calendar", "planet-size-comparison",
+      "nebula-color-mixer", "meteor-shower-planner", "galaxy-shape-quiz"]) {
+      assert.ok(paths.includes("tools/" + route + "/index.html"), route);
+      assert.ok(paths.includes("assets/tools/public-previews/" + route + ".jpg"), route);
+    }
+    for (const asset of ["bright-stars.js", "globes/moon.jpg", "nebula-infrared.jpg", "nebula-visible.jpg"]) {
+      assert.ok(paths.includes("assets/tools/" + asset), asset);
+    }
     for (const path of paths) {
       assert.doesNotMatch(path, /^(tests|scripts|\.git)\b|\.(md|py|mjs|json)$/, path);
     }

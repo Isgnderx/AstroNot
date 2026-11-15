@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../../tools/time-machine.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/fits.js" defer></script>
     <script src="../../tools/pair.js" defer></script>
@@ -41,7 +42,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-tm-canvas]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Observation</p>
         <h1 data-workspace-title>Time Machine</h1>
@@ -213,7 +214,7 @@
 
       <div class="tm-slots" data-tm-slots></div>
 
-      <section class="workspace-panel tm-pair" aria-labelledby="tm-pair-title">
+      <section class="workspace-panel tm-pair" aria-labelledby="tm-pair-title" data-pdf-section>
         <h2 id="tm-pair-title">Comparison conditions</h2>
         <p class="tm-pair__verdict" data-tm-verdict>Load a reference and a comparison observation to compare them.</p>
         <ul class="tm-notes" data-tm-warnings hidden></ul>
@@ -221,24 +222,27 @@
           <h3>Timeline</h3>
           <div class="tm-timeline__track" aria-hidden="true" data-tm-track></div>
           <ol class="tm-timeline__list" data-tm-timeline-list></ol>
-          <p class="workspace-help" data-tm-timeline-text></p>
+          <p class="workspace-help" data-tm-timeline-text data-pdf-text></p>
         </div>
-        <p class="workspace-help" data-tm-timeline-missing></p>
+        <p class="workspace-help" data-tm-timeline-missing data-pdf-text></p>
         <dl class="workspace-facts tm-checks" data-tm-checks hidden>
           <div><dt>Sky overlap</dt><dd data-tm-check="overlap">—</dd></div>
           <div><dt>Pixel grid</dt><dd data-tm-check="grid">—</dd></div>
           <div><dt>Linked pan and zoom, Blink</dt><dd data-tm-check="link">—</dd></div>
         </dl>
-        <div class="tm-table-wrap" data-tm-conditions hidden>
-          <table class="tm-table">
-            <caption>Observing conditions, reference and comparison</caption>
-            <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Comparison</th><th scope="col">Match</th></tr></thead>
-            <tbody data-tm-conditions-body></tbody>
-          </table>
-        </div>
+        <details class="workspace-disclosure" hidden>
+          <summary>Observing conditions</summary>
+          <div class="tm-table-wrap" data-tm-conditions>
+            <table class="tm-table">
+              <caption>Observing conditions, reference and comparison</caption>
+              <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Comparison</th><th scope="col">Match</th></tr></thead>
+              <tbody data-tm-conditions-body></tbody>
+            </table>
+          </div>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-display" aria-labelledby="tm-display-title">
+      <section class="workspace-panel tm-display" aria-labelledby="tm-display-title" data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="tm-display-title">Compare</h2>
           <div class="tm-segment" role="group" aria-label="View mode">
@@ -283,7 +287,7 @@
         <p class="tm-live" role="status" aria-live="polite" data-tm-live></p>
       </section>
 
-      <section class="workspace-panel tm-mark" aria-labelledby="tm-mark-title">
+      <section class="workspace-panel tm-mark" aria-labelledby="tm-mark-title" data-pdf-section>
         <h2 id="tm-mark-title">Marked point</h2>
         <p class="workspace-help" data-tm-mark-note>Click or tap an image, or press Enter in a focused view, to mark a point. The same sky position is shown in both images when both have a WCS.</p>
         <div class="tm-table-wrap">
@@ -299,8 +303,8 @@
         </div>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="tm-note-title">
-        <h2 id="tm-note-title">How comparisons are checked</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="tm-note-title">
+        <summary id="tm-note-title">How comparisons are checked</summary>
         <p class="workspace-help"><strong>Time</strong> comes from <strong>DATE-OBS</strong> and <strong>MJD-OBS</strong> with <strong>TIMESYS</strong> (UTC when absent). If both are present and disagree by more than a second, neither is trusted. <strong>DATE</strong> is the time the file was written and is shown separately. A time you type is marked as entered manually. Times on different time scales are not ordered.</p>
         <p class="workspace-help"><strong>Same sky</strong> is decided from the WCS of each image, not from file names. <strong>Linked pan and zoom</strong> and <strong>Blink</strong> need one verified pixel grid: equal array sizes and the same sky position for sample pixels in both images. Real exposures taken on different dates usually sit on slightly different grids; the optional alignment copies the nearest comparison pixel onto the reference grid for viewing and does not interpolate or change any value. Pixel values are read from the calibrated data and do not depend on contrast.</p>
         <p class="workspace-help">The same file cannot be used as two epochs: identical pixel data are rejected as the same observation. Mask, variance and other HDUs are not applied. Blink shows at most two frames per second.</p>
@@ -310,9 +314,9 @@
     </main>
 
     <template data-tm-slot-template>
-      <section class="workspace-panel tm-slot" data-tm-slot>
+      <section class="workspace-panel tm-slot" data-tm-slot data-pdf-section>
         <div class="tm-slot__head">
-          <h2 data-tm-slot-title></h2>
+          <h2 data-tm-slot-title data-pdf-heading></h2>
           <span class="tm-slot__badge" data-tm-slot-badge></span>
         </div>
         <div class="tm-slot__inputs">
@@ -340,7 +344,7 @@
           <div><dt>Detector</dt><dd data-tm-fact="detector">—</dd></div>
           <div><dt>WCS</dt><dd data-tm-fact="wcs">—</dd></div>
         </dl>
-        <p class="workspace-help" data-tm-time-issues></p>
+        <p class="workspace-help" data-tm-time-issues data-pdf-text></p>
         <div class="tm-manual" data-tm-manual hidden>
           <label>Observation time, UTC
             <input type="text" inputmode="numeric" autocomplete="off" placeholder="2025-05-24T04:24:53" data-tm-manual-input>

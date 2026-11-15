@@ -844,6 +844,7 @@
     const d = dom[role];
     const image = slot.image;
     const meta = image && image.meta;
+    d.root.toggleAttribute("data-image-ready", Boolean(image));
     d.fileLabel.textContent = slot.file ? "Change FITS file" : "Choose FITS file";
     d.status.toggleAttribute("data-error", Boolean(slot.error));
     d.status.textContent = slot.error || slot.message;
@@ -880,6 +881,7 @@
     el.notes.replaceChildren();
     el.summary.hidden = !result;
     el.conditions.hidden = !pair;
+    el.summary.closest("details").hidden = !(result || pair);
     el.swap.setAttribute("aria-disabled", String(!(reference.file || target.file)));
     el.download.setAttribute("aria-disabled", String(!result || result.empty));
     el.assumeWrap.hidden = !(outcome && !outcome.ok && outcome.code === "unit-missing") && !(state.assume && outcome && outcome.ok && outcome.result.unitCheck.state === "assumed");
@@ -899,7 +901,7 @@
     } else {
       const time = pair.time;
       el.verdict.textContent = result.empty
-        ? "The difference is empty. " + result.emptyReason
+        ? "The difference is empty."
         : result.counts.valid.toLocaleString("en-US") + " valid pixels of " + result.counts.total.toLocaleString("en-US") + ". " +
           (time.state === "ordered" ? "The target was observed " + time.text + "." : time.state === "same" ? "Both observations have the same time." : "The observation times are not both available, so their order is not known.");
       if (result.empty) addItem(el.notes, result.emptyReason, "tm-notes__warning");

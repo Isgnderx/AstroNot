@@ -542,7 +542,7 @@
     el.notes.replaceChildren();
     el.suggest.replaceChildren();
     el.suggest.hidden = true;
-    el.planFacts.hidden = true;
+    el.planFacts.closest("details").hidden = true;
     const pending = state.entries.length - readyEntries().length;
     if (plan.kind === "loading") {
       el.verdict.textContent = "Reading the selected files…";
@@ -571,7 +571,7 @@
         addItem(el.notes, "The inputs fall into " + links.groups.length + " groups that do not overlap each other on the sky (" + links.groups.map((group) => group.map((index) => index + 1).join(", ")).join(" | ") + "). Pixels between them will be invalid, and there is no overlap to check the groups against each other.", "tm-notes__warning");
       }
       if (pending > 0) addItem(el.notes, plural(pending, "input") + " could not be read and " + (pending === 1 ? "is" : "are") + " not part of this mosaic. See the Selected inputs table.", "tm-notes__warning");
-      el.planFacts.hidden = false;
+      el.planFacts.closest("details").hidden = false;
       const set = (name, text) => setFact(el.planFacts, name, text, "data-mb-fact");
       set("grid", grid.mode === "reference"
         ? count(grid.width) + " × " + count(grid.height) + " pixels, TAN" + (plan.outcome.inputs[grid.referenceIndex].wcs.sipOrder !== null ? "-SIP" : "") + ", using the WCS of input " + (grid.referenceIndex + 1) + " (north is not necessarily up)"
@@ -662,7 +662,7 @@
   function renderResult() {
     const result = state.result;
     el.resultNotes.replaceChildren();
-    el.resultFacts.hidden = !result;
+    el.resultFacts.closest("details").hidden = !result;
     if (!result) {
       el.resultVerdict.textContent = state.building ? "Building the mosaic…" : "No mosaic has been built yet.";
       el.resultNotes.hidden = true;
@@ -670,8 +670,8 @@
     }
     const c = result.counts;
     el.resultVerdict.textContent = result.empty
-      ? "The mosaic is empty. " + result.emptyReason
-      : count(c.valid) + " valid pixels of " + count(c.total) + " (" + (100 * c.valid / c.total).toFixed(1) + "%). " + plural(c.maxCoverage, "image") + " at most cover a pixel; " + count(c.overlap) + " pixels are covered by two or more.";
+      ? "The mosaic is empty."
+      : count(c.valid) + " valid pixels of " + count(c.total) + " (" + (100 * c.valid / c.total).toFixed(1) + "%).";
     if (result.empty) addItem(el.resultNotes, result.emptyReason, "tm-notes__warning");
     for (const text of result.warnings) addItem(el.resultNotes, text, "tm-notes__warning");
     for (const text of result.notes) addItem(el.resultNotes, text, "tm-notes__info");
@@ -1287,7 +1287,7 @@
     window.AstroNotLatestMosaic = state.result; // For tests and other tools.
     buildPictures();
     fitView();
-    el.buildStatus.textContent = "Mosaic built: " + count(state.result.counts.valid) + " valid pixels on a " + state.result.width + " × " + state.result.height + " grid.";
+    el.buildStatus.textContent = "Mosaic built.";
     refresh();
     announce(el.buildStatus.textContent);
   }

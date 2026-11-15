@@ -32,6 +32,7 @@
 - [x] Light Curve Analysis (`/tools/light-curve-analysis`; TDB/barisentrik yollar yalnız sintetik testlərlə yoxlanıb)
 - [x] Catalog Cross-Match (`/tools/catalog-cross-match`; Astropy və IRSA best-neighbour cədvəli ilə yoxlanıb)
 - [x] Mosaic Builder (`/tools/mosaic-builder`; FLAGS şəkli şərh olunmur)
+- [x] Bürc Axtarışı / Constellation Finder: IAU sərhədləri ilə 88 bürcün hamısı (6 dildə adlar, 13 zodiak bürcünün xətt-fiqurları) və **Sənin bürcün** paneli — doğum tarixinə görə astroloji bürc və Günəşin həqiqətən olduğu bürc (İlanbürc daxil) yan-yana, xəritədə vurğulanır.
 - [x] Məcburi Spektrofotometriya / Forced Spectrophotometry (`/tools/forced-spectrophotometry`; spxphot-un JavaScript köçürməsi, BD+17 4708 nümunəsində spxphot-un CSV-si ilə 352/352 sətir üst-üstə düşür)
   - [ ] Observation Search: IRSA formatlı kəsikləri S3-dən lokal qurmaq (spxphot `search --download cutout` kimi; IRSA kəsik xidməti CORS göndərmir və 503 qaytarır).
   - [ ] Yeni alətin tr/ru/es/zh sətirləri (hazırda yalnız az var).

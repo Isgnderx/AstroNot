@@ -365,7 +365,7 @@ function setupFitsViewer() {
       drawFitsImage(canvas, bytes, hdu);
       const dimensions = hdu.axes.join(" × ");
       canvas.setAttribute("aria-label", "Grayscale preview of " + hdu.name + ", " + dimensions + " pixels");
-      caption.textContent = dimensions + " pixels · Grayscale display stretch · Undefined pixels shown in black";
+      caption.textContent = "Grayscale display stretch · Undefined pixels shown in black";
       empty.hidden = true;
       canvas.hidden = false;
       zoomLabel.hidden = false;

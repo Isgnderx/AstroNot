@@ -2,7 +2,8 @@
 // both read these rules, so the preview serves exactly the files that ship and nothing else.
 
 export const rootFiles = new Set(["index.html", "workspace.html", "routes.js", "site.js", "styles.css"]);
-export const publicDirectories = new Set(["assets", "tools", "explore", "learn", "about"]);
+// "presentation" is served and published but linked from nowhere: it is reached only by typing /presentation.
+export const publicDirectories = new Set(["assets", "tools", "explore", "learn", "about", "presentation"]);
 
 // Files the package adds that the local preview serves only as the 404 page.
 export const notFoundFile = "404.html";

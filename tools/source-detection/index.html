@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/source-detection.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/fits.js" defer></script>
     <script src="../../tools/pair.js" defer></script>
@@ -37,15 +38,15 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-sd-canvas]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Analysis</p>
         <h1 data-workspace-title>Source Detection</h1>
         <p class="workspace-description" data-workspace-description>Identify sources in astronomical images and measure their positions.</p>
       </header>
 
-      <section class="workspace-panel tm-source" aria-labelledby="sd-source-title">
-        <h2 id="sd-source-title">Image</h2>
+      <section class="workspace-panel tm-source" aria-labelledby="sd-source-title" data-pdf-section>
+        <h2 id="sd-source-title" data-pdf-heading>Image</h2>
         <p class="workspace-help">Choose a calibrated, uncompressed two-dimensional FITS image HDU (a local file read on this device, up to 4,194,304 pixels and 4,096 pixels per axis), or load the bundled SPHEREx cutout. The tool lists <strong>detected candidates</strong>: groups of connected pixels that stand out from the background. A candidate is <strong>not</strong> a catalog identification, and it can be a star, a galaxy, a blend, a ghost or a noise peak. Pixels that are NaN or BLANK are never used; zero is a valid value.</p>
         <div class="tm-actions">
           <label class="tm-file">
@@ -121,25 +122,28 @@
         <p class="workspace-status" role="status" data-sd-run-status></p>
       </section>
 
-      <section class="workspace-panel sd-result" aria-labelledby="sd-result-title" aria-live="polite">
+      <section class="workspace-panel sd-result" aria-labelledby="sd-result-title" aria-live="polite" data-pdf-section>
         <h2 id="sd-result-title">Result</h2>
         <p class="tm-pair__verdict" data-sd-verdict>Load an image to detect sources.</p>
         <ul class="tm-notes" data-sd-notes hidden></ul>
-        <dl class="workspace-facts tm-checks" data-sd-summary hidden>
-          <div><dt>Method</dt><dd data-sd-sum="method">—</dd></div>
-          <div><dt>Background</dt><dd data-sd-sum="background">—</dd></div>
-          <div><dt>Noise</dt><dd data-sd-sum="noise">—</dd></div>
-          <div><dt>What the threshold means here</dt><dd data-sd-sum="threshold">—</dd></div>
-          <div><dt>Smoothing</dt><dd data-sd-sum="smoothing">—</dd></div>
-          <div><dt>Pixels</dt><dd data-sd-sum="pixels">—</dd></div>
-          <div><dt>Segments</dt><dd data-sd-sum="segments">—</dd></div>
-          <div><dt>Candidates</dt><dd data-sd-sum="candidates">—</dd></div>
-          <div><dt>Run time</dt><dd data-sd-sum="time">—</dd></div>
-        </dl>
+        <details class="workspace-disclosure" hidden>
+          <summary>Detection details</summary>
+          <dl class="workspace-facts tm-checks" data-sd-summary>
+            <div><dt>Method</dt><dd data-sd-sum="method">—</dd></div>
+            <div><dt>Background</dt><dd data-sd-sum="background">—</dd></div>
+            <div><dt>Noise</dt><dd data-sd-sum="noise">—</dd></div>
+            <div><dt>What the threshold means here</dt><dd data-sd-sum="threshold">—</dd></div>
+            <div><dt>Smoothing</dt><dd data-sd-sum="smoothing">—</dd></div>
+            <div><dt>Pixels</dt><dd data-sd-sum="pixels">—</dd></div>
+            <div><dt>Segments</dt><dd data-sd-sum="segments">—</dd></div>
+            <div><dt>Candidates</dt><dd data-sd-sum="candidates">—</dd></div>
+            <div><dt>Run time</dt><dd data-sd-sum="time">—</dd></div>
+          </dl>
+        </details>
       </section>
 
       <div class="sd-layout">
-        <section class="workspace-panel sd-display" aria-labelledby="sd-display-title">
+        <section class="workspace-panel sd-display" aria-labelledby="sd-display-title" data-pdf-section>
           <div class="tm-display__bar">
             <h2 id="sd-display-title">Image and candidates</h2>
             <div class="sd-zoom">
@@ -178,7 +182,7 @@
           <p class="tm-live" role="status" aria-live="polite" data-sd-live></p>
         </section>
 
-        <section class="workspace-panel sd-candidates" aria-labelledby="sd-table-title">
+        <section class="workspace-panel sd-candidates" aria-labelledby="sd-table-title" data-pdf-section>
           <div class="tm-display__bar">
             <h2 id="sd-table-title">Detected candidates</h2>
             <label class="sd-sort">Sort by
@@ -215,7 +219,7 @@
         </section>
       </div>
 
-      <section class="workspace-panel tm-mark sd-detail" aria-labelledby="sd-detail-title">
+      <section class="workspace-panel tm-mark sd-detail" aria-labelledby="sd-detail-title" data-pdf-section>
         <h2 id="sd-detail-title">Selected candidate</h2>
         <p class="workspace-help" data-sd-detail-note>Select a marker or a table row to see its measurements and the calibrated pixel values around its peak.</p>
         <div class="tm-table-wrap" data-sd-detail-wrap hidden>
@@ -235,21 +239,24 @@
 
       <section class="workspace-panel sd-export" aria-labelledby="sd-export-title">
         <h2 id="sd-export-title">Hand-off</h2>
-        <p class="workspace-help">Download the candidates as a CSV for Catalog Cross-Match with the columns <strong>source_id, x_pixel, y_pixel, ra, dec, area_pixels, peak, flux_sum, flags, source_file, obs_id, hdu, pixel_origin</strong>. <strong>x_pixel</strong> and <strong>y_pixel</strong> are FITS pixel numbers (<strong>pixel_origin = 1</strong>: the center of the first pixel is (1, 1)). <strong>ra</strong> and <strong>dec</strong> are degrees in ICRS from the centroid, empty when the image has no usable WCS. <strong>hdu</strong> counts from 0 (the primary HDU). The same-named parameters file records the method, threshold and its unit, and every setting. Source IDs belong to one run and change when the settings change.</p>
         <div class="tm-actions">
           <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-sd-download-csv>Download candidates (CSV)</button>
           <button class="workspace-button" type="button" aria-disabled="true" data-sd-download-json>Download parameters (JSON)</button>
           <label class="tm-check"><input type="checkbox" data-sd-only-sky> <span>Only candidates with sky coordinates</span></label>
         </div>
         <p class="workspace-status" role="status" data-sd-export-status></p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">Download the candidates as a CSV for Catalog Cross-Match with the columns <strong>source_id, x_pixel, y_pixel, ra, dec, area_pixels, peak, flux_sum, flags, source_file, obs_id, hdu, pixel_origin</strong>. <strong>x_pixel</strong> and <strong>y_pixel</strong> are FITS pixel numbers (<strong>pixel_origin = 1</strong>: the center of the first pixel is (1, 1)). <strong>ra</strong> and <strong>dec</strong> are degrees in ICRS from the centroid, empty when the image has no usable WCS. <strong>hdu</strong> counts from 0 (the primary HDU). The same-named parameters file records the method, threshold and its unit, and every setting. Source IDs belong to one run and change when the settings change.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="sd-note-title">
-        <h2 id="sd-note-title">How candidates are found</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="sd-note-title">
+        <summary id="sd-note-title">How candidates are found</summary>
         <p class="workspace-help">Valid pixels are the finite values after <strong>BSCALE</strong>, <strong>BZERO</strong> and <strong>BLANK</strong> are applied. The <strong>background</strong> is a sigma-clipped median (3 σ, up to 10 passes), either one value or a mesh of boxes whose medians are median-filtered and interpolated. The <strong>noise</strong> σ is 1.4826 × the median absolute deviation of the same clipped sample, or √variance from a VARIANCE image when the file has one in the square of the image unit. A threshold of 3 σ is therefore a different brightness in a noisier image, or in a noisier part of a mesh or VARIANCE image; the result shows the level in image units.</p>
         <p class="workspace-help">Pixels above the threshold are grouped into 8-connected segments, and segments with fewer than the minimum number of pixels are dropped. Optional Gaussian smoothing is a normalized convolution over valid pixels, with the noise propagated for independent pixels (real noise is often correlated, so the S/N of a smoothed image is approximate). A segment is split where two peaks are separated by a valley at least the chosen number of σ and at least 10% of the lower peak deep, with at least the minimum number of pixels on each side. A shared segment is flagged <strong>blended</strong>.</p>
         <p class="workspace-help">The <strong>centroid</strong> is flux-weighted over the segment pixels of the unsmoothed background-subtracted values (negative values count as zero). <strong>Peak</strong> and <strong>flux sum</strong> are in the image unit; for surface brightness such as MJy/sr the flux sum is not a flux density. <strong>Flags</strong> mean: edge (touches the image border), masked neighbour (next to NaN, BLANK or unusable pixels), saturated (reaches the saturation level, tested only when you or the header give one) and blended. FLAGS and other mask images are not interpreted. No photometry, PSF fitting, star-galaxy separation or catalog matching is done here.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
   </body>

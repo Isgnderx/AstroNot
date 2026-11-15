@@ -153,7 +153,8 @@
     const { added, duplicates } = addFrames(incoming);
     renderFrames();
     afterInputsChanged();
-    const parts = ["Frames added: " + added + ", duplicates left out: " + duplicates + ".", ...loadedSummary(), ...notes];
+    const parts = [...loadedSummary(), ...notes];
+    if (duplicates) parts.push("Duplicates skipped: " + duplicates + ".");
     setStatus(parts, added === 0 && notes.length > 0);
     return { added, parts };
   }
@@ -207,7 +208,9 @@
     const { added, duplicates } = addFrames(incoming);
     renderFrames();
     afterInputsChanged();
-    setStatus(["Local frames added: " + added + ", duplicates left out: " + duplicates + ".", ...loadedSummary(), ...notes], added === 0 && notes.length > 0);
+    const parts = [...loadedSummary(), ...notes];
+    if (duplicates) parts.push("Duplicates skipped: " + duplicates + ".");
+    setStatus(parts, added === 0 && notes.length > 0);
   }
 
   async function useExample() {
@@ -247,7 +250,7 @@
     const count = state.frames.length;
     el.framesWrap.hidden = !count;
     setDisabled(el.clear, !count);
-    el.framesCaption.textContent = count > maxListedFrames ? "Loaded frames: " + count + " (the first " + maxListedFrames + " are listed)" : "Loaded frames: " + count;
+    el.framesCaption.textContent = count > maxListedFrames ? "Loaded frames (first " + maxListedFrames + " shown)" : "Loaded frames";
     el.frames.replaceChildren(...state.frames.slice(0, maxListedFrames).map((frame) => {
       const row = document.createElement("tr");
       const reads = cell("td", readsFrom(frame));

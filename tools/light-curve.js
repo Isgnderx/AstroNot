@@ -136,7 +136,7 @@
   }
 
   function plural(count, word) {
-    return count.toLocaleString("en-US") + " " + word + (count === 1 ? "" : "s");
+    return count.toLocaleString("en-US") + " " + word + (count === 1 || word === "series" ? "" : "s");
   }
 
   function unitOption(unit) {
@@ -197,6 +197,7 @@
     if (options.binningWidth) state.config.binning = { ...state.config.binning, width: options.binningWidth };
     fillColumnForm(table.header, detected);
     nodes.columnsPanel.hidden = false;
+    nodes.columnsPanel.open = detected.profile === "generic";
     say(nodes.status, "Read " + plural(table.rows.length, "row") + " from " + name + ".");
     if (detected.profile === "generic") {
       nodes.columnsPanel.querySelector("select").focus({ preventScroll: false });
@@ -271,6 +272,7 @@
     try {
       dataset = T.buildDataset(state.table, config);
     } catch (error) {
+      nodes.columnsPanel.open = true;
       say(nodes.applyStatus, error.message, true);
       return;
     }
@@ -280,6 +282,7 @@
     state.selectedId = null;
     state.rowLimit = initialRowLimit;
     if (dataset.records.length === 0) {
+      nodes.columnsPanel.open = true;
       hideResultsKeepForm();
       say(nodes.applyStatus, "None of the " + plural(dataset.rowCount, "row") + " could be read with these settings. " + (dataset.rejected[0] ? "First problem, row " + dataset.rejected[0].row + ": " + dataset.rejected[0].reason + "." : ""), true);
       showRejected();
@@ -355,7 +358,7 @@
     nodes.facts.hidden = false;
     $("[data-lc-fact='file']").textContent = state.fileName;
     $("[data-lc-fact='profile']").textContent = { spectrophotometry: "Spectrophotometry CSV contract", export: "AstroNot light-curve export", generic: "Generic table, columns chosen by you" }[state.profile];
-    $("[data-lc-fact='rows']").textContent = plural(state.records.length, "row") + " read" + (state.rejected.length ? ", " + state.rejected.length.toLocaleString("en-US") + " rejected" : "");
+    $("[data-lc-fact='rows']").textContent = plural(state.records.length, "row") + " read";
     $("[data-lc-fact='series']").textContent = plural(sources.size, "source") + ", " + plural(seriesCount, "series");
     $("[data-lc-fact='provenance']").textContent = state.provenance || "Unavailable";
   }
