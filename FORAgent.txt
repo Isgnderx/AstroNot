@@ -18,8 +18,12 @@ files, comparing epochs, photometry, spectra, source detection, catalog cross-ma
 the browser.
 
 Design principles that every tool follows:
-- Everything runs client-side. There is no server, no database, no build step. Files the user chooses
-  are read on their device and never uploaded.
+- Everything runs client-side. There is no database and no build step. Files the user chooses are
+  read on their device and never uploaded. ONE exception since 15 Nov 2026: `functions/api/sia.js`, a
+  Cloudflare Pages Function that forwards a single validated IRSA SIA search for the Time Machine
+  (IRSA sends no CORS headers). It accepts only collection/ra/dec/detector and forwards nothing else;
+  serve.mjs imports the same handler; pages fall back to the IRSA link + CSV import without it. Do not
+  add more server routes without the owner's decision.
 - Honest output: every refusal has a reason, partial results are reported as partial, nothing is
   smoothed or guessed, and results are never presented as official archive products.
 - Real data, real validation: examples are real SPHEREx cutouts or real IRSA tables; numerics are
@@ -101,8 +105,10 @@ BUILD-PROMPTS.md (Azerbaijani; earlier prompt texts used to build tools with cod
 
 4. THE TOOLS (routes under /tools/)
 -----------------------------------
-Observation: sky-explorer (pan/zoom a SPHEREx image, RA/Dec from WCS), time-machine (compare two
-epochs, blink, timeline, display-only alignment), spectrum (Spectrum Lab: plot a spectrum CSV with
+Observation: sky-explorer (pan/zoom a SPHEREx image, RA/Dec from WCS), time-machine (tab "Sky
+position": search RA/Dec, one detector's frames as a dated sequence, 6 per page, carousel, slider,
+Play, "Hold one wavelength"; tab "Two local files": the original two-epoch compare, blink, timeline,
+display-only alignment), spectrum (Spectrum Lab: plot a spectrum CSV with
 units/errors/flags), observation-search (builds an IRSA SIA query link for SPHEREx DR1/QR3/QR2 and
 the deep-field collections; imports the returned CSV; hands off to FITS Viewer and to Forced
 Spectrophotometry — IRSA sends no CORS headers, so the page cannot fetch SIA/TAP itself).
@@ -118,8 +124,16 @@ Data facts that shape the tools (verified on the dates given):
 - IRSA SIA/TAP/cutout services send no Access-Control-Allow-Origin header (12–14 Nov 2026), so a
   browser page cannot read them; users save the CSV from the prepared link and import it.
 - IRSA's public S3 bucket https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/ DOES send
-  `Access-Control-Allow-Origin: *`, allows `Range`, and answers 206 (14 Nov 2026). This is what makes
-  Forced Spectrophotometry possible client-side.
+  `Access-Control-Allow-Origin: *`, allows `Range`, and answers 206 (14 Nov 2026; preflight for the
+  Range header also OK, 15 Nov). This is what makes Forced Spectrophotometry and the Time Machine's
+  pixel reads possible client-side.
+- SIA with MAXREC=2000 and no BAND truncates busy positions: the north ecliptic deep field returned its
+  first 89 of 373 days, skewed by detector. A ±0.005 µm BAND at a detector's band centre returns that
+  detector only (≤ ~2000 rows/year in the deep field); the Time Machine searches per detector, MAXREC
+  10000 (15 Nov 2026).
+- SPHEREx's linear variable filter: one sky position is seen at a different wavelength in every
+  exposure (Orion, D2: 1.157 vs 1.561 µm). Any animation or epoch comparison must hold the wavelength,
+  or brightness changes are mostly wavelength changes.
 - A SPHEREx Level-2 frame (~70 MB) has HDUs PRIMARY, IMAGE (float32 2040×2040, MJy/sr, TAN-SIP),
   FLAGS (RICE_1 tile-compressed int32, one tile per row), VARIANCE, ZODI, EPSF (BINTABLE, 441 zones
   of 33×33 at 5× oversampling, ~3.86 MB), WCS-WAVE (-TAB wavelength lookup). IRSA cutouts keep EPSF
@@ -206,6 +220,21 @@ spectrophotometry/progress.md is the execution ledger (every ruling, every defer
 every task's commits), task-N-brief.md / task-N-report.md, review-*.diff packages. If the worktree
 is gone, the git history and this file are the record.
 
+
+6.3 Time Machine "Sky position" mode (15 Nov 2026, Claude; not committed — left in the working tree
+    of branch uzeyir_data for the owner to review)
+- New: tools/time-sequence.js (DOM-free model: query/URL building, grouping by day/visit/exposure,
+  lazy sequence, wavelength chooser with a calibrated reference, north-up gnomonic grid, frame
+  coordinates via forced-phot createTanSip on a 4-px mesh, row window, bilinear resample, display
+  helpers), tools/time-machine-sequence.js (UI + tabs), functions/api/sia.js (the proxy),
+  tests/time-sequence.test.mjs + tests/time-sequence-reference.py (22 tests: proxy contract, grid vs
+  astropy 1e-9″, resample vs astropy+scipy and reproject ≤2e-7 with exact inversion, wavelength =
+  spxphot's 1e-12, LIVE gated).
+- Changed: tools/time-machine/index.html (tabs; archive panel; the old two-file sections are wrapped in
+  #tm-files unchanged), tools/time-machine.css (appended), tools/forced-phot.js (exports imageHdu),
+  serve.mjs (/api/sia), tools/registry.js (description/steps), assets/i18n/az.js (66 messages +
+  33 templates, additions only), README.md, TODO.md, this file.
+- node --test: 392 tests, 386 pass, 0 fail, 6 skipped (in an environment with astropy+reproject).
 
 7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
 ---------------------------------------------------
