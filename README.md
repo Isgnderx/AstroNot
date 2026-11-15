@@ -35,7 +35,7 @@ After publishing, repeat the route and Show All checks on the real HTTPS address
 ## Site pages
 
 - `/` — Landing page
-- `/tools` — Scientific Tools directory
+- `/tools` — Scientific Tools and Space for Everyone directories
   - `/tools/sky-explorer` — Sky Explorer
   - `/tools/time-machine` — Time Machine
   - `/tools/image-differencing` — Image Differencing
@@ -45,6 +45,17 @@ After publishing, repeat the route and Show All checks on the real HTTPS address
 - `/learn` — Educational content
   - `/learn#fits-guide` — Step-by-step guide to opening the bundled SPHEREx FITS example and reading its OBSID, DATE-OBS, and BUNIT. Observation Search and FITS Viewer link back to it with **FITS guide**.
 - `/about` — Mission and team
+
+## Space for Everyone
+
+The six beginner tools are linked from `/tools#non-researcher-tools`. They use bundled assets and run in a static browser preview.
+
+- `/tools/constellation-finder` projects 2,579 stars from the [Yale Bright Star Catalogue via NASA HEASARC](https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html) onto a local sky. Six guide patterns can be centered. The geometric horizon omits atmospheric refraction, twilight, weather and light pollution.
+- `/tools/moon-phase-calendar` shows an illuminated globe for a chosen day, with a playable phase sequence. Phase calculations follow [Paul Schlyter’s approximate lunar longitude](https://stjarnhimlen.se/comp/ppcomp.html). The calendar uses UTC and the [NASA SVS CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/) surface map by Ernie Wright, derived from Lunar Reconnaissance Orbiter observations and resized for the web.
+- `/tools/planet-size-comparison` uses [NASA JPL mean radii](https://ssd.jpl.nasa.gov/planets/phys_par.html) for scale. The [Solar System Scope planetary maps](https://www.solarsystemscope.com/textures/) by INOVE were resized for the web, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- `/tools/nebula-color-mixer` stacks the R and I exposures from [Digitized Sky Survey 2 via ESA/Hubble](https://esahubble.org/projects/fits_liberator/m42data/). The I image was aligned to the R image using the FITS sky coordinates. Both bands were cropped and resampled to 960 × 896, independently contrast-stretched and tinted for display.
+- `/tools/meteor-shower-planner` shows typical annual peak dates and radiants from the [International Meteor Organization](https://www.imo.net/resources/calendar/). The direction is calculated for the chosen city and local time. The animation is illustrative.
+- `/tools/galaxy-shape-quiz` uses four procedural 3D models to demonstrate [galaxy morphology](https://science.nasa.gov/universe/galaxies/types/).
 
 ## Scientific Tools
 

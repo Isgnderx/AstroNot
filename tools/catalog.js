@@ -65,6 +65,18 @@ function createToolCard(tool, headingTag) {
   return item;
 }
 
+function createBeginnerCard(tool) {
+  const card = createToolCard(tool, "h3");
+  card.querySelector(".tool-card__category").remove();
+  card.querySelector(".tool-card__state").remove();
+  const link = card.querySelector(".tool-card__launch");
+  const title = card.querySelector(".tool-card__title");
+  title.id = "tool-name-" + tool.id;
+  link.removeAttribute("aria-label");
+  link.setAttribute("aria-labelledby", title.id);
+  return card;
+}
+
 function setupToolDirectory(directory, tools, headingTag) {
   const track = directory.querySelector("[data-tool-track]");
   const filters = directory.querySelector("[data-tool-filters]");
@@ -175,7 +187,11 @@ const scientificDirectory = document.querySelector('[data-tools-directory="scien
 if (scientificDirectory) setupToolDirectory(scientificDirectory, scientificTools, "h2");
 
 const nonResearcherDirectory = document.querySelector('[data-tools-directory="non-researcher"]');
-if (nonResearcherDirectory) setupToolDirectory(nonResearcherDirectory, nonResearcherTools, "h3");
+if (nonResearcherDirectory) {
+  const grid = nonResearcherDirectory.querySelector("[data-tool-track]");
+  grid.replaceChildren(...nonResearcherTools.map(createBeginnerCard));
+  nonResearcherDirectory.hidden = false;
+}
 
 const homeTools = document.querySelector("[data-home-tools]");
 if (homeTools) {
