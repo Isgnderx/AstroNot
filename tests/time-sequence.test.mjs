@@ -368,9 +368,12 @@ test("display: median, shared range with offsets, stretches and RGBA (NaN in blu
   assert.deepEqual([...rgba], [0, 0, 0, 255, 0, 0, 0, 255, 34, 38, 52, 255, 255, 255, 255, 255]);
   assert.deepEqual([...TS.toRgba(new Float32Array([3]), [1, 3], "linear", undefined, 2)].slice(0, 3), [0, 0, 0]);
   assert.equal(TS.mjdToIso(60927.833964523), "2025-09-09T20:00:54Z");
-  assert.equal(TS.formatElapsed(177.74), "177 d 17 h");
-  assert.equal(TS.formatElapsed(0.25), "6 h 0 min");
-  assert.equal(TS.formatElapsed(-0.002), "−3 min");
+  assert.equal(TS.formatElapsed(177.74), "177 days 17 h");
+  assert.equal(TS.formatElapsed(0.25), "6 hours 0 min");
+  assert.equal(TS.formatElapsed(-0.002), "−3 minutes");
+  assert.equal(TS.formatElapsed(1.05), "1 day 1 h");
+  assert.equal(TS.formatElapsed(1 / 24 + 2 / 1440), "1 hour 2 min");
+  assert.equal(TS.formatElapsed(1 / 1440), "1 minute");
 });
 
 // ---- Cross-check with astropy + reproject (optional) --------------------------------------------------------------------------

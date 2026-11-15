@@ -235,6 +235,21 @@ is gone, the git history and this file are the record.
   serve.mjs (/api/sia), tools/registry.js (description/steps), assets/i18n/az.js (66 messages +
   33 templates, additions only), README.md, TODO.md, this file.
 - node --test: 392 tests, 386 pass, 0 fail, 6 skipped (in an environment with astropy+reproject).
+- Translations (15 Nov 2026, Claude, after the owner committed 6.3 and merged cahid_front):
+  the Time Machine page (both tabs) is translated in all five catalogs the same way 28ac63d did it for
+  the other tools — new messages at the top of the messages object, new templates at the top of the
+  templates object. Keys were found by rendering the page in English (examples, paging, play, the
+  no-search-service fallback, bad input, the files tab) and checking each string with
+  AstroNotLanguage.translate in every language; all pass except IDs, dates and units.
+  * time-sequence.js formatElapsed now writes "177 days 17 h", "1 day 2 h", "6 hours 0 min",
+    "3 minutes": site-language.js ignores templates whose longest fixed part is under four letters, so
+    "{} d {} h" and "{} h {} min" can never match (the "{} h {} min" keys already in az/ru/tr are dead).
+  * pair.js's "18 d 9 h after the reference" is untouched; it is covered by whole-sentence templates
+    ("The comparison was observed {} d {} h after the reference." etc.).
+  * New "Blink is unavailable: {}" templates: before them the generic "{} image{}, {}" template
+    matched that sentence and produced nonsense.
+  * Fixed three existing values used on the page: tr "Reference" (was "İpuç"), ru "Reference" (was
+    "Ссылка"), zh "Comparison" (was "较量"); tr "{} μm (bandwidth {} μm)" (was "{0} m").
 
 7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
 ---------------------------------------------------
@@ -258,7 +273,8 @@ is gone, the git history and this file are the record.
     246/352 BD+17 4708 points (all of detectors 1–2), so the cue says little for bright stars.
     Options: keep and reword the legend; or hollow = FIT_ERROR/near-saturation bits only.
   * The Spectrum Lab CSV's obs_id column holds lvf_id (EXPIDN), not the IRSA obs_id.
-  * tr/ru/es/zh strings for the new tool (and re-translation of those catalogs generally).
+  * tr/ru/es/zh strings for Forced Spectrophotometry were added in 28ac63d; the rest of those
+    catalogs is still machine-quality.
   * Observation Search could build IRSA-format cutouts locally from S3 (spxphot `search
     --download cutout`); the IRSA cutout service is unreliable.
   * Sersic (galaxy) mode is shipped "indicative only", as in spxphot (fluxes ~4 % high vs IRSA).
