@@ -451,8 +451,8 @@ function setupFitsViewer() {
   exampleButton.disabled = false;
 }
 
-// Other pages (Sky Explorer, tests) load this file for the shared readers and have no Viewer controls.
-if (document.querySelector("[data-fits-file]")) setupFitsViewer();
+// Other pages (Sky Explorer, tests) and the engine worker (no document at all) load this file for the shared readers.
+if (typeof document === "object" && document.querySelector("[data-fits-file]")) setupFitsViewer();
 
 // Public hook for the Rust/WebAssembly kernel and for tests: AstroNotFits.useKernel(kernel | null), .kernel(), .engine(), .ready.
 // The kernel is requested here, once, so every page that includes this file also loads it (tools/wasm.js and
