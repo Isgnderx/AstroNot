@@ -221,6 +221,13 @@ is gone, the git history and this file are the record.
   Browser-checked headless in en and az, phone width OK. Design and plan docs under docs/superpowers/ (the owner
   chose direct implementation for this one, no subagents).
 
+6.4 Hidden presentation page (15 Nov 2026)
+- `/presentation/` (presentation/index.html + presentation.css + presentation.js) is a 14-slide keyboard-driven deck
+  about the project in the site's look (←/→, space, Home/End, click, F for full screen; URL hash per slide).
+  It is deliberately linked from nowhere (no nav, no card, no sitemap; `noindex`) and reachable only by typing the
+  URL. "presentation" is in `publicDirectories` so serve.mjs and the publish package include it. Azerbaijani
+  entries for its text are in az.js; other languages fall back to English.
+
 7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
 ---------------------------------------------------
 - main: HEAD 27a2751 — the feature branch was fast-forward-merged on 14 Nov 2026 (17 commits
