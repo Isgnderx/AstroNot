@@ -48,11 +48,17 @@
               <h1 id="tools-title">Scientific Tools</h1>
               <p class="tools__intro">Workspaces for astronomical observation, analysis, and data processing.</p>
             </div>
-            <a class="tools__archive" href="https://irsa.ipac.caltech.edu/Missions/spherex.html">
-              <svg class="tools__archive-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></svg>
-              <span><strong>SPHEREx data archive</strong><small>NASA/IPAC IRSA</small></span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg>
-            </a>
+            <div class="tools__heading-links">
+              <a class="tools__archive" href="#non-researcher-tools">
+                <span><strong>Space for Everyone</strong><small>Explore six interactive tools</small></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6"/></svg>
+              </a>
+              <a class="tools__archive" href="https://irsa.ipac.caltech.edu/Missions/spherex.html">
+                <svg class="tools__archive-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></svg>
+                <span><strong>SPHEREx data archive</strong><small>NASA/IPAC IRSA</small></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg>
+              </a>
+            </div>
           </div>
 
           <div data-tools-directory="scientific" hidden>
@@ -78,29 +84,17 @@
         </div>
       </section>
 
-      <section class="tools section-space" id="non-researcher-tools" aria-labelledby="non-researcher-tools-title">
+      <section class="tools section-space" id="non-researcher-tools" aria-labelledby="non-researcher-tools-title" tabindex="-1">
         <div class="frame">
           <div class="tools__heading">
-            <h2 id="non-researcher-tools-title">Non-researcher Tools</h2>
+            <div>
+              <h2 id="non-researcher-tools-title">Space for Everyone</h2>
+              <p class="tools__intro">Turn a planet, find a constellation or see when to watch for meteors.</p>
+            </div>
           </div>
 
           <div data-tools-directory="non-researcher" hidden>
-            <div class="tools__toolbar">
-              <div class="tools__filters" role="group" aria-label="Filter non-researcher tools by category" data-tool-filters></div>
-              <div class="tools__controls" role="group" aria-label="Scroll through non-researcher tools">
-                <span class="tools__range" data-tool-range aria-hidden="true"></span>
-                <button type="button" class="tools__step" data-tool-previous aria-label="Previous non-researcher tools" aria-controls="non-researcher-tool-cards" aria-disabled="true">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
-                </button>
-                <button type="button" class="tools__step" data-tool-next aria-label="Next non-researcher tools" aria-controls="non-researcher-tool-cards" aria-disabled="true">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                </button>
-              </div>
-            </div>
-            <ul class="tools__track" id="non-researcher-tool-cards" tabindex="0" aria-label="Non-researcher tools. Use left and right arrow keys to browse." data-tool-track></ul>
-            <div class="tools__notes">
-              <p class="tools__availability" role="status" data-tool-availability></p>
-            </div>
+            <ul class="tools__public-grid" aria-labelledby="non-researcher-tools-title" data-tool-track></ul>
           </div>
           <noscript><p class="tools__intro">Enable JavaScript to browse the tool directory.</p></noscript>
         </div>

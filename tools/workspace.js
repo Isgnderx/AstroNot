@@ -55,7 +55,7 @@ function renderWorkspacePreview(content, tool) {
 function openWorkspace() {
   const directId = document.body.dataset.workspaceId;
   const id = directId ?? new URLSearchParams(location.search).get("tool");
-  const tool = scientificTools.find((entry) => entry.id === id);
+  const tool = [...scientificTools, ...nonResearcherTools].find((entry) => entry.id === id);
   const heading = document.querySelector("[data-workspace-title]");
   const description = document.querySelector("[data-workspace-description]");
   const content = document.querySelector("[data-workspace-content]");

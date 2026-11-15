@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b0c0e">
+    <meta name="description" content="Pick a city and time, then turn the sky to find familiar star patterns.">
+    <title>Constellation Finder — AstroNot</title>
+    <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../workspace.css">
+    <link rel="stylesheet" href="../public-tools.css">
+    <script src="../../routes.js" defer></script>
+    <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../public-astronomy.js" defer></script>
+    <script src="../../assets/tools/bright-stars.js" defer></script>
+    <script src="../public-scenes.js" defer></script>
+    <script src="../public-tools.js" defer></script>
+  </head>
+  <body class="workspace-page outreach">
+    <a class="skip-link" href="#page-content">Skip to content</a>
+    <header class="workspace-bar">
+      <div class="workspace-frame workspace-bar__inner">
+        <div class="workspace-bar__identity">
+          <a class="wordmark" href="../../index.html" data-route="/" aria-label="AstroNot home">
+            <img src="../../assets/mark.svg" width="36" height="36" alt="">
+            <span>AstroNot<span class="wordmark__period">.</span></span>
+          </a>
+          <nav class="workspace-crumb" aria-label="Breadcrumb">
+            <a class="workspace-back" href="../index.html#non-researcher-tools" data-route="/tools#non-researcher-tools">Space for Everyone</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace-frame outreach__main" id="page-content" tabindex="-1">
+      <header class="outreach__heading">
+        <h1>Constellation Finder</h1>
+        <p>Pick a city and time, then turn the sky to find familiar star patterns.</p>
+      </header>
+      <div data-public-tool="constellation-finder" hidden></div>
+      <noscript><p>Enable JavaScript to use this interactive tool.</p></noscript>
+      <footer class="outreach__sources">
+        <p>The map shows geometry at the selected time. Daylight, weather and city lights affect what you can see.</p>
+        <ul>
+          <li><span>Star positions</span> <a href="https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html">Yale Bright Star Catalogue via NASA HEASARC</a></li>
+          <li><span>Direction calculation</span> <a href="https://aa.usno.navy.mil/faq/alt_az">U.S. Naval Observatory</a></li>
+        </ul>
+      </footer>
+    </main>
+  </body>
+</html>
