@@ -115,16 +115,9 @@
 /* Closing */
 .slide__cta { margin: 1.6rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; }
 .slide__cta a { color: var(--base); background: var(--blue); border-radius: 999px; padding: 0.7rem 1.4rem; font-weight: 600; text-decoration: none; }
-.slide__url { color: var(--muted); font-size: 1rem; }
 
 /* Speaker notes */
 .slide__notes { display: none; }
-.deck-notes {
-  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 6; padding: 1rem var(--gutter) 1.2rem;
-  background: rgba(16, 22, 34, 0.96); border-block-start: 1px solid var(--line); backdrop-filter: blur(8px);
-}
-.deck-notes__label { margin: 0 0 0.3rem; color: var(--blue); font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; }
-.deck-notes__text { margin: 0; color: var(--ink); font-size: 1.05rem; line-height: 1.5; max-inline-size: 70rem; }
 .deck-noscript { padding: 1rem var(--gutter); color: var(--muted); }
 
 @media (max-width: 960px) {
@@ -139,7 +132,7 @@
 }
 
 @media print {
-  .deck-bar, .deck-progress, .deck-notes, .skip-link { display: none !important; }
+  .deck-bar, .deck-progress, .skip-link { display: none !important; }
   .deck-page { overflow: visible; }
   .deck { block-size: auto; overflow: visible; scroll-snap-type: none; }
   .slide { min-block-size: 0; break-after: page; padding-block-start: 2rem; background: var(--base); -webkit-print-color-adjust: exact; print-color-adjust: exact; }

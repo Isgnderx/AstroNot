@@ -1,4 +1,4 @@
-// Slide deck controls (arrow keys, space, Home/End, click on the slide halves, F for full screen, N for speaker notes;
+// Slide deck controls (arrow keys, space, Home/End, click on the slide halves, F for full screen;
 // the URL hash follows the current slide) and the rotating 3D planets, drawn with the site's own sphere renderer
 // from tools/public-scenes.js and the Solar System Scope textures the Planet Size Comparison tool uses.
 (() => {
@@ -7,9 +7,6 @@
   const slides = [...deck.querySelectorAll(".slide")];
   const counter = document.querySelector("[data-deck-counter]");
   const progress = document.querySelector("[data-deck-progress]");
-  const notesButton = document.querySelector("[data-deck-notes]");
-  const notesPanel = document.querySelector("[data-deck-notes-panel]");
-  const notesText = document.querySelector("[data-deck-notes-text]");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 
   // The start slide: the URL hash if it names one; otherwise whichever slide the browser already scrolled to.
@@ -21,7 +18,6 @@
     counter.textContent = (current + 1) + " / " + slides.length;
     progress.style.inlineSize = ((current + 1) / slides.length * 100) + "%";
     if (location.hash !== "#" + slides[current].id) history.replaceState(null, "", "#" + slides[current].id);
-    notesText.textContent = slides[current].querySelector(".slide__notes")?.textContent.trim() ?? "";
   }
 
   function show(index, { focus = true, instant = false } = {}) {
@@ -32,14 +28,8 @@
     if (focus) deck.focus({ preventScroll: true });
   }
 
-  function toggleNotes(open = notesPanel.hidden) {
-    notesPanel.hidden = !open;
-    notesButton.setAttribute("aria-pressed", String(open));
-  }
-
   document.querySelector("[data-deck-prev]").addEventListener("click", () => show(current - 1));
   document.querySelector("[data-deck-next]").addEventListener("click", () => show(current + 1));
-  notesButton.addEventListener("click", () => toggleNotes());
   document.querySelector("[data-deck-full]").addEventListener("click", () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen?.();
@@ -53,9 +43,7 @@
       show(current + keys[event.key]);
     } else if (event.key === "Home") { event.preventDefault(); show(0); }
     else if (event.key === "End") { event.preventDefault(); show(slides.length - 1); }
-    else if (event.key.toLowerCase() === "f") document.querySelector("[data-deck-full]").click();
-    else if (event.key.toLowerCase() === "n") toggleNotes();
-  });
+    else if (event.key.toLowerCase() === "f") document.querySelector("[data-deck-full]").click();  });
 
   // Clicking the left third goes back, the rest forward; links, buttons and the planets keep their own behaviour.
   deck.addEventListener("click", (event) => {
