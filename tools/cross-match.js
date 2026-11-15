@@ -96,7 +96,7 @@
     if (!ready) {
       setStatus(el.runStatus, !state.src ? "Load your sources to begin." : !state.src.data ? "Choose the RA and Dec columns of your sources." : !state.cat ? "Load a catalog extract." : "Choose the RA and Dec columns of the catalog.");
     } else if (!state.result) {
-      setStatus(el.runStatus, "Ready: " + plural(state.src.data.valid, "valid source") + " and " + plural(state.cat.data.valid, "valid catalog row") + ".");
+      setStatus(el.runStatus, "");
     }
   }
 
@@ -515,10 +515,7 @@
     const { match, src } = result;
     const counts = match.counts;
     const found = counts[X.status.single] + counts[X.status.multiple];
-    el.verdict.textContent = found.toLocaleString("en-US") + " of " + plural(src.valid, "source") + " with a valid position " + (found === 1 ? "has" : "have") + " at least one catalog row within " + match.radiusArcsec + " arcsec: " +
-      counts[X.status.single].toLocaleString("en-US") + " single and " + counts[X.status.multiple].toLocaleString("en-US") + " with several candidates. " +
-      counts[X.status.none].toLocaleString("en-US") + " have no match" + (counts[X.status.invalid] ? " and " + counts[X.status.invalid].toLocaleString("en-US") + (counts[X.status.invalid] === 1 ? " has" : " have") + " invalid coordinates" : "") +
-      ". The first candidate in each row is the nearest candidate: a position match, not a confirmed identification.";
+    el.verdict.textContent = "Sources with a candidate: " + found.toLocaleString("en-US") + " of " + src.valid.toLocaleString("en-US") + ". Matches are based on position alone.";
 
     const notes = [];
     for (const line of epochSentences(result)) notes.push(["info", line]);
@@ -529,7 +526,7 @@
     else if (match.coverageSummary.given && match.coverageSummary.outside) notes.push(["warning", plural(match.coverageSummary.outside, "source") + " have a search circle that is not fully inside the extract's cone; a missing match there may only mean the extract stops. See the Coverage column of the export."]);
     if (counts[X.status.multiple]) {
       const ties = match.ties.reduce((sum, value) => sum + value, 0);
-      notes.push(["info", plural(counts[X.status.multiple], "source") + " have more than one candidate" + (ties ? "; " + plural(ties, "source") + " have the two nearest at the same separation (marked “tie”), ordered by catalog ID" : "") + ". The nearest candidate is not necessarily the right object."]);
+      if (ties) notes.push(["info", "Ties are ordered by catalog ID."]);
     }
     if (result.src.duplicateIds) notes.push(["warning", plural(result.src.duplicateIds, "row") + " of your sources share an ID with another row. Rows are told apart by row number."]);
     clear(el.notes);

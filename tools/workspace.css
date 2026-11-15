@@ -81,7 +81,8 @@
   background: var(--workspace-surface);
 }
 
-.workspace-panel h2 {
+.workspace-panel h2,
+.workspace-panel.workspace-disclosure > summary {
   font-size: 1.0625rem;
   font-weight: 650;
   letter-spacing: -0.025em;
@@ -97,9 +98,32 @@
   text-wrap: pretty;
 }
 
-.workspace-status:empty { display: none; }
+.workspace-status:empty,
+.workspace-help:empty { display: none; }
 .workspace-status[data-error] { color: #ffd0cb; }
 .workspace-help strong { color: var(--ink); }
+
+.workspace-disclosure:not(.workspace-panel) { margin-block-start: 0.75rem; }
+.workspace-disclosure > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.workspace-disclosure > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 0.2rem;
+}
+
+.workspace-pdf-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.workspace-pdf-bar .workspace-pdf-button {
+  margin-inline-start: auto;
+}
 
 .workspace-source {
   display: inline-flex;

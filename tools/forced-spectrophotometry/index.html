@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/forced-spectrophotometry.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/fits-range.js" defer></script>
     <script src="../../tools/epsf.js" defer></script>
@@ -41,7 +42,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-fs-frames-wrap]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Analysis</p>
         <h1 data-workspace-title>Forced Spectrophotometry</h1>
@@ -49,8 +50,8 @@
         <p class="workspace-help fs-aside">For aperture photometry of calibrated images you already have, use <a class="fs-link" href="../../tools/spectrophotometry/index.html" data-route="/tools/spectrophotometry">Spectrophotometry</a>.</p>
       </header>
 
-      <section class="workspace-panel fs-frames" aria-labelledby="fs-frames-title">
-        <h2 id="fs-frames-title">Frames</h2>
+      <section class="workspace-panel fs-frames" aria-labelledby="fs-frames-title" data-pdf-section>
+        <h2 id="fs-frames-title" data-pdf-heading>Frames</h2>
         <p class="workspace-help">Import one or more IRSA SIA result files (CSV) saved from <strong>Observation Search</strong>: every SPHEREx level 2 image in them is a frame, read from the IRSA archive copy on Amazon S3 a few kilobytes at a time. You can also choose SPHEREx level 2 FITS files on this device; a file needs its <strong>EPSF</strong> extension (QR3, DR1 and later) to be measured. A frame listed twice is measured once.</p>
         <div class="tm-actions">
           <label class="tm-file">
@@ -79,6 +80,7 @@
       <section class="workspace-panel fs-targets" aria-labelledby="fs-targets-title">
         <h2 id="fs-targets-title">Targets</h2>
         <p class="workspace-help">Up to 20 sky positions (ICRS). Every target is fitted on every frame it falls on; targets close together are fitted jointly. A target is a point source unless you switch on its <strong>Galaxy model</strong> (a Sérsic profile convolved with the ePSF; an effective radius below 1 arcsec is treated as a point source, as IRSA does). A targets CSV has the columns <strong>ra, dec</strong> and optionally <strong>name, sersic_n, re_arcsec, axis_ratio, pa_deg</strong>, in degrees.</p>
+        <p class="workspace-help">Galaxy model fluxes are indicative only.</p>
         <div class="fs-target-tools">
           <label>Coordinate unit
             <select data-fs-unit>
@@ -162,7 +164,7 @@
         <p class="fs-stale" role="status" data-fs-stale></p>
       </section>
 
-      <section class="workspace-panel fs-results" aria-labelledby="fs-results-title" data-fs-results-section>
+      <section class="workspace-panel fs-results" aria-labelledby="fs-results-title" data-fs-results-section data-pdf-section>
         <h2 id="fs-results-title">Results</h2>
         <p class="tm-pair__verdict" data-fs-verdict>Load frames and enter a target, then press Measure.</p>
         <figure class="fs-plot" data-fs-plot hidden>
@@ -175,7 +177,7 @@
             </div>
           </div>
           <div class="fs-chart" tabindex="0" role="group" aria-label="Spectrum plot. Use the arrow keys to move between points." aria-describedby="fs-plot-summary fs-plot-keys" data-fs-chart></div>
-          <figcaption class="fs-plot__summary" id="fs-plot-summary" data-fs-plot-summary></figcaption>
+          <figcaption class="fs-plot__summary" id="fs-plot-summary" data-fs-plot-summary data-pdf-text></figcaption>
           <ul class="fs-legend" aria-label="Detectors and targets in the plot" data-fs-legend></ul>
           <div class="fs-not-drawn" data-fs-not-drawn hidden>
             <p class="workspace-help" data-fs-not-drawn-text></p>
@@ -199,17 +201,20 @@
 
       <section class="workspace-panel fs-downloads" aria-labelledby="fs-downloads-title">
         <h2 id="fs-downloads-title">Downloads</h2>
-        <p class="workspace-help">The <strong>IRSA-format CSV</strong> has spxphot's 19 columns with the IRSA table's names (label, ra, dec, lambda, lambda_width, flux, flux_err, flux_err_tractor, flags, fit_ql, flux_bkg, lvf_id, det_id, deep_flg, mjd, data_collection, x_image, y_image, n_pix). The <strong>Spectrum Lab CSV</strong> has the Spectrum Lab columns (wavelength in μm, flux in μJy) with method <strong>forced-epsf</strong>.</p>
         <div class="tm-actions">
           <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-fs-download-irsa>Download IRSA-format CSV</button>
           <button class="workspace-button" type="button" aria-disabled="true" data-fs-download-lab>Download Spectrum Lab CSV</button>
           <a class="workspace-source" href="../../tools/spectrum/index.html" data-route="/tools/spectrum">Open Spectrum Lab</a>
         </div>
         <p class="workspace-status" role="status" data-fs-export-status></p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">The <strong>IRSA-format CSV</strong> has spxphot's 19 columns with the IRSA table's names (label, ra, dec, lambda, lambda_width, flux, flux_err, flux_err_tractor, flags, fit_ql, flux_bkg, lvf_id, det_id, deep_flg, mjd, data_collection, x_image, y_image, n_pix). The <strong>Spectrum Lab CSV</strong> has the Spectrum Lab columns (wavelength in μm, flux in μJy) with method <strong>forced-epsf</strong>.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="fs-note-title">
-        <h2 id="fs-note-title">How the flux is computed</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="fs-note-title">
+        <summary id="fs-note-title">How the flux is computed</summary>
         <p class="workspace-help">This page is a port of spxphot, an independent Rust reimplementation of the IRSA SPHEREx Spectrophotometry Tool, and follows its method step by step. Each frame that covers a target gives one spectral point:</p>
         <ol class="fs-steps">
           <li><strong>Find frames.</strong> spxphot asks IRSA TAP for them. TAP sends no CORS header, so a browser cannot ask it; here the frame list comes from the SIA search that Observation Search builds (for BD+17 4708 the same 352 frames: DR1 239, QR3 113), filtered by deep fields, detector and MJD.</li>
@@ -238,7 +243,7 @@
         <p class="workspace-help" data-fs-sersic-note><strong>Galaxy model: not validated.</strong> With a Sérsic profile spxphot's fluxes ran about 4 % above IRSA's (NGC 7619, median ratio 1.040) with a different spectral shape. A likely but unconfirmed cause is that Tractor approximates Sérsic profiles with a mixture of Gaussians, while this method uses the exact profile. Treat galaxy fluxes as indicative only.</p>
         <p class="workspace-help">Data: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx DR1/QR3. This is an independent reimplementation of the IRSA Spectrophotometry Tool's method and is not affiliated with IPAC or the SPHEREx team.</p>
         <p class="workspace-help">References: <a class="fs-link" href="https://irsa.ipac.caltech.edu/applications/spherex/">IRSA SPHEREx tools</a> (the Spectrophotometry Tool), <a class="fs-link" href="https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html">IRSA Spectrophotometry Tool documentation</a>, <a class="fs-link" href="https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html">SPHEREx cutout service</a>, <a class="fs-link" href="https://irsa.ipac.caltech.edu/Missions/spherex.html">SPHEREx at IRSA</a>.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
   </body>

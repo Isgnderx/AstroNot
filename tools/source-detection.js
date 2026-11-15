@@ -591,7 +591,7 @@
     const result = state.result;
     const image = state.image;
     el.notes.replaceChildren();
-    el.summary.hidden = !result;
+    el.summary.closest("details").hidden = !result;
     if (!image) {
       el.verdict.textContent = state.loading ? "Reading the selected file…" : "Load an image to detect sources.";
       if (state.error) addItem(el.notes, state.error, "tm-notes__error");
@@ -611,9 +611,8 @@
     }
     const unit = result.unit;
     const n = result.sources.length;
-    el.verdict.textContent = n
-      ? count(n) + " detected " + (n === 1 ? "candidate" : "candidates") + " in " + count(result.width) + " × " + count(result.height) + " pixels. They are candidates found by this method, not catalog identifications."
-      : "No candidates. No group of at least " + result.params.minPixels + " connected pixels lies above the threshold.";
+    el.verdict.textContent = n === 0 ? "No candidates found." :
+      n === 1 ? "1 source candidate found." : count(n) + " source candidates found.";
     for (const text of result.warnings) addItem(el.notes, text, "tm-notes__warning");
     for (const text of result.notes) addItem(el.notes, text, "tm-notes__info");
     if (!n && result.counts.aboveThreshold > 0) addItem(el.notes, count(result.counts.aboveThreshold) + " pixels are above the threshold, but they form only groups smaller than " + result.params.minPixels + " pixels.", "tm-notes__info");
@@ -622,7 +621,7 @@
     const u = unit || "image units";
     const t = result.threshold;
     const noise = result.noise;
-    setSummary("method", result.method + ". Pixels above the threshold are grouped by 8-connectivity; each group is one candidate.");
+    setSummary("method", result.method);
     setSummary("background", result.background.description + ". Level " + (result.background.level === null ? "unavailable" : withUnit(significant(result.background.level, 5), unit)) +
       (result.background.cells > 1 ? " (range " + significant(result.background.levelMin, 4) + " to " + significant(result.background.levelMax, 4) + ")" : "") + ".");
     const sigmaRange = noise.sigmaMin !== null && noise.sigmaMax !== null && noise.sigmaMin !== noise.sigmaMax ? " (range " + significant(noise.sigmaMin, 3) + " to " + significant(noise.sigmaMax, 3) + ")" : "";
@@ -630,7 +629,7 @@
     if (t.mode === "sigma") {
       setSummary("threshold", significant(t.value, 4) + " σ above the background = " + (t.levelMedian === null ? "unavailable" : withUnit(significant(t.levelMedian, 4), unit)) +
         (t.levelMin !== t.levelMax ? " (from " + significant(t.levelMin, 3) + " to " + significant(t.levelMax, 3) + ", because the noise differs across the image)" : "") +
-        ". A pixel must exceed the local background by this much; the same " + significant(t.value, 3) + " σ would be a higher level in a noisier image.");
+        ".");
     } else {
       setSummary("threshold", "Absolute: " + withUnit(significant(t.value, 5), u) + " above the local background. The noise is not used for the threshold" + (noise.sigmaMedian > 0 ? " (it is " + significant(t.value / noise.sigmaMedian, 3) + " σ for the median noise)" : "") + ".");
     }

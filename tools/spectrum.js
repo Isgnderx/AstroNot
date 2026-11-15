@@ -161,6 +161,7 @@
     state.text = text;
     state.encodingNote = note;
     el.delimiter.value = "auto";
+    el.columnsPanel.open = false;
     parseTable();
   }
 
@@ -172,6 +173,7 @@
       setStatus(table.message, true);
       if (table.code === "no-delimiter" || table.code === "bad-csv" || el.delimiter.value !== "auto") {
         el.columnsPanel.hidden = false;
+        el.columnsPanel.open = true;
         el.mapping.replaceChildren();
         el.unitWavelength.disabled = el.unitFlux.disabled = true;
         el.columnsNote.textContent = "This file could not be read as a table. If it uses a delimiter other than the one tried, choose it here.";
@@ -185,6 +187,7 @@
     state.detect = Spectrum.detectColumns(table.headers);
     state.mapping = { ...state.detect.mapping };
     state.units = { wavelength: state.detect.units.wavelength ?? "", flux: state.detect.units.flux ?? "" };
+    if (!state.detect.contract) el.columnsPanel.open = true;
     buildMappingUi();
     rebuild(true);
   }
@@ -246,6 +249,7 @@
     state.tableKey = "";
     renderImport();
     if (!result.ok) {
+      el.columnsPanel.open = true;
       for (const name of ["selectionPanel", "plotPanel", "pointPanel", "tablePanel"]) el[name].hidden = true;
       setStatus(result.message, true);
       announce("");
@@ -267,13 +271,10 @@
     setupSelection();
     for (const name of ["selectionPanel", "plotPanel", "pointPanel", "tablePanel"]) el[name].hidden = false;
     el.widthWrap.hidden = state.mapping.lambda_width === null;
-    el.provenance.hidden = false;
-    el.provenance.textContent = state.example
-      ? "Synthetic example: generated for AstroNot to show the tool. It is not an archive result and not SPHEREx data; the sources, fluxes, flags and times are invented."
-      : "Loaded from " + state.fileName + ". AstroNot reads the values as the file states them and cannot check where a file came from.";
+    el.provenance.hidden = !state.example;
+    el.provenance.textContent = state.example ? "Synthetic example data." : "";
     el.provenance.toggleAttribute("data-synthetic", state.example);
-    const skipped = result.bad.length;
-    setStatus("Showing " + plural(result.points.length, "measurement") + " from " + state.fileName + "." + (skipped ? " " + plural(skipped, "row") + " could not be used and " + (skipped === 1 ? "was" : "were") + " left out; see What was read." : ""));
+    setStatus("Loaded " + state.fileName + ".");
     renderAll();
   }
 
@@ -320,7 +321,6 @@
         (seen.has(key) ? repeated : seen).add(key);
       }
       if (repeated.size) note("info", plural(repeated.size, "wavelength") + " " + (repeated.size === 1 ? "has" : "have") + " more than one measurement. Each is kept as its own point.");
-      if (result.bad.length) note("warning", plural(result.bad.length, "row") + " could not be used and " + (result.bad.length === 1 ? "was" : "were") + " left out.");
     }
     el.notes.replaceChildren(...notes);
     el.notes.hidden = notes.length === 0;
@@ -737,9 +737,7 @@
       const active = columns[index].key === state.sort.key;
       th.setAttribute("aria-sort", active ? (state.sort.direction === "asc" ? "ascending" : "descending") : "none");
     });
-    const total = currentSource().count;
-    el.tableCaption.textContent = currentSource().label + ": " + view.rows.length.toLocaleString("en-US") + " of " + total.toLocaleString("en-US") + " measurements, sorted by " +
-      columns.find((column) => column.key === state.sort.key).label.replace(/ \(.*/, "").toLowerCase() + (state.sort.direction === "asc" ? " ascending" : " descending");
+    el.tableCaption.textContent = currentSource().label;
 
     const sorted = Spectrum.sortPoints(view.points, state.sort.key, state.sort.direction);
     const visible = sorted.slice(0, state.limit);
@@ -765,7 +763,7 @@
     if (sorted.length > state.limit) el.more.textContent = "Show " + Math.min(pageSize, sorted.length - state.limit) + " more rows (" + (sorted.length - state.limit).toLocaleString("en-US") + " not shown)";
     el.tableNote.textContent = view.rows.length === 0
       ? "No measurements match the current choices."
-      : "Sort a column with its heading button. Press a Line button to select that measurement.";
+      : "";
     markTableSelection(false);
   }
 

@@ -669,7 +669,7 @@
       slot.manualTime = null;
       buildMeta(slot);
       slot.view = Pair.createView(image.width, image.height);
-      slot.message = (slot.isExample ? "SPHEREx example loaded." : slot.name + " loaded.") + (image.wcs ? "" : " No usable sky coordinates.");
+      slot.message = image.wcs ? "Image loaded." : "Image loaded. No usable sky coordinates.";
     } catch (error) {
       if (version !== slot.version || token !== slot.hduVersion) return;
       slot.loading = false;
@@ -926,7 +926,7 @@
     el.timeline.hidden = true;
     el.timelineMissing.textContent = "";
     el.checks.hidden = !pair;
-    el.conditions.hidden = !pair;
+    el.conditions.closest("details").hidden = !pair;
     el.swap.setAttribute("aria-disabled", String(!(reference.file || comparison.file)));
     if (!pair) {
       el.verdict.textContent = reference.loading || comparison.loading
@@ -942,11 +942,13 @@
     el.verdict.textContent = blocking
       ? blocking.text
       : pair.overlap.state === "full" || pair.overlap.state === "substantial"
-        ? "These images cover the same sky area" + (pair.time.state === "ordered" ? ", and the comparison was observed " + pair.time.text + "." : ".")
+        ? "These images cover the same sky area."
         : "Check the notes below before comparing these images.";
 
-    for (const warning of pair.warnings) addItem(el.warnings, warning.text, "tm-notes__" + warning.severity);
-    el.warnings.hidden = !pair.warnings.length;
+    for (const warning of pair.warnings) {
+      if (warning !== blocking) addItem(el.warnings, warning.text, "tm-notes__" + warning.severity);
+    }
+    el.warnings.hidden = !el.warnings.children.length;
 
     const overlap = pair.overlap;
     const percent = (value) => Math.round(value * 100) + "%";
@@ -957,7 +959,8 @@
     set(el.checks, "grid", pair.grid.ok ? "One common grid (largest offset " + significant(pair.grid.maxOffsetPixels, 2) + " pixels)"
       : pair.grid.reason + (aligned ? " Display alignment is on." : ""));
     const link = linkDecision();
-    set(el.checks, "link", link.allowed ? "Available" + (aligned ? ", on the reference grid (comparison resampled)" : "") : "Unavailable: " + link.reason);
+    set(el.checks, "link", link.allowed ? "Available" + (aligned ? ", on the reference grid (comparison resampled)" : "")
+      : link.reason === pair.grid.reason ? "Unavailable" : "Unavailable: " + link.reason);
 
     // Timeline: the two valid times in order.
     if (pair.timeline) {
@@ -978,7 +981,7 @@
       });
       el.timelineText.textContent = pair.timeline.state === "same"
         ? "Both observations have the same time."
-        : "The comparison was observed " + pair.time.text + ". Span " + Pair.formatDuration(pair.timeline.spanDays) + ".";
+        : "The comparison was observed " + pair.time.text + ".";
     } else {
       el.timelineMissing.textContent = "Timeline unavailable: " + pair.time.reason + " You can enter a time by hand in the observation card.";
     }

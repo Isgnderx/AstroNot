@@ -353,11 +353,12 @@
     setDisabled(el.download, !(result && result.csvRows.length));
     if (!result) return;
 
-    const measured = result.items.filter((item) => item.measurement.measured).length;
+    const measured = result.items.filter((item) => item.measurement.measured);
     const points = result.csvRows.length;
     const total = result.items.length;
-    el.verdict.textContent = plural(total, "image") + ": " + measured + " measured, " + points + " " + (points === 1 ? "is a spectrum point" : "are spectrum points") +
-      (points ? " (wavelength from the file's WCS-WAVE table)." : measured ? ". No wavelength could be read from the spectral WCS of a measured image, so no spectrum point can be written." : ". See the notes for the reason of each.");
+    const missingUncertainty = measured.filter((item) => item.measurement.fluxErrMicroJy === null).length;
+    el.verdict.textContent = measured.length + " of " + plural(total, "image") + " measured. " + plural(points, "spectrum point") + "." +
+      (missingUncertainty ? " Uncertainty unavailable for " + plural(missingUncertainty, "measurement") + "." : "");
 
     const notes = [];
     for (const item of result.items) {
@@ -367,7 +368,6 @@
       else {
         if (m.status === "partial-aperture") notes.push(["warning", label + ": " + m.reasons.join(" ")]);
         if (!m.spectrumPoint) notes.push(["warning", label + ": " + m.notSpectrumReason]);
-        if (m.fluxErrMicroJy === null) notes.push(["info", label + ": uncertainty left empty. " + m.fluxErrReason]);
         if (m.omega && m.omega.ratioToHeader && Math.abs(m.omega.ratioToHeader - 1) > 0.05) notes.push(["warning", label + ": the pixel solid angle from the WCS differs from the header OMEGA_MEDIAN by " + percent(m.omega.ratioToHeader - 1) + "."]);
         if (item.observation.epoch.mjd === null) notes.push(["info", label + ": no UTC observation time (" + item.observation.epoch.reason + "), so the mjd column is empty."]);
       }
@@ -405,12 +405,7 @@
     state.selected = Math.min(state.selected, result.items.length - 1);
     selectDetail(state.selected, false);
 
-    if (points) {
-      const skipped = total - points;
-      el.exportStatus.textContent = plural(points, "spectrum point") + " ready" + (skipped ? "; " + plural(skipped, "image") + " left out (not measured or no wavelength)." : ".");
-    } else {
-      el.exportStatus.textContent = "No spectrum point to export: a CSV row needs a measured flux and a wavelength from the file's spectral WCS.";
-    }
+    el.exportStatus.textContent = "";
   }
 
   function fact(label, value) {
@@ -592,7 +587,7 @@
     state.result = { form, items, csvRows, csv: csvRows.length ? Phot.toCsv(csvRows) : "" };
     window.AstroNotLatestSpectrophotometry = state.result; // The reusable result, for tests and other tools.
     el.stale.textContent = "";
-    setFormStatus("Measured " + plural(items.length, "image") + " for " + form.sourceId + " at RA " + form.target.ra + "°, Dec " + form.target.dec + "°.");
+    setFormStatus("Measurement complete.");
     renderResults();
   }
 

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/spectrophotometry.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/fits.js" defer></script>
     <script src="../../tools/pair.js" defer></script>
@@ -37,7 +38,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-sp-list-wrap]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Analysis</p>
         <h1 data-workspace-title>Spectrophotometry</h1>
@@ -45,8 +46,8 @@
         <p class="workspace-help sp-aside">For the IRSA forced-photometry method (an ePSF fit on every frame covering a position, read from the archive), use <a class="sp-link" href="../../tools/forced-spectrophotometry/index.html" data-route="/tools/forced-spectrophotometry">Forced Spectrophotometry</a>.</p>
       </header>
 
-      <section class="workspace-panel sp-images" aria-labelledby="sp-images-title">
-        <h2 id="sp-images-title">Calibrated images</h2>
+      <section class="workspace-panel sp-images" aria-labelledby="sp-images-title" data-pdf-section>
+        <h2 id="sp-images-title" data-pdf-heading>Calibrated images</h2>
         <p class="workspace-help">Choose one or more SPHEREx Level 2 FITS images or cutouts (uncompressed, <strong>IMAGE</strong> in <strong>MJy/sr</strong>, TAN or TAN-SIP WCS in ICRS). The tool also reads a <strong>FLAGS</strong> image, a <strong>VARIANCE</strong> image and the <strong>WCS-WAVE</strong> table when the file has them. Each file is one exposure, so each gives one point of the spectrum. Files are read on this device.</p>
         <div class="tm-actions">
           <label class="tm-file">
@@ -109,7 +110,7 @@
         <p class="workspace-status" role="status" data-sp-form-status></p>
       </form>
 
-      <section class="workspace-panel sp-result" aria-labelledby="sp-result-title">
+      <section class="workspace-panel sp-result" aria-labelledby="sp-result-title" data-pdf-section>
         <h2 id="sp-result-title">Aperture flux density</h2>
         <p class="tm-pair__verdict" role="status" data-sp-verdict>Load images and enter a target to measure.</p>
         <ul class="tm-notes" data-sp-notes hidden></ul>
@@ -130,16 +131,18 @@
 
       <section class="workspace-panel sp-export" aria-labelledby="sp-export-title">
         <h2 id="sp-export-title">Spectrum Lab hand-off</h2>
-        <p class="workspace-help">The CSV has the Spectrum Lab columns <strong>source_id, obs_id, mjd, ra, dec, wavelength, lambda_width, flux, flux_err, flags, method</strong> (wavelength and lambda_width in μm, flux and flux_err in μJy, mjd in UTC, flags 0 when nothing is flagged) followed by extra columns about the aperture and the status. An unknown uncertainty is an empty field. The method column says <strong>aperture-photometry</strong>: this is not the archive's forced photometry.</p>
         <div class="tm-actions">
           <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-sp-download>Download spectrum CSV</button>
           <a class="workspace-source" href="../../tools/spectrum/index.html" data-route="/tools/spectrum" data-sp-lab>Open Spectrum Lab</a>
         </div>
         <p class="workspace-status" role="status" data-sp-export-status></p>
-        <p class="workspace-help">Next: download the CSV, open Spectrum Lab and choose that file there.</p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">The CSV has the Spectrum Lab columns <strong>source_id, obs_id, mjd, ra, dec, wavelength, lambda_width, flux, flux_err, flags, method</strong> (wavelength and lambda_width in μm, flux and flux_err in μJy, mjd in UTC, flags 0 when nothing is flagged) followed by extra columns about the aperture and the status. An unknown uncertainty is an empty field. The method column says <strong>aperture-photometry</strong>: this is not the archive's forced photometry.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel sp-detail" aria-labelledby="sp-detail-title" data-sp-detail hidden>
+      <section class="workspace-panel sp-detail" aria-labelledby="sp-detail-title" data-sp-detail hidden data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="sp-detail-title">Measurement detail</h2>
           <label class="sp-detail__choice">Image
@@ -166,13 +169,13 @@
         </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="sp-note-title">
-        <h2 id="sp-note-title">How the flux is computed</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="sp-note-title">
+        <summary id="sp-note-title">How the flux is computed</summary>
         <p class="workspace-help"><strong>Aperture flux density</strong> = 10⁶ × Σ wᵢ (Iᵢ − b) Ωᵢ in Jy, with Iᵢ and the background b in MJy/sr and Ωᵢ the solid angle of pixel i in sr. The weights wᵢ are the exact overlaps of the pixels with the circle (partly covered pixels count by their covered fraction). Ωᵢ comes from the image WCS (the sky area of the pixel corners), not from a constant. The result is shown in μJy.</p>
         <p class="workspace-help"><strong>Background</strong> b is the sigma-clipped median (or mean) of the valid annulus pixels, with 3σ clipping. Pixels that are NaN, BLANK or flagged (SUR_ERROR, NONFUNC, MISSING_DATA, HOT, COLD, NONLINEAR, PERSIST, BLOOM, SNOWBALL, HALO, SATELLITE_HALO, the bits the archive tool ignores when fitting) are left out of the aperture and the annulus, never replaced. The flux is not corrected for left-out area; the covered share and the masked share are shown, and a measurement below the minimum coverage is refused. A target outside the image is not measured.</p>
         <p class="workspace-help"><strong>Wavelength</strong> is read from the per-pixel spectral WCS of the file (the WCS-WAVE lookup table) at the target pixel. A file without that table gives a flux but no spectrum point, and is left out of the CSV. <strong>Uncertainty</strong> is propagated from the VARIANCE image only (independent pixel noise plus the error of the background level); without a VARIANCE image the uncertainty is empty. It contains no calibration, aperture-correction or correlated-noise term. <strong>Flags</strong> are the bitwise OR of the FLAGS values of the aperture pixels, plus bit 32 (CONTAINS_BAD_PIXEL) when a pixel was left out, as in the IRSA table.</p>
         <p class="workspace-help"><strong>Not the archive's measurement.</strong> The <a class="sp-link" href="https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html">IRSA SPHEREx Spectrophotometry tool</a> fits a PSF and morphology model with Tractor (forced photometry); this tool sums pixels in a circle. The two differ for blended or extended sources, and no aperture correction is applied here, so compare them only with that difference in mind. The time (mjd) is the mid-exposure time (MJD-AVG) in UTC when the header has it, otherwise the exposure start.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
   </body>
