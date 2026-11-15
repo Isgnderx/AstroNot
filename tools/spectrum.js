@@ -220,7 +220,7 @@
       if (state.units[kind] && source === "contract") parts.push("The " + kind + " unit " + label(kind, state.units[kind]) + " is the documented unit of this format.");
       else if (state.units[kind] && source === "header") parts.push("The " + kind + " unit " + label(kind, state.units[kind]) + " was read from the column name; check it.");
     }
-    el.unitsNote.textContent = parts.join(" ");
+    el.unitsNote.replaceChildren(...parts.map((part, index) => index ? " " + part : part));
   }
 
   function onMappingChange() {

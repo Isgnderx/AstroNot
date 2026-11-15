@@ -456,7 +456,9 @@
       rows.push(["Reason", m.reasons.join(" ")]);
     }
     el.facts.replaceChildren(...rows.map(([label, value]) => fact(label, value)));
-    el.conversions.textContent = m.conversions.length ? "Conversions: " + m.conversions.join(" ") : "";
+    el.conversions.replaceChildren(...(m.conversions.length
+      ? ["Conversions:", ...m.conversions.map((conversion) => " " + conversion)]
+      : []));
 
     el.pixels.replaceChildren(...m.pixels.map((pixel) => {
       const used = pixel.status === "valid";

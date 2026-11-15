@@ -136,7 +136,7 @@
   }
 
   function plural(count, word) {
-    return count.toLocaleString("en-US") + " " + word + (count === 1 ? "" : "s");
+    return count.toLocaleString("en-US") + " " + word + (count === 1 || word === "series" ? "" : "s");
   }
 
   function unitOption(unit) {

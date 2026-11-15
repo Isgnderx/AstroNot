@@ -283,8 +283,9 @@
     if (info.note) notes.push(info.note);
     if (!release) notes.push("The release is not stored in the file: enter it, for example DR3.");
     if (Object.keys(meta).length) notes.push("File information read from # lines: " + Object.entries(meta).map(([key, value]) => key + " = " + value).join("; ") + ".");
+    if (requestNote) notes.push(requestNote.trim());
     el.catNote.hidden = notes.length === 0;
-    el.catNote.textContent = notes.join(" ") + requestNote;
+    el.catNote.replaceChildren(...notes.map((note, index) => index ? " " + note : note));
     rebuildCatalog(true);
   }
 

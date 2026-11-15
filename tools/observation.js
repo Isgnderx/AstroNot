@@ -334,6 +334,10 @@ function setupObservationSearch() {
     if (importInput.files[0]) importResults(importInput.files[0]);
   });
   cutoutBox.addEventListener("input", () => rowViews.forEach(refreshRow));
+  window.addEventListener("astronot-languagechange", () => {
+    rowViews.forEach(refreshRow);
+    if (!handoff.hidden && preparedPosition) handoff.href = observationForcedPhotometryUrl(preparedPosition);
+  });
 
   example.addEventListener("click", () => {
     form.reset();

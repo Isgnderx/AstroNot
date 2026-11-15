@@ -52,7 +52,7 @@
 
       <section class="workspace-panel fs-frames" aria-labelledby="fs-frames-title" data-pdf-section>
         <h2 id="fs-frames-title" data-pdf-heading>Frames</h2>
-        <p class="workspace-help">Import one or more IRSA SIA result files (CSV) saved from <strong>Observation Search</strong>: every SPHEREx level 2 image in them is a frame, read from the IRSA archive copy on Amazon S3 a few kilobytes at a time. You can also choose SPHEREx level 2 FITS files on this device; a file needs its <strong>EPSF</strong> extension (QR3, DR1 and later) to be measured. A frame listed twice is measured once.</p>
+        <p class="workspace-help">Import one or more IRSA SIA result files (CSV) saved from <strong>Observation Search</strong>: every SPHEREx level 2 image in them is a frame, read from the IRSA archive copy on Amazon S3 a few kilobytes at a time. You can also choose SPHEREx level 2 FITS files on this device; a file needs its <strong translate="no">EPSF</strong> extension (QR3, DR1 and later) to be measured. A frame listed twice is measured once.</p>
         <div class="tm-actions">
           <label class="tm-file">
             <input class="tm-file__input" type="file" accept=".csv,text/csv" multiple disabled data-fs-csv>
@@ -79,7 +79,7 @@
 
       <section class="workspace-panel fs-targets" aria-labelledby="fs-targets-title">
         <h2 id="fs-targets-title">Targets</h2>
-        <p class="workspace-help">Up to 20 sky positions (ICRS). Every target is fitted on every frame it falls on; targets close together are fitted jointly. A target is a point source unless you switch on its <strong>Galaxy model</strong> (a Sérsic profile convolved with the ePSF; an effective radius below 1 arcsec is treated as a point source, as IRSA does). A targets CSV has the columns <strong>ra, dec</strong> and optionally <strong>name, sersic_n, re_arcsec, axis_ratio, pa_deg</strong>, in degrees.</p>
+        <p class="workspace-help">Up to 20 sky positions (ICRS). Every target is fitted on every frame it falls on; targets close together are fitted jointly. A target is a point source unless you switch on its <strong>Galaxy model</strong> (a Sérsic profile convolved with the ePSF; an effective radius below 1 arcsec is treated as a point source, as IRSA does). A targets CSV has the columns <strong translate="no">ra, dec</strong> and optionally <strong translate="no">name, sersic_n, re_arcsec, axis_ratio, pa_deg</strong>, in degrees.</p>
         <p class="workspace-help">Galaxy model fluxes are indicative only.</p>
         <div class="fs-target-tools">
           <label>Coordinate unit
@@ -209,7 +209,8 @@
         <p class="workspace-status" role="status" data-fs-export-status></p>
         <details class="workspace-disclosure">
           <summary>Export details</summary>
-          <p class="workspace-help">The <strong>IRSA-format CSV</strong> has spxphot's 19 columns with the IRSA table's names (label, ra, dec, lambda, lambda_width, flux, flux_err, flux_err_tractor, flags, fit_ql, flux_bkg, lvf_id, det_id, deep_flg, mjd, data_collection, x_image, y_image, n_pix). The <strong>Spectrum Lab CSV</strong> has the Spectrum Lab columns (wavelength in μm, flux in μJy) with method <strong>forced-epsf</strong>.</p>
+          <p class="workspace-help"><strong>IRSA-format CSV</strong> has spxphot's 19 columns with the IRSA table's names (label, ra, dec, lambda, lambda_width, flux, flux_err, flux_err_tractor, flags, fit_ql, flux_bkg, lvf_id, det_id, deep_flg, mjd, data_collection, x_image, y_image, n_pix).</p>
+          <p class="workspace-help"><strong>Spectrum Lab CSV</strong> has the Spectrum Lab columns (wavelength in μm, flux in μJy) with method <code translate="no">forced-epsf</code>.</p>
         </details>
       </section>
 
