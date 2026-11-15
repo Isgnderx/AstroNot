@@ -43,11 +43,13 @@
     };
   }
 
-  async function bytesFor(name) {
+  async function bytesFor(name, options) {
     const embedded = root.AstroNotWasmBytes && root.AstroNotWasmBytes[name];
     if (embedded) return base64ToBytes(embedded);
-    if (scriptUrl && /^https?:/.test(scriptUrl)) {
-      const response = await fetch(new URL("wasm/" + name + ".wasm", scriptUrl));
+    // A page knows the file from this script's URL; a worker (no document) passes the URL in `options.url`.
+    const url = options.url || (scriptUrl && /^https?:/.test(scriptUrl) ? new URL("wasm/" + name + ".wasm", scriptUrl).href : null);
+    if (url && /^https?:/.test(url) && typeof fetch === "function") {
+      const response = await fetch(url);
       if (!response.ok) throw new Error("HTTP " + response.status);
       return new Uint8Array(await response.arrayBuffer());
     }
@@ -57,10 +59,11 @@
     return null;
   }
 
-  function load(name) {
+  // load(name, { url }) -> kernel or null. `url` is the full address of the .wasm file (needed inside a Web Worker).
+  function load(name, options = {}) {
     if (typeof WebAssembly !== "object") return Promise.resolve(null);
     if (!cache.has(name)) {
-      cache.set(name, bytesFor(name)
+      cache.set(name, bytesFor(name, options)
         .then(async (bytes) => (bytes ? wrap(name, (await WebAssembly.instantiate(bytes, {})).instance.exports) : null))
         .catch(() => null));
     }

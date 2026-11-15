@@ -11,6 +11,10 @@ name = "detect"
 version = "0.1.0"
 
 [[package]]
+name = "engine"
+version = "0.1.0"
+
+[[package]]
 name = "fitsdata"
 version = "0.1.0"
 
