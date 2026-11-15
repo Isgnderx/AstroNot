@@ -18,6 +18,7 @@ export const contentTypes = {
   ".woff2": "font/woff2",
   ".wasm": "application/wasm",
   ".txt": "text/plain; charset=utf-8",
+  ".gif": "image/gif",
 };
 
 // Every path segment must look like an ordinary public name: no dotfiles, no spaces.

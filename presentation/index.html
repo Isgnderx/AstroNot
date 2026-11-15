@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080a10">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="description" content="AstroNot project presentation.">
+    <meta name="description" content="AstroNot — NASA Space Apps Challenge presentation.">
     <title>AstroNot — Presentation</title>
     <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../styles.css">
@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="presentation.css">
     <script src="../routes.js" defer></script>
     <script src="../assets/i18n/site-language.js" defer></script>
+    <script src="../tools/public-astronomy.js" defer></script>
+    <script src="../tools/public-scenes.js" defer></script>
     <script src="presentation.js" defer></script>
   </head>
   <body class="workspace-page deck-page">
@@ -24,12 +26,13 @@
             <img src="../assets/mark.svg" width="36" height="36" alt="">
             <span>AstroNot<span class="wordmark__period">.</span></span>
           </a>
-          <span class="deck-bar__label">Presentation</span>
+          <span class="deck-bar__label">NASA Space Apps Challenge</span>
         </div>
         <div class="deck-bar__controls" role="group" aria-label="Slide controls">
           <button type="button" class="deck-button" data-deck-prev aria-label="Previous slide">←</button>
-          <span class="deck-counter" data-deck-counter aria-live="polite" translate="no">1 / 14</span>
+          <span class="deck-counter" data-deck-counter aria-live="polite" translate="no">1 / 7</span>
           <button type="button" class="deck-button" data-deck-next aria-label="Next slide">→</button>
+          <button type="button" class="deck-button deck-button--text" data-deck-notes aria-pressed="false" title="Speaker notes (N)">Notes</button>
           <button type="button" class="deck-button" data-deck-full aria-label="Full screen" title="Full screen (F)">⛶</button>
         </div>
       </div>
@@ -38,203 +41,169 @@
     <main class="deck" id="deck" tabindex="-1" aria-roledescription="slide deck">
       <div class="deck-progress" aria-hidden="true"><span data-deck-progress></span></div>
 
+      <!-- 1 · Title -->
       <section class="slide slide--title" id="s1" aria-label="Title">
         <img class="slide__galaxy" src="../assets/spiral-galaxy.jpg" alt="">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Explore the unknown</p>
-          <h1 class="slide__title">AstroNot<span class="wordmark__period">.</span></h1>
-          <p class="slide__lead">We’re not astronauts. We are AstroNot.</p>
-          <p class="slide__sub">Browser-based research tools for NASA’s SPHEREx infrared survey — no server, no upload, real archive data.</p>
-        </div>
-      </section>
-
-      <section class="slide" id="s2" aria-label="The problem">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">The problem</p>
-          <h2>A new all-sky survey, and a steep path to its data</h2>
-          <ul class="slide__list">
-            <li><strong>SPHEREx</strong> maps the whole sky in 102 infrared bands (0.75–5 µm). Every exposure is a 70 MB FITS file; the archive at IRSA already holds hundreds of thousands.</li>
-            <li>Working with it means a chain of tools: search the archive, download cutouts, inspect headers, align epochs, measure fluxes, build spectra.</li>
-            <li>The official web tools are shared and slow: the IRSA Spectrophotometry Tool took 11 minutes for one star.</li>
-            <li>Students and the public have no way in at all.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="slide" id="s3" aria-label="What AstroNot is">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">What we built</p>
-          <h2>A complete astronomy workbench that runs in the browser</h2>
-          <div class="slide__grid slide__grid--3">
-            <div class="slide__card"><span class="slide__big">13</span><p>scientific tools, from archive search to forced photometry</p></div>
-            <div class="slide__card"><span class="slide__big">6</span><p>interactive tools for everyone — constellations, planets, the Moon, meteors</p></div>
-            <div class="slide__card"><span class="slide__big">6</span><p>interface languages, Azerbaijani written by hand</p></div>
+        <div class="slide__inner slide__inner--title">
+          <div class="slide__brand">
+            <img src="../assets/mark.svg" width="88" height="88" alt="">
+            <h1 class="slide__title">AstroNot<span class="wordmark__period">.</span></h1>
           </div>
-          <p class="slide__note">Static HTML, CSS and JavaScript. Files are read on your device and never uploaded. Works from a USB stick or any static host.</p>
+          <p class="slide__lead">Space tools for researchers and curious minds</p>
+          <p class="slide__sub">One platform to analyze astronomy data and explore space.</p>
+          <p class="slide__meta" translate="no">Team AstroNot · NASA Space Apps Challenge · [CHALLENGE NAME]</p>
         </div>
+        <p class="slide__credit slide__credit--right">Spiral galaxy: illustrative artwork, not a telescope image.</p>
+        <aside class="slide__notes">AstroNot serves two audiences at once: researchers who work with real astronomy data, and people who are simply curious about space. The central idea is to bring scattered astronomy tools into one accessible platform that runs in an ordinary web browser, with no installation and no data leaving the user’s device.</aside>
       </section>
 
-      <section class="slide" id="s4" aria-label="Principles">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Principles</p>
-          <h2>Honest tools</h2>
-          <div class="slide__grid slide__grid--2">
-            <div class="slide__card"><h3>Real data only</h3><p>Every example is a real SPHEREx cutout or a real IRSA table, with its provenance on the page.</p></div>
-            <div class="slide__card"><h3>Nothing is guessed</h3><p>Every refusal has a reason. Partial results are reported as partial. Nothing is smoothed or binned without saying so.</p></div>
-            <div class="slide__card"><h3>Validated</h3><p>Checked against Astropy, photutils, reproject and the archive’s own outputs — the numbers are in the README.</p></div>
-            <div class="slide__card"><h3>Private by design</h3><p>No server, no accounts, no uploads. The only network traffic is to the public archive.</p></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="slide" id="s5" aria-label="The tools">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">The tools</p>
-          <h2>Thirteen scientific workspaces</h2>
-          <div class="slide__columns">
-            <div><h3>Observation</h3><ul class="slide__list slide__list--tight"><li>Observation Search</li><li>Sky Explorer</li><li>Time Machine</li><li>Spectrum Lab</li></ul></div>
-            <div><h3>Analysis</h3><ul class="slide__list slide__list--tight"><li>Spectrophotometry</li><li>Forced Spectrophotometry</li><li>Source Detection</li><li>Light Curve Analysis</li><li>Catalog Cross-Match</li><li>Motion Detector</li></ul></div>
-            <div><h3>Processing</h3><ul class="slide__list slide__list--tight"><li>FITS Viewer</li><li>Image Differencing</li><li>Mosaic Builder</li></ul></div>
-          </div>
-          <p class="slide__note">Each one has a real example, a method note and automated tests. Heavy pixel work runs in Rust compiled to WebAssembly, with a JavaScript fallback.</p>
-        </div>
-      </section>
-
-      <section class="slide" id="s6" aria-label="From the archive to the screen">
-        <div class="slide__inner slide__inner--split">
+      <!-- 2 · Challenge -->
+      <section class="slide" id="s2" aria-label="Challenge">
+        <div class="slide__inner slide__inner--split slide__inner--split-wide">
           <div>
-            <p class="slide__eyebrow">Workflow</p>
-            <h2>From the archive to your screen</h2>
-            <ol class="slide__list">
-              <li><strong>Observation Search</strong> builds the IRSA query for a sky position, date and wavelength range.</li>
-              <li>The archive’s CSV is imported; every observation offers a cutout and the full file.</li>
-              <li>FITS Viewer checks the header, Time Machine compares two epochs, Image Differencing finds what changed.</li>
-              <li>Spectrophotometry and Spectrum Lab turn exposures into a spectrum.</li>
+            <p class="slide__eyebrow">Challenge</p>
+            <h2>The barriers to exploring space</h2>
+            <p class="slide__opening">Finding and using astronomy tools can take too much effort.</p>
+            <ol class="slide__steps">
+              <li><span class="slide__step-no">1</span><span>Useful tools are scattered across different websites.</span></li>
+              <li><span class="slide__step-no">2</span><span>Complex interfaces take time to learn.</span></li>
+              <li><span class="slide__step-no">3</span><span>Older workflows add setup and navigation friction.</span></li>
+              <li><span class="slide__step-no">4</span><span>Large data files can slow processing and interrupt work.</span></li>
             </ol>
+            <p class="slide__closing">These barriers consume researchers’ time and discourage beginners.</p>
           </div>
-          <figure class="slide__figure">
-            <img src="../assets/tools/fits-preview.png" alt="Grayscale preview of a SPHEREx cutout">
-            <figcaption>A real SPHEREx QR2 cutout, observation 2025W21_2C_0280_1, detector 2.</figcaption>
+          <figure class="slide__figure slide__figure--data">
+            <img src="fits-cutout.gif" alt="Animated SPHEREx image cutout with a marked source" width="480" height="480">
+            <figcaption>Real observation: SPHEREx Level 2 cutout · NASA/IPAC IRSA</figcaption>
           </figure>
         </div>
+        <aside class="slide__notes">Picture a researcher with one question about one object. Before any science happens there is searching for the right tool, installing or configuring it, learning unfamiliar controls, and waiting for large files. Each step interrupts the actual goal. The same friction turns beginners away before they start.</aside>
       </section>
 
-      <section class="slide slide--accent" id="s7" aria-label="Forced Spectrophotometry">
+      <!-- 3 · Solution and how it works -->
+      <section class="slide" id="s3" aria-label="Solution and how it works">
         <div class="slide__inner">
-          <p class="slide__eyebrow">Highlight</p>
-          <h2>The IRSA Spectrophotometry Tool — rebuilt in the browser</h2>
-          <div class="slide__grid slide__grid--3">
-            <div class="slide__card"><span class="slide__big">11 min</span><p>IRSA’s web tool for one star (352 exposures)</p></div>
-            <div class="slide__card"><span class="slide__big">107 s</span><p>AstroNot, in a browser tab, same 352 exposures</p></div>
-            <div class="slide__card"><span class="slide__big">0.9999</span><p>median flux ratio against IRSA’s own result</p></div>
+          <p class="slide__eyebrow">Solution</p>
+          <h2>Astronomy tools in one place</h2>
+          <p class="slide__opening">AstroNot connects scientific analysis with visual exploration.</p>
+          <div class="slide__grid slide__grid--2 slide__audiences">
+            <div class="slide__card slide__card--shot">
+              <img src="forced-page.png" alt="Screenshot of the Forced Spectrophotometry workspace" width="1385" height="2083">
+              <div class="slide__card-body">
+                <h3>For researchers</h3>
+                <p><strong class="slide__count">13 scientific tools</strong> for working with observations, FITS images, and spectra.</p>
+              </div>
+            </div>
+            <div class="slide__card slide__card--shot">
+              <img src="planets.png" alt="Screenshot of the Planet Size Comparison tool" width="1600" height="1000">
+              <div class="slide__card-body">
+                <h3>For everyone</h3>
+                <p><strong class="slide__count">6 interactive experiences</strong> covering constellations, planets, Moon phases, nebulae, meteors, and galaxies.</p>
+              </div>
+            </div>
           </div>
-          <p class="slide__note">We reverse-engineered the archive tool, reimplemented its method in Rust (spxphot) and ported it to JavaScript line by line. The port reproduces the Rust output on every one of 352 exposures to better than 1e-11.</p>
-        </div>
-      </section>
-
-      <section class="slide" id="s8" aria-label="How forced photometry works">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">How it works</p>
-          <h2>Only the bytes we need</h2>
-          <ol class="slide__list">
-            <li>The frame list comes from Observation Search (IRSA sends no CORS headers for its query services).</li>
-            <li>IRSA’s public S3 copy does allow cross-origin range reads, so the browser reads only about 25 rows of each 70 MB frame, plus the ePSF table once per detector.</li>
-            <li>The star’s pixel position comes from the TAN-SIP WCS, matching Astropy to a millionth of an arcsecond.</li>
-            <li>The point-spread function is rendered with the same bicubic spline photutils uses.</li>
-            <li>A weighted linear least-squares fit of flux + background in a 13-pixel circle — exact in one step.</li>
-            <li>Pixel solid angle turns surface brightness into µJy; flags, quality and wavelength come with each point.</li>
+          <ol class="slide__flow">
+            <li><span class="slide__step-no">1</span><span>Choose a tool.</span></li>
+            <li><span class="slide__step-no">2</span><span>Open an example or your data.</span></li>
+            <li><span class="slide__step-no">3</span><span>Explore the results.</span></li>
           </ol>
         </div>
+        <aside class="slide__notes">A researcher opens an observation from the archive and measures a spectrum in the same tab. A beginner turns a planet or finds a constellation with the same look and feel. Each audience has an appropriate starting point, but both work inside one platform with real data and shared design.</aside>
       </section>
 
-      <section class="slide" id="s9" aria-label="Constellation Finder">
-        <div class="slide__inner slide__inner--split">
-          <div>
-            <p class="slide__eyebrow">For everyone</p>
-            <h2>Constellation Finder: all 88 constellations and your zodiac sign</h2>
-            <ul class="slide__list">
-              <li>2,579 Yale stars on a local sky for any city, date and time.</li>
-              <li>Every constellation is drawn with its official IAU boundary and named in six languages.</li>
-              <li>Enter a birth date and see two answers side by side: the astrological sign, and the constellation the Sun was actually in, Ophiuchus included.</li>
-              <li>Example: 5 December 2000 → Sagittarius by the calendar, Ophiuchus by the sky.</li>
-            </ul>
+      <!-- 4 · Space data and technology -->
+      <section class="slide slide--accent" id="s4" aria-label="Space data and technology">
+        <div class="slide__inner">
+          <p class="slide__eyebrow">Space data and technology</p>
+          <h2>Rust + WebAssembly</h2>
+          <p class="slide__opening">Efficient scientific processing inside the browser.</p>
+          <div class="slide__inner--split slide__inner--split-wide slide__tech">
+            <div>
+              <p class="slide__body">We compile Rust into WebAssembly to run selected demanding calculations directly in the browser.</p>
+              <ul class="slide__list">
+                <li>Rust handles core data-processing operations.</li>
+                <li>WebAssembly brings compiled Rust code to the web.</li>
+                <li>Applications include FITS decoding, image alignment, source detection, and catalog matching.</li>
+              </ul>
+              <p class="slide__credit">Data: NASA/IPAC IRSA · SPHEREx observations · NASA and ESA/Hubble imagery</p>
+            </div>
+            <div class="slide__diagram" aria-label="Rust code is compiled to WebAssembly and runs inside the browser next to the AstroNot interface">
+              <div class="slide__node"><img src="rust-logo.png" alt="Rust logo" width="1024" height="1024"><span>Rust code</span></div>
+              <div class="slide__arrow" aria-hidden="true"><span>compile</span></div>
+              <div class="slide__node"><img src="webassembly-logo.png" alt="WebAssembly logo" width="513" height="513"><span>WebAssembly</span></div>
+              <div class="slide__arrow" aria-hidden="true"><span>runs in</span></div>
+              <div class="slide__node slide__node--browser"><img src="fits-preview.png" alt="SPHEREx cutout decoded in the browser" width="480" height="480"><span>Your browser · AstroNot</span></div>
+              <p class="slide__credit">Real SPHEREx cutout decoded by the WebAssembly kernel · NASA/IPAC IRSA</p>
+            </div>
           </div>
-          <figure class="slide__figure">
-            <img src="../assets/tools/public-previews/constellation-finder.jpg" alt="Preview of the Constellation Finder">
-            <figcaption>Boundaries checked against 13,238 IAU boundary points.</figcaption>
+        </div>
+        <aside class="slide__notes">Rust is the language we write the heavy calculations in. WebAssembly is a format browsers can run at near-native speed, so the same compiled code works on any computer without installation. Selected operations use these modules; a JavaScript fallback keeps every tool working where WebAssembly is unavailable.</aside>
+      </section>
+
+      <!-- 5 · Impact -->
+      <section class="slide" id="s5" aria-label="Impact">
+        <div class="slide__inner slide__inner--split slide__inner--planet">
+          <div>
+            <p class="slide__eyebrow">Impact</p>
+            <h2>Making astronomy easier to access</h2>
+            <p class="slide__opening">AstroNot aims to reduce the effort between curiosity and discovery.</p>
+            <div class="slide__audience-list">
+              <div><h3>For researchers</h3><p>A shared workspace reduces tool switching and makes analysis workflows easier to navigate.</p></div>
+              <div><h3>For space enthusiasts</h3><p>Interactive 3D models and visual explanations provide an approachable starting point.</p></div>
+              <div><h3>For students and educators</h3><p>Real observations connect astronomy concepts with hands-on exploration.</p></div>
+            </div>
+          </div>
+          <figure class="slide__figure slide__figure--planet">
+            <canvas class="slide__planet" data-planet="saturn" width="720" height="720" aria-label="Rotating 3D model of Saturn"></canvas>
+            <figcaption>3D rendering from the Planet Size Comparison tool · texture: Solar System Scope (INOVE), CC BY 4.0</figcaption>
           </figure>
         </div>
+        <aside class="slide__notes">For researchers, the practical benefit is fewer interruptions: search, inspection and measurement live in one place. For enthusiasts, three-dimensional models and plain-language explanations are a gentle way in. For students and teachers, every example is a real observation. These are the benefits the platform is built to deliver.</aside>
       </section>
 
-      <section class="slide" id="s10" aria-label="Technology">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Technology</p>
-          <h2>Simple on purpose</h2>
-          <div class="slide__grid slide__grid--2">
-            <div class="slide__card"><h3>Front end</h3><p>Plain HTML, CSS and JavaScript. No framework, no build step. Canvas and SVG for graphics.</p></div>
-            <div class="slide__card"><h3>Kernels</h3><p>Rust compiled to WebAssembly for FITS decoding, reprojection, detection and cross-matching; JavaScript fallbacks everywhere.</p></div>
-            <div class="slide__card"><h3>Testing</h3><p>389 automated tests, including comparisons with Astropy, photutils and the archive’s outputs; headless browser checks per page.</p></div>
-            <div class="slide__card"><h3>Delivery</h3><p>A publish script packages only public files with a signed manifest. Six languages through one runtime catalog.</p></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="slide" id="s11" aria-label="Validation">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Validation</p>
-          <h2>Numbers, not adjectives</h2>
-          <table class="slide__table">
-            <thead><tr><th>What</th><th>Compared with</th><th>Result</th></tr></thead>
-            <tbody>
-              <tr><td>World coordinates (TAN-SIP)</td><td>Astropy WCS</td><td>&lt; 1e-6 arcsec</td></tr>
-              <tr><td>Image reprojection</td><td>reproject_interp</td><td>agrees on real pairs</td></tr>
-              <tr><td>Catalog cross-match</td><td>IRSA best-neighbour table</td><td>18 / 18 pairs</td></tr>
-              <tr><td>Forced photometry</td><td>IRSA Spectrophotometry Tool</td><td>flux ratio 0.9999, flags 100 %</td></tr>
-              <tr><td>Constellation boundaries</td><td>IAU lines (13,238 points)</td><td>≤ 0.05° in the zodiac</td></tr>
-              <tr><td>Sun position</td><td>USNO equinox instants</td><td>&lt; 0.02°</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="slide" id="s12" aria-label="Team">
+      <!-- 6 · Team -->
+      <section class="slide" id="s6" aria-label="Team">
         <div class="slide__inner">
           <p class="slide__eyebrow">Team</p>
-          <h2>AstroNot</h2>
-          <div class="slide__grid slide__grid--3">
-            <div class="slide__card slide__card--person"><strong>Mehin Mashadiyeva</strong><p>Project Manager</p></div>
-            <div class="slide__card slide__card--person"><strong>Aykhan Isgandarzada</strong><p>System Engineer</p></div>
-            <div class="slide__card slide__card--person"><strong>Uzeyir Bayramli</strong><p>ML/Data Analyst</p></div>
-            <div class="slide__card slide__card--person"><strong>Khadija Ahmadova</strong><p>Backend Developer</p></div>
-            <div class="slide__card slide__card--person"><strong>Jahid Mahmudzada</strong><p>Frontend Developer</p></div>
+          <h2>The team behind AstroNot</h2>
+          <div class="slide__team">
+            <div class="slide__member"><img src="../assets/team/mehin-mashadiyeva.jpg" alt="" width="320" height="320"><strong>Mehin Mashadiyeva</strong><span>Project Manager</span></div>
+            <div class="slide__member"><img src="../assets/team/aykhan-isgandarzada.jpg" alt="" width="320" height="320"><strong>Aykhan Isgandarzada</strong><span>System Engineer</span></div>
+            <div class="slide__member"><img src="../assets/team/uzeyir-bayramli.jpg" alt="" width="320" height="320"><strong>Uzeyir Bayramli</strong><span>ML/Data Analyst</span></div>
+            <div class="slide__member"><img src="../assets/team/khadija-ahmadova.jpg" alt="" width="320" height="320"><strong>Khadija Ahmadova</strong><span>Backend Developer</span></div>
+            <div class="slide__member"><img src="../assets/team/jahid-mahmudzada.png" alt="" width="320" height="320"><strong>Jahid Mahmudzada</strong><span>Frontend Developer</span></div>
           </div>
         </div>
+        <aside class="slide__notes">Five people built AstroNot. Project management kept the scope honest and the demo on time. System and backend engineering shaped the data path from the archive to the browser. Data analysis validated the numbers against established tools. Frontend work gave both audiences one consistent, accessible interface.</aside>
       </section>
 
-      <section class="slide" id="s13" aria-label="Next steps">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Next</p>
-          <h2>What comes next</h2>
-          <ul class="slide__list">
-            <li>Publish the site and share the link.</li>
-            <li>Build IRSA-format cutouts straight from the S3 copy, without the archive’s slow cutout service.</li>
-            <li>Validate the galaxy (Sérsic) mode of forced photometry against the archive.</li>
-            <li>Hand-written translations for the remaining languages.</li>
-            <li>More SPHEREx releases as they arrive.</li>
-          </ul>
+      <!-- 7 · Next steps -->
+      <section class="slide slide--closing" id="s7" aria-label="Next steps">
+        <div class="slide__inner slide__inner--split slide__inner--planet">
+          <div>
+            <p class="slide__eyebrow">Next steps</p>
+            <h2>What comes next</h2>
+            <ol class="slide__roadmap">
+              <li><span class="slide__step-no">1</span><span>Test core workflows with researchers and first-time users.</span></li>
+              <li><span class="slide__step-no">2</span><span>Benchmark larger datasets and improve processing and memory usage.</span></li>
+              <li><span class="slide__step-no">3</span><span>Expand guided learning and support for more astronomy datasets.</span></li>
+            </ol>
+            <p class="slide__closing">Our goal is to make astronomy tools easier to find, use, and understand.</p>
+            <p class="slide__cta"><a href="../index.html" data-route="/">Explore AstroNot</a> <span class="slide__url" translate="no">[PUBLIC WEBSITE URL]</span></p>
+          </div>
+          <figure class="slide__figure slide__figure--planet">
+            <canvas class="slide__planet" data-planet="mars" width="640" height="640" aria-label="Rotating 3D model of Mars"></canvas>
+            <figcaption>3D rendering · texture: Solar System Scope (INOVE), CC BY 4.0</figcaption>
+          </figure>
         </div>
-      </section>
-
-      <section class="slide slide--title" id="s14" aria-label="Thank you">
-        <img class="slide__galaxy" src="../assets/spiral-galaxy.jpg" alt="">
-        <div class="slide__inner">
-          <p class="slide__eyebrow">Thank you</p>
-          <h2 class="slide__title">Explore the unknown.</h2>
-          <p class="slide__sub">Data: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx DR1/QR3. AstroNot is an independent student project and is not affiliated with NASA, IPAC or the SPHEREx team.</p>
-          <p class="slide__sub"><a href="../index.html" data-route="/">Open the site</a></p>
-        </div>
+        <aside class="slide__notes">The next stage combines three things: feedback from real researchers and first-time users, performance validation on larger datasets, and broader access to astronomy data with more guided learning. The goal stays the same throughout: astronomy tools that are easier to find, easier to use, and easier to understand.</aside>
       </section>
     </main>
-    <noscript><p class="deck-noscript">The slides also read top to bottom without JavaScript.</p></noscript>
+
+    <div class="deck-notes" data-deck-notes-panel hidden>
+      <p class="deck-notes__label">Speaker notes</p>
+      <p class="deck-notes__text" data-deck-notes-text></p>
+    </div>
+    <noscript><p class="deck-noscript">The slides also read top to bottom without JavaScript; speaker notes follow each slide.</p></noscript>
   </body>
 </html>

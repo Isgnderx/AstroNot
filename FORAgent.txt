@@ -236,6 +236,32 @@ is gone, the git history and this file are the record.
   33 templates, additions only), README.md, TODO.md, this file.
 - node --test: 392 tests, 386 pass, 0 fail, 6 skipped (in an environment with astropy+reproject).
 
+6.4 Constellation Finder: all 88 constellations + "Your zodiac sign" (15 Nov 2026, commits 3033a69, ab575a4)
+- The public Constellation Finder (`/tools/constellation-finder`) now knows all 88 IAU constellations: official
+  J2000 boundaries and label points from d3-celestial (BSD-3; inputs + PROVENANCE under tests/data/constellations/),
+  names in six languages (az hand-written in scripts/constellations-extra.json), stick figures for the 13 zodiac
+  constellations + the six classics, Yale star membership. Generated data file: assets/tools/constellations.js
+  (`node scripts/make-constellations.mjs`).
+- New DOM-free module tools/public-zodiac.js: Sun longitude (Meeus ch. 25), tropical sign, point-in-constellation
+  (RA wrap, polar rings), Sun's constellation and date ranges, star membership, birth-instant parsing.
+- "Your zodiac sign" panel: birth date (+ optional time and UTC offset) → astrological sign AND the constellation
+  the Sun was actually in (Ophiuchus included), notes on precession / boundary proximity, "Show on the sky".
+- Tests: tests/public-zodiac.test.mjs, tests/constellations.test.mjs (dense IAU cross-check: 0.05° zodiac / 0.5° poles).
+  Browser-checked headless in en and az, phone width OK. Design and plan docs under docs/superpowers/ (the owner
+  chose direct implementation for this one, no subagents).
+
+6.5 Hidden presentation page (15 Nov 2026)
+- `/presentation/` (presentation/index.html + presentation.css + presentation.js) is the 7-slide NASA Space Apps
+  pitch deck built to the owner's brief (Title · Challenge · Solution & how it works · Rust + WebAssembly · Impact ·
+  Team · Next steps), English, with speaker notes per slide (N key or the Notes button opens a drawer; print shows
+  them under each slide). Keyboard/click navigation, F for full screen, URL hash per slide. It reuses the site's own
+  sphere renderer (tools/public-scenes.js) for rotating 3D Saturn and Mars (Solar System Scope textures, CC BY 4.0),
+  the supplied Rust/WebAssembly logos and a real SPHEREx cutout GIF (presentation/*.png, *.gif), real product
+  screenshots and the team portraits. Two bracketed placeholders remain for the owner: [CHALLENGE NAME] on slide 1
+  and [PUBLIC WEBSITE URL] on slide 7. The page is linked from nowhere (`noindex`) and reachable only by typing the
+  URL; "presentation" is in `publicDirectories` (and `.gif` in `contentTypes`) so serve.mjs and the publish package
+  include it. Azerbaijani entries for its text are in az.js; other languages fall back to English.
+
 7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
 ---------------------------------------------------
 - main: HEAD 27a2751 — the feature branch was fast-forward-merged on 14 Nov 2026 (17 commits
