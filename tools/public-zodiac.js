@@ -20,9 +20,10 @@
   const signNames = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpius", "Sagittarius", "Capricornus", "Aquarius", "Pisces"];
   const signDesigs = ["Ari", "Tau", "Gem", "Cnc", "Leo", "Vir", "Lib", "Sco", "Sgr", "Cap", "Aqr", "Psc"];
   const signFolkNames = ["the Ram", "the Bull", "the Twins", "the Crab", "the Lion", "the Maiden", "the Scales", "the Scorpion", "the Archer", "the Sea-Goat", "the Water Bearer", "the Fishes"];
-  // Conventional date ranges of the tropical signs (the dates shift by a day with the year; the sign itself is computed).
-  const signRanges = ["21 Mar – 19 Apr", "20 Apr – 20 May", "21 May – 20 Jun", "21 Jun – 22 Jul", "23 Jul – 22 Aug", "23 Aug – 22 Sep",
-    "23 Sep – 22 Oct", "23 Oct – 21 Nov", "22 Nov – 21 Dec", "22 Dec – 19 Jan", "20 Jan – 18 Feb", "19 Feb – 20 Mar"];
+  // Conventional date ranges of the tropical signs as [[month, day], [month, day]] (the real boundary shifts by a day with
+  // the year; the sign itself is always computed from the Sun's longitude).
+  const signRanges = [[[3, 21], [4, 19]], [[4, 20], [5, 20]], [[5, 21], [6, 20]], [[6, 21], [7, 22]], [[7, 23], [8, 22]], [[8, 23], [9, 22]],
+    [[9, 23], [10, 22]], [[10, 23], [11, 21]], [[11, 22], [12, 21]], [[12, 22], [1, 19]], [[1, 20], [2, 18]], [[2, 19], [3, 20]]];
 
   // ---- The Sun ----------------------------------------------------------------------------------------------
   const julianCenturies = (timestamp) => (timestamp / day + 2440587.5 - 2451545) / 36525;

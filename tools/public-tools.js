@@ -113,12 +113,32 @@
   const bearingOf = (azimuth) => bearings[Math.round(azimuth / 45) % bearings.length];
 
   function constellations() {
+    const zodiac = window.AstroNotPublicZodiac;
+    const sky = window.AstroNotConstellations;
+    const yale = window.AstroNotBrightStars;
+    const tips = new Map(astronomy.constellations.map((entry) => [entry.name, entry.tip]));
+    // All 88 constellations; the six classics keep their tips, 18 have stick figures (lines, anchor).
+    const items = sky.constellations.map((entry) => ({ ...entry, tip: tips.get(entry.name) ?? null }));
+    const { membership, brightest } = zodiac.assignStars(yale, sky.constellations);
+    const densified = items.map((item) => item.polygons.map((ring) => zodiac.densify(ring, 1)));
+    const languageCode = () => {
+      const code = (document.documentElement.lang || "en").toLowerCase();
+      return code.startsWith("zh") ? "zh" : ["az", "tr", "ru", "es"].includes(code) ? code : "en";
+    };
+    const nameOf = (item) => item.names[languageCode()] || item.name;
+    const offsets = [];
+    for (let minutes = -12 * 60; minutes <= 14 * 60; minutes += 30) {
+      const sign = minutes < 0 ? "-" : "+";
+      const abs = Math.abs(minutes);
+      offsets.push(sign + String(Math.floor(abs / 60)).padStart(2, "0") + ":" + String(abs % 60).padStart(2, "0"));
+    }
+
     buildView({
       title: "Interactive night sky",
       label: "Night sky map",
       hint: dragHint,
       motion: "Animate time",
-      facts: fact("Guide star", "anchor") + fact("Height above horizon", "altitude") + fact("Look toward", "direction"),
+      facts: fact("", "anchor") + fact("Height above horizon", "altitude") + fact("Look toward", "direction"),
       controls: `
         <section aria-labelledby="sky-settings">
           <h2 id="sky-settings">Set your sky</h2>
@@ -139,6 +159,23 @@
           <p data-tip></p>
           <p class="outreach__readout" data-visibility></p>
           <button type="button" class="outreach__button outreach__button--light" data-center>Center constellation</button>
+        </section>
+        <section aria-labelledby="sky-zodiac">
+          <h2 id="sky-zodiac">Your zodiac sign</h2>
+          <p>Enter a birth date to see the astrological sign and the constellation the Sun was really in that day.</p>
+          <div class="outreach__pair">
+            <label>Birth date<input type="date" data-birth min="1900-01-01" max="2100-12-31"></label>
+            <label>Time of birth (optional)<input type="time" data-birth-time></label>
+          </div>
+          <label>UTC offset of the birthplace<select data-birth-offset translate="no">${offsets.map((value) =>
+            '<option value="' + value + '"' + (value === "+04:00" ? " selected" : "") + ">UTC" + value + "</option>").join("")}</select></label>
+          <div class="outreach__zodiac" role="status" data-zodiac hidden>
+            <p><span class="outreach__zodiac-label">Astrological sign</span> <strong data-zodiac-sign translate="no"></strong> <span data-zodiac-range translate="no"></span></p>
+            <p><span class="outreach__zodiac-label">Where the Sun actually was</span> <strong data-zodiac-iau translate="no"></strong> <span data-zodiac-dates translate="no"></span></p>
+            <p data-zodiac-note></p>
+            <button type="button" class="outreach__button outreach__button--light" data-zodiac-show>Show on the sky</button>
+          </div>
+          <p class="outreach__readout" data-zodiac-status></p>
         </section>`,
     });
     const city = $("[data-city]");
@@ -146,16 +183,50 @@
     const time = $("[data-time]");
     const guide = $("[data-guide]");
     const timeOut = $("[data-local-time]");
-    const items = astronomy.constellations;
     const skyView = { az: 0, alt: 0, zoom: 1 };
     let stars = [];
     let guides = [];
+    let outlines = [];
     let target;
     let playElapsed = 0;
-    let selected = 0;
+    let selected = items.findIndex((item) => item.desig === "Ori");
     let validDate;
+    let marker = null;
+    let birth = null;
     fillOptions(city, astronomy.cities.map(([name]) => name), 0);
-    fillOptions(guide, items.map(({ name }) => name), selected);
+
+    function fillGuides() {
+      const option = (index) => {
+        const element = new Option(nameOf(items[index]), index, false, index === selected);
+        element.setAttribute("translate", "no");
+        return element;
+      };
+      const group = (label, indices) => {
+        const element = document.createElement("optgroup");
+        element.label = label;
+        element.append(...indices.map(option));
+        return element;
+      };
+      const byName = (a, b) => nameOf(items[a]).localeCompare(nameOf(items[b]), languageCode() === "zh" ? "zh-Hans" : languageCode());
+      const zodiacIndices = items.map((item, index) => item.zodiac ? index : -1).filter((index) => index >= 0)
+        .sort((a, b) => items[a].zodiac - items[b].zodiac);
+      const classicIndices = items.map((item, index) => item.classic ? index : -1).filter((index) => index >= 0);
+      const all = items.map((_, index) => index).sort(byName);
+      guide.replaceChildren(group("Zodiac (13 constellations)", zodiacIndices), group("Classic shapes", classicIndices), group("All constellations A–Z", all));
+      guide.value = String(selected);
+    }
+    fillGuides();
+
+    // Where a constellation is "pointed at": its guide star, else its brightest Yale star, else its label point.
+    function anchorOf(index) {
+      const item = items[index];
+      if (item.anchor) return { kind: "guide", ra: sky.stars[item.anchor][0], dec: sky.stars[item.anchor][1], name: item.anchor };
+      if (brightest[index] >= 0) {
+        const [ra, dec, mag] = yale[brightest[index]];
+        return { kind: "brightest", ra, dec, mag };
+      }
+      return { kind: "label", ra: item.label[0], dec: item.label[1] };
+    }
 
     function center() {
       const point = astronomy.skyAngles(target);
@@ -164,24 +235,41 @@
       skyView.zoom = 1.38;
     }
 
+    function extras() {
+      const highlight = new Set();
+      for (let index = 0; index < membership.length; index++) if (membership[index] === selected) highlight.add(index);
+      const boundaries = [];
+      outlines.forEach((rings, index) => {
+        if (index !== selected && skyView.zoom < 1.3) return;
+        boundaries.push({ rings, selected: index === selected, label: index === selected ? { point: outlines.labels[index], text: nameOf(items[index]) } : null });
+      });
+      return { boundaries, highlight, marker: marker && { point: marker.point, text: window.AstroNotLanguage.translate("Sun on") + " " + marker.text } };
+    }
+
     function update(track = false) {
       const [, latitude, longitude, zone] = astronomy.cities[city.value];
       const instant = astronomy.cityTime(validDate, Number(time.value) / 60, zone);
       const transform = astronomy.skyTransform(instant, latitude, longitude);
-      stars = window.AstroNotBrightStars.map(([ra, dec, mag, bv]) => [transform(ra, dec), mag, bv]);
-      guides = items.map(({ paths, anchor }) => paths.map((path) => path.map((name) => ({
-        name, anchor: name === anchor, point: transform(...astronomy.guideStars[name]),
+      stars = yale.map(([ra, dec, mag, bv]) => [transform(ra, dec), mag, bv]);
+      guides = items.map(({ lines, anchor }) => (lines ?? []).map((path) => path.map((name) => ({
+        name, anchor: name === anchor, point: transform(...sky.stars[name]),
       }))));
+      outlines = densified.map((rings) => rings.map((ring) => ring.map(([ra, dec]) => transform(ra, dec))));
+      outlines.labels = items.map((item) => transform(...item.label));
+      if (marker) marker.point = transform(marker.ra, marker.dec);
       const item = items[selected];
-      target = transform(...astronomy.guideStars[item.anchor]);
+      const anchor = anchorOf(selected);
+      target = transform(anchor.ra, anchor.dec);
       const point = astronomy.skyAngles(target);
       timeOut.textContent = astronomy.cityClock(instant, zone);
       time.setAttribute("aria-valuetext", timeOut.textContent);
-      write("anchor", item.anchor);
+      write("anchor-label", anchor.kind === "guide" ? "Guide star" : "Brightest star in our catalogue");
+      write("anchor", anchor.kind === "guide" ? anchor.name : anchor.kind === "brightest" ? "magnitude " + number(anchor.mag, 2) : "none brighter than 5.4");
       write("altitude", number(point.altitude, 1) + "°");
       write("direction", bearingOf(point.azimuth));
-      $("[data-tip]").textContent = item.tip;
-      $("[data-visibility]").textContent = point.altitude < 0 ? "Guide star is below the horizon." : "Guide star is above the horizon.";
+      $("[data-tip]").textContent = item.tip ?? "The outline is the official IAU boundary.";
+      const subject = anchor.kind === "guide" ? "Guide star" : anchor.kind === "brightest" ? "The brightest star" : "The constellation's centre";
+      $("[data-visibility]").textContent = subject + (point.altitude < 0 ? " is below the horizon." : " is above the horizon.");
       if (track) center();
       scene?.invalidate();
     }
@@ -195,7 +283,7 @@
         zoom(factor) { skyView.zoom = scenes.clamp(skyView.zoom * factor, 0.65, 2.9); },
         reset: center,
       },
-      draw(ctx, w, h) { if (target) scenes.sky(ctx, w, h, skyView, stars, guides, selected); },
+      draw(ctx, w, h) { if (target) scenes.sky(ctx, w, h, skyView, stars, guides, selected, extras()); },
       advance(delta) {
         playElapsed += delta;
         if (playElapsed < 0.13) return;
@@ -217,12 +305,91 @@
       update(true);
     }
     tonight();
-    // Lead with a shape above the horizon when one of the six is visible.
+    // Lead with a classic shape above the horizon when one of the six is visible.
     if (astronomy.skyAngles(target).altitude < 5) {
-      const best = guides.map((paths) => paths.flat().find(({ anchor }) => anchor).point[2]);
-      guide.value = selected = best.indexOf(Math.max(...best));
+      const classics = items.map((item, index) => item.classic ? index : -1).filter((index) => index >= 0);
+      const heights = classics.map((index) => guides[index].flat().find(({ anchor }) => anchor).point[2]);
+      selected = classics[heights.indexOf(Math.max(...heights))];
+      guide.value = String(selected);
       update(true);
     }
+
+    function selectConstellation(index) {
+      selected = index;
+      guide.value = String(index);
+      update(true);
+    }
+
+    // ---- Your zodiac sign ----
+    const birthDate = $("[data-birth]");
+    const birthTime = $("[data-birth-time]");
+    const birthOffset = $("[data-birth-offset]");
+    const result = $("[data-zodiac]");
+    const zodiacStatus = $("[data-zodiac-status]");
+    const itemIndex = (desig) => items.findIndex((item) => item.desig === desig);
+    const shortDate = (iso) => formatted(Date.parse(iso + "T12:00:00Z"), { day: "numeric", month: "short" });
+
+    function renderBirth() {
+      if (!birth) {
+        result.hidden = true;
+        marker = null;
+        scene?.invalidate();
+        return;
+      }
+      const { instant, sun, sign } = birth;
+      const signItem = items[itemIndex(zodiac.signDesigs[sign])];
+      const iauItem = items[itemIndex(sun.desig)];
+      $("[data-zodiac-sign]").textContent = nameOf(signItem) + (languageCode() === "en" ? " (" + zodiac.signFolkNames[sign] + ")" : "");
+      const year = new Date(instant).getUTCFullYear();
+      const monthDay = ([month, dayOfMonth]) => shortDate(year + "-" + String(month).padStart(2, "0") + "-" + String(dayOfMonth).padStart(2, "0"));
+      $("[data-zodiac-range]").textContent = "(" + zodiac.signRanges[sign].map(monthDay).join(" – ") + ")";
+      const ranges = zodiac.constellationDates(year, sun.desig, sky.constellations)
+        .map(({ start, end }) => shortDate(start) + " – " + shortDate(end)).join(", ");
+      $("[data-zodiac-iau]").textContent = nameOf(iauItem);
+      $("[data-zodiac-dates]").textContent = "(" + ranges + " " + year + ")";
+      const notes = [];
+      notes.push(sun.desig === zodiac.signDesigs[sign]
+        ? "This time the sign and the constellation agree."
+        : "They differ because precession has shifted the signs by about one constellation since the zodiac was defined some 2,000 years ago.");
+      // Near a sign boundary (every 30° of longitude) or near an IAU boundary, the time of birth matters.
+      const toSignEdge = Math.min(sun.lambdaDate % 30, 30 - (sun.lambdaDate % 30));
+      if (sun.near || toSignEdge <= 0.5) notes.push("The Sun was within half a degree of a boundary; the exact time of birth decides.");
+      if (!birth.timed) notes.push("Time of birth not given: 12:00 UTC assumed.");
+      // One sentence per node, so each can be translated on its own.
+      $("[data-zodiac-note]").replaceChildren(...notes.flatMap((sentence, index) => {
+        const span = document.createElement("span");
+        span.textContent = sentence;
+        return index ? [" ", span] : [span];
+      }));
+      result.hidden = false;
+    }
+
+    function readBirth() {
+      zodiacStatus.textContent = "";
+      const text = birthDate.value;
+      const instant = zodiac.birthInstant(text, birthTime.value, birthOffset.value);
+      if (instant === null) {
+        birth = null;
+        if (text) zodiacStatus.textContent = "Enter a real date between 1900 and 2100.";
+        renderBirth();
+        return;
+      }
+      const sun = zodiac.sunConstellation(instant, sky.constellations);
+      birth = { instant, sun, sign: zodiac.tropicalSign(sun.lambdaDate), timed: Boolean(birthTime.value), iso: text };
+      renderBirth();
+    }
+
+    $("[data-zodiac-show]").addEventListener("click", () => {
+      if (!birth) return;
+      play(false);
+      marker = { ra: birth.sun.ra, dec: birth.sun.dec, text: dateName(Date.parse(birth.iso + "T12:00:00Z")), point: null };
+      selectConstellation(itemIndex(birth.sun.desig));
+      const altitude = astronomy.skyAngles(target).altitude;
+      zodiacStatus.textContent = "The marker shows where the Sun stood on that birthday; the real Sun is not there now. " +
+        nameOf(items[selected]) + (altitude < 0 ? " is below the horizon at the chosen time." : " is above the horizon at the chosen time.");
+    });
+    for (const input of [birthDate, birthTime, birthOffset]) input.addEventListener("input", readBirth);
+
     city.addEventListener("change", () => { play(false); update(true); });
     date.addEventListener("change", () => {
       play(false);
@@ -234,7 +401,7 @@
     guide.addEventListener("change", () => { selected = Number(guide.value); update(true); });
     $("[data-center]").addEventListener("click", () => { center(); scene?.invalidate(); });
     $("[data-tonight]").addEventListener("click", tonight);
-    refreshOnLanguage(() => update());
+    refreshOnLanguage(() => { fillGuides(); update(); renderBirth(); });
   }
 
   function orbit(startPitch, startYaw = 0, minZoom = 0.72, maxZoom = 1.6) {
