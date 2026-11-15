@@ -27,13 +27,13 @@ const scientificTools = [
     route: "time-machine",
     name: "Time Machine",
     category: "observation",
-    description: "Compare observations from different dates with a timeline and blink view.",
+    description: "Watch one patch of sky over time: search a position and step or play through its SPHEREx observations, or compare two local files.",
     diagram: "epochs",
     available: true,
     preview: {
       title: "Epoch comparison",
       alt: "Schematic of the same sky field in two epochs, with a region marked for comparison",
-      steps: ["Choose observations of the same field", "Set the reference and target epochs", "Compare the frames side by side or blink between them"],
+      steps: ["Enter a sky position or choose an example", "Pick a detector and how to sample the dates", "Step or play through the frames on one grid"],
     },
   },
   {

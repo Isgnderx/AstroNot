@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { contentTypes, isPublicPath, notFoundFile } from "./scripts/publish-rules.mjs";
+import { handleSia } from "./functions/api/sia.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
@@ -35,6 +36,15 @@ const server = createServer(async (request, response) => {
     } catch {
       response.writeHead(404).end("Page not found");
     }
+  }
+
+  // The one server route (Time Machine search). Same handler as the Cloudflare Pages Function in functions/api/sia.js.
+  if (parts.length === 2 && parts[0] === "api" && parts[1] === "sia") {
+    const answer = await handleSia(new Request(url, { method: request.method }));
+    const body = request.method === "HEAD" ? null : Buffer.from(await answer.arrayBuffer());
+    response.writeHead(answer.status, Object.fromEntries(answer.headers));
+    response.end(body);
+    return;
   }
 
   if (!isPublicPath(parts)) {

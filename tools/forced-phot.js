@@ -1123,6 +1123,7 @@
     SYS_FRAC,
     frameFromImportRow,
     selectFrames,
+    imageHdu,
     validateShape,
     parseTargetsCsv,
     createCalibCache,

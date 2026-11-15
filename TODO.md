@@ -17,6 +17,11 @@
 ## Sonrakı alətlər
 
 - [x] **Time Machine** — eyni göy sahəsinin müxtəlif tarixlərdə çəkilmiş görüntülərini yan-yana müqayisə et.
+  - [x] **Göy mövqeyi rejimi** (15 noyabr 2026): RA/Dec ilə arxivdə axtarış, bir detektorun kadrları tarix sırası ilə, hər səhifədə 6 kadr, karusel (Əvvəlki/Sonrakı), sürgü və **Oynat**. Piksellər S3-dən Range sorğuları ilə (kadr başına ~1 MB) oxunur və vahid şimal-yuxarı şəbəkəyə yenidən nümunələnir; **Bir dalğa uzunluğunu saxla** LVF səbəbindən yaranan yalançı parlaqlıq dəyişikliklərinin qarşısını alır. Axtarış üçün saytın yeganə server marşrutu `/api/sia` (`functions/api/sia.js`, Cloudflare Pages Function) əlavə olunub; o olmayan hostinqdə IRSA keçidi + CSV idxalı işləyir. Bax: README → Time Machine.
+  - [ ] Cloudflare Pages-də `functions/api/sia.js`-in həqiqətən yerləşdiyini yoxla: yayımdan sonra `https://<sayt>/api/sia?collection=spherex_dr1&ra=83.8221&dec=-5.3911&detector=2` CSV qaytarmalı, `collection=x` isə 400. (`dist/` paketinə daxil deyil; Git inteqrasiyası və ya repo kökündən `wrangler pages deploy dist` lazımdır.)
+  - [ ] Yeni rejimin tr/ru/es/zh sətirləri (hazırda yalnız az var); vaxt qısaltmaları (`d`, `h`, `min`) heç bir dildə tərcümə olunmur.
+  - [ ] S3 əlçatmaz olanda `createHttpSource` hər sorğunu 7 dəfə təkrar edir (Məcburi Spektrofotometriyadakı eyni problem, aşağıya bax): kadr ~47 s "yüklənir" görünür. Həmin düzəliş (AbortSignal, 4xx-i təkrar etməmək, vaxt limiti) Zaman Maşınına da tətbiq olunmalıdır.
+  - [ ] Dərin sahələrdə hədəf tez-tez detektorun zolaq kənarına düşür (məs. şimal ekliptik qütbü, detektor 1, ~1.09 µm): görüntüdə qaranlıq qövs (izo-dalğa uzunluğu xətti) görünür. İstinad dalğa uzunluğu zolaq daxilində seçilir, lakin qövs sahəyə düşə bilər; istifadəçiyə bunu izah edən qeyd əlavə etmək olar.
 - [x] **Image Differencing** — eyni koordinat sisteminə uyğunlaşdırılmış iki görüntünün fərqini göstər.
 - [x] **Motion Detector** — bir neçə müşahidədə görünən hərəkət namizədlərini qeyd et və ilkin görüntülərlə yoxla.
   - İşləyir (`/tools/motion`), real 3 epoxlu SPHEREx seriyasında sınaqdan keçib; 4 təsdiqlənməmiş namizəd çıxıb, real hərəkətli obyekt iddia edilmir.

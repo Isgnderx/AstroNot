@@ -16,6 +16,12 @@
     <script src="../../tools/fits.js" defer></script>
     <script src="../../tools/pair.js" defer></script>
     <script src="../../tools/time-machine.js" defer></script>
+    <script src="../../tools/observation-csv.js" defer></script>
+    <script src="../../tools/fits-range.js" defer></script>
+    <script src="../../tools/epsf.js" defer></script>
+    <script src="../../tools/forced-phot.js" defer></script>
+    <script src="../../tools/time-sequence.js" defer></script>
+    <script src="../../tools/time-machine-sequence.js" defer></script>
   </head>
   <body class="workspace-page" data-workspace-id="multi-epoch-viewer">
     <a class="skip-link" href="#workspace-main">Skip to workspace</a>
@@ -40,8 +46,160 @@
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Observation</p>
         <h1 data-workspace-title>Time Machine</h1>
-        <p class="workspace-description" data-workspace-description>Compare observations from different dates with a timeline and blink view.</p>
+        <p class="workspace-description" data-workspace-description>Watch one patch of sky over time: search a position and step or play through its SPHEREx observations, or compare two local files.</p>
       </header>
+
+      <div class="tm-tabs" role="tablist" aria-label="Time Machine mode">
+        <button class="tm-tab" type="button" role="tab" id="tm-tab-archive" aria-selected="true" aria-controls="tm-archive" data-tm-tab="archive">Sky position</button>
+        <button class="tm-tab" type="button" role="tab" id="tm-tab-files" aria-selected="false" aria-controls="tm-files" tabindex="-1" data-tm-tab="files">Two local files</button>
+      </div>
+
+      <div id="tm-archive" role="tabpanel" aria-labelledby="tm-tab-archive" data-ts>
+        <section class="workspace-panel ts-search" aria-labelledby="ts-search-title">
+          <h2 id="ts-search-title">Find a sky position in the archive</h2>
+          <p class="workspace-help">AstroNot asks IRSA for every SPHEREx exposure that contains the position, keeps one detector, and places the observations in date order on one north-up grid, so you can step or play through them. Only the image rows around the position are read from the archive (about 1 MB per frame).</p>
+          <form class="ts-form" data-ts-form novalidate>
+            <div class="ts-fields ts-fields--position">
+              <label>RA <small>degrees or hh:mm:ss</small>
+                <input name="ra" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" required value="83.8221">
+              </label>
+              <label>Dec <small>degrees or ±dd:mm:ss</small>
+                <input name="dec" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" required value="-5.3911">
+              </label>
+              <label>Field of view
+                <select name="field">
+                  <option value="0.05">0.05° (3′)</option>
+                  <option value="0.1">0.1° (6′)</option>
+                  <option value="0.15">0.15° (9′)</option>
+                  <option value="0.25" selected>0.25° (15′)</option>
+                  <option value="0.4">0.4° (24′)</option>
+                </select>
+              </label>
+            </div>
+            <div class="ts-fields">
+              <label>Data release
+                <select name="release">
+                  <option value="dr1" selected>SPHEREx DR1</option>
+                  <option value="qr3">SPHEREx QR3</option>
+                  <option value="dr1_deep">SPHEREx DR1 deep fields</option>
+                  <option value="qr3_deep">SPHEREx QR3 deep fields</option>
+                </select>
+              </label>
+              <label>Detector
+                <select name="detector">
+                  <option value="1">1 · 0.75–1.09 µm</option>
+                  <option value="2" selected>2 · 1.10–1.62 µm</option>
+                  <option value="3">3 · 1.63–2.41 µm</option>
+                  <option value="4">4 · 2.42–3.82 µm</option>
+                  <option value="5">5 · 3.83–4.41 µm</option>
+                  <option value="6">6 · 4.42–5.00 µm</option>
+                </select>
+              </label>
+              <label>One frame per
+                <select name="sampling">
+                  <option value="day" selected>observing day</option>
+                  <option value="visit">visit (gap over 20 days)</option>
+                  <option value="all">exposure (every frame)</option>
+                </select>
+              </label>
+              <label>Wavelength
+                <select name="wavelength">
+                  <option value="hold1" selected>Hold one wavelength (± 1 channel)</option>
+                  <option value="hold2">Hold one wavelength (± 2 channels)</option>
+                  <option value="any">Any wavelength (fastest)</option>
+                </select>
+              </label>
+            </div>
+            <div class="tm-actions">
+              <button class="workspace-button workspace-button--primary" type="submit" disabled data-ts-search>Search and build the sequence</button>
+              <span class="ts-examples-label">Examples:</span>
+              <button class="workspace-button" type="button" disabled data-ts-example="orion">Orion Nebula</button>
+              <button class="workspace-button" type="button" disabled data-ts-example="nep">North ecliptic pole deep field</button>
+              <button class="workspace-button" type="button" disabled data-ts-example="m31">Andromeda Galaxy</button>
+            </div>
+            <p class="workspace-status" role="status" data-ts-status></p>
+          </form>
+          <div class="ts-fallback" data-ts-fallback hidden>
+            <p class="workspace-help" data-ts-fallback-reason></p>
+            <div class="tm-actions">
+              <a class="workspace-source" data-ts-irsa-link target="_blank" rel="noopener" href="https://irsa.ipac.caltech.edu/SIA">Open IRSA results (CSV)</a>
+              <label class="tm-file">
+                <input class="tm-file__input" type="file" accept=".csv,text/csv" data-ts-import>
+                <span class="workspace-button tm-file__button">Choose the saved CSV file</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace-panel ts-player" aria-labelledby="ts-player-title" hidden data-ts-player>
+          <div class="ts-player__bar">
+            <h2 id="ts-player-title">Sequence</h2>
+            <p class="ts-summary" data-ts-summary></p>
+          </div>
+          <div class="ts-carousel">
+            <button class="workspace-button" type="button" disabled data-ts-prev><span aria-hidden="true">‹ </span>Earlier</button>
+            <p class="ts-page-label" aria-live="polite" data-ts-page-label></p>
+            <button class="workspace-button" type="button" disabled data-ts-next>Later<span aria-hidden="true"> ›</span></button>
+          </div>
+          <figure class="ts-stage">
+            <div class="ts-viewport" tabindex="0" role="img" aria-label="SPHEREx frame" aria-describedby="ts-keys" data-ts-viewport>
+              <canvas data-ts-canvas></canvas>
+              <span class="ts-reticle" aria-hidden="true"></span>
+              <span class="ts-compass" aria-hidden="true"><span class="ts-compass__n">N</span><span class="ts-compass__e">E</span></span>
+              <p class="ts-loading" hidden data-ts-loading></p>
+            </div>
+            <figcaption class="ts-caption" data-ts-caption></figcaption>
+          </figure>
+          <div class="ts-scrub">
+            <button class="workspace-button workspace-button--primary ts-play" type="button" aria-pressed="false" disabled data-ts-play>Play</button>
+            <div class="ts-scrub__track">
+              <input class="ts-slider" type="range" min="0" max="0" step="1" value="0" aria-label="Frame on this page" disabled data-ts-slider>
+              <ol class="ts-strip" data-ts-strip></ol>
+            </div>
+          </div>
+          <div class="tm-controls ts-controls">
+            <label>Speed
+              <select data-ts-speed></select>
+            </label>
+            <label class="tm-check"><input type="checkbox" checked data-ts-across> <span>Continue to the next page</span></label>
+            <label>Stretch
+              <select data-ts-stretch>
+                <option value="asinh" selected>Asinh (faint and bright)</option>
+                <option value="sqrt">Square root</option>
+                <option value="linear">Linear</option>
+              </select>
+            </label>
+            <label>Brightness range
+              <select data-ts-range>
+                <option value="shared" selected>Shared by the frames on this page</option>
+                <option value="own">Each frame on its own</option>
+              </select>
+            </label>
+            <label class="tm-check"><input type="checkbox" checked data-ts-background> <span>Remove each frame's sky level</span></label>
+          </div>
+          <p class="workspace-help" data-ts-scale></p>
+          <p class="tm-keys" id="ts-keys">Drag the slider or click a frame below it. With the image focused: ← and → step, Space plays and pauses, Page Up and Page Down change the page.</p>
+          <ul class="tm-notes" hidden data-ts-warnings></ul>
+          <div class="tm-table-wrap">
+            <table class="tm-table" hidden data-ts-table>
+              <caption>Frames on this page, each read from its own archive file</caption>
+              <thead><tr><th scope="col">#</th><th scope="col">Observed</th><th scope="col">After the first frame</th><th scope="col">Observation ID</th><th scope="col">Wavelength at the target</th><th scope="col">Field covered</th><th scope="col">Data read</th></tr></thead>
+              <tbody data-ts-table-body></tbody>
+            </table>
+          </div>
+          <p class="tm-live" role="status" aria-live="polite" data-ts-live></p>
+        </section>
+
+        <section class="workspace-panel tm-note" aria-labelledby="ts-note-title">
+          <h2 id="ts-note-title">How the sequence is built</h2>
+          <p class="workspace-help"><strong>Search.</strong> IRSA's Simple Image Access service lists every SPHEREx level-2 exposure of the chosen detector whose footprint contains the position (at most 10000). IRSA does not let a web page read that answer, so this site forwards only that one request through its own small search service. Where the service is missing, the page gives you the IRSA link and reads the CSV you save.</p>
+          <p class="workspace-help"><strong>Frames.</strong> One detector is kept and its exposures are ordered by time and grouped by observing day, by visit (no gap longer than 20 days) or not at all. One frame per group is shown, six per page. With <strong>Hold one wavelength</strong>, each group's frame is the one whose wavelength at the position is closest to a reference wavelength, and a group without one within the tolerance is skipped. The reference is the wavelength inside the detector's band that the most of the first twelve groups can match. SPHEREx's filter changes wavelength across each detector, so the same star is seen at a different wavelength in every exposure; without this, most brightness changes in the animation are wavelength changes, not changes in time.</p>
+          <p class="workspace-help"><strong>Pixels.</strong> Only the IMAGE rows that cover the field are read, directly from IRSA's public S3 copy of the archive. Each frame is resampled bilinearly onto one north-up, east-left grid centered on the position at the native pixel scale, so every frame shows the same sky. Values stay in MJy/sr; flags, variance and the ZODI model are not applied. By default each frame's median level is subtracted for display, because the zodiacal-light background changes with the date; the table and caption values are not changed by this. This is a viewing product, not a calibrated reprojection: use Image Differencing or Forced Spectrophotometry to measure changes.</p>
+          <p class="workspace-help">Data: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx DR1/QR3.</p>
+        </section>
+      </div>
+
+      <div id="tm-files" role="tabpanel" aria-labelledby="tm-tab-files" hidden>
 
       <section class="workspace-panel tm-source" aria-labelledby="tm-source-title">
         <h2 id="tm-source-title">Two observations of one field</h2>
@@ -150,7 +308,8 @@
         <p class="workspace-help"><strong>Time</strong> comes from <strong>DATE-OBS</strong> and <strong>MJD-OBS</strong> with <strong>TIMESYS</strong> (UTC when absent). If both are present and disagree by more than a second, neither is trusted. <strong>DATE</strong> is the time the file was written and is shown separately. A time you type is marked as entered manually. Times on different time scales are not ordered.</p>
         <p class="workspace-help"><strong>Same sky</strong> is decided from the WCS of each image, not from file names. <strong>Linked pan and zoom</strong> and <strong>Blink</strong> need one verified pixel grid: equal array sizes and the same sky position for sample pixels in both images. Real exposures taken on different dates usually sit on slightly different grids; the optional alignment copies the nearest comparison pixel onto the reference grid for viewing and does not interpolate or change any value. Pixel values are read from the calibrated data and do not depend on contrast.</p>
         <p class="workspace-help">The same file cannot be used as two epochs: identical pixel data are rejected as the same observation. Mask, variance and other HDUs are not applied. Blink shows at most two frames per second.</p>
-      </details>
+      </section>
+      </div>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
 

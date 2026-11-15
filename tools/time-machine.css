@@ -288,3 +288,199 @@
 @media (pointer: coarse) {
   .tm-source input, .tm-manual input { font-size: 1rem; }
 }
+
+/* ---- Mode tabs and the archive sequence player (tools/time-machine-sequence.js) ---------------------------------------- */
+.tm-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-block-end: var(--workspace-gap);
+  padding: 0.25rem;
+  border: 1px solid var(--workspace-border);
+  border-radius: 0.55rem;
+  background: var(--workspace-surface);
+}
+
+.tm-tab {
+  min-block-size: 2.5rem;
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tm-tab[aria-selected="true"] { background: #eaecf1; color: #101216; }
+.tm-tab:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+
+.ts-search .workspace-help { max-inline-size: 75ch; }
+.ts-form { margin-block-start: 0.85rem; }
+.ts-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-block-start: 0.75rem;
+}
+.ts-fields--position { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block-start: 0; }
+.ts-fields small { margin-inline-start: 0.3rem; color: var(--workspace-muted); font-size: 0.75rem; font-weight: 400; }
+.ts-examples-label { color: var(--workspace-muted); font-size: 0.875rem; }
+.ts-fallback { margin-block-start: 0.85rem; padding-block-start: 0.85rem; border-block-start: 1px solid #292d34; }
+
+.ts-player { margin-block-start: var(--workspace-gap); }
+.ts-player__bar { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; }
+.ts-summary { margin: 0; color: var(--workspace-muted); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+
+.ts-carousel {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-start: 0.85rem;
+}
+.ts-page-label { margin: 0; text-align: center; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.ts-stage { margin: 0.75rem 0 0; }
+.ts-viewport {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  inline-size: min(100%, 40rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  border: 1px solid var(--workspace-border);
+  border-radius: 0.4rem;
+  background: #07080a;
+}
+.ts-viewport:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+.ts-viewport canvas { inline-size: 100%; block-size: 100%; image-rendering: pixelated; }
+
+/* A ring at the searched position: open in the middle so the source itself stays visible. */
+.ts-reticle {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 7%;
+  aspect-ratio: 1;
+  border: 2px solid rgb(255 213 128 / 0.85);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Compass in the top-right corner: an arm up to N and an arm left to E (north up, east left). */
+.ts-compass {
+  position: absolute;
+  inset-block-start: 1.4rem;
+  inset-inline-end: 1rem;
+  inline-size: 2.6rem;
+  block-size: 2.6rem;
+  color: #d9dde5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+.ts-compass::before, .ts-compass::after { position: absolute; background: #d9dde5; content: ""; }
+.ts-compass::before { inset-block: 0; inset-inline-end: 0; inline-size: 2px; } /* north arm */
+.ts-compass::after { inset-block-end: 0; inset-inline: 0; block-size: 2px; } /* east arm */
+.ts-compass__n { position: absolute; inset-block-start: -1rem; inset-inline-end: -0.2rem; }
+.ts-compass__e { position: absolute; inset-block-end: -0.3rem; inset-inline-start: -0.9rem; }
+
+.ts-loading {
+  position: absolute;
+  inset-block-end: 0.6rem;
+  inset-inline-start: 0.6rem;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.3rem;
+  background: rgb(16 18 22 / 0.88);
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.ts-caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem 0.9rem;
+  margin-block-start: 0.6rem;
+  color: var(--workspace-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.ts-caption strong { color: var(--ink); }
+
+.ts-scrub {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  margin-block-start: 1rem;
+}
+.ts-play { min-inline-size: 5.5rem; }
+
+/* Thumbnails sit in six equal columns; the slider runs from the centre of the first to the centre of the last frame on the page,
+   so its thumb is over the frame it selects (the range thumb is 16 px in Chrome and Firefox). */
+[data-ts] { --ts-count: 6; --ts-gap: 0.5rem; --ts-knob: 16px; }
+.workspace .ts-slider {
+  --ts-col: calc((100% - 5 * var(--ts-gap)) / 6);
+  display: block;
+  inline-size: calc((var(--ts-count) - 1) * (var(--ts-col) + var(--ts-gap)) + var(--ts-knob));
+  min-inline-size: var(--ts-knob);
+  min-block-size: 2.5rem;
+  margin: 0 0 0 calc(var(--ts-col) / 2 - var(--ts-knob) / 2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: #ffd580;
+  cursor: pointer;
+}
+.workspace .ts-slider:disabled { opacity: 0.5; cursor: default; }
+
+.ts-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ts-gap);
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ts-thumb {
+  display: grid;
+  gap: 0.3rem;
+  inline-size: 100%;
+  padding: 0.3rem;
+  border: 1px solid var(--workspace-border);
+  border-radius: 0.35rem;
+  background: #0b0d10;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.ts-thumb canvas { inline-size: 100%; aspect-ratio: 1; border-radius: 0.2rem; background: #15181e; image-rendering: pixelated; }
+.ts-thumb[aria-pressed="true"] { border-color: #ffd580; color: var(--ink); box-shadow: 0 0 0 1px #ffd580; }
+.ts-thumb[data-pending] canvas { animation: ts-pulse 1.4s ease-in-out infinite; }
+.ts-thumb[data-failed] { border-style: dashed; }
+.ts-thumb:focus-visible { outline: 2px solid #f2f4f8; outline-offset: 2px; }
+@keyframes ts-pulse { 50% { opacity: 0.45; } }
+
+.ts-controls { margin-block-start: 1rem; }
+
+@media (max-width: 760px) {
+  .ts-fields, .ts-fields--position { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ts-scrub { grid-template-columns: 1fr; }
+  [data-ts] { --ts-gap: 0.3rem; }
+  .ts-thumb { padding: 0.15rem; font-size: 0.6875rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-thumb[data-pending] canvas { animation: none; opacity: 0.6; }
+}
