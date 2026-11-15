@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/image-differencing.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/wasm.js" defer></script>
     <script src="../../tools/wasm/reproject.wasm.js" defer></script>
@@ -39,7 +40,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-id-slot][data-image-ready]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Data Processing</p>
         <h1 data-workspace-title>Image Differencing</h1>
@@ -48,7 +49,7 @@
 
       <section class="workspace-panel tm-source" aria-labelledby="id-source-title">
         <h2 id="id-source-title">Reference and target</h2>
-        <p class="workspace-help">The result is <strong>Δ = target − reference</strong>. Choose a <strong>Reference</strong> and a <strong>Target</strong> image HDU below, or load the example pair. Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS, and both must use the same units. Pixels that are NaN, BLANK or outside the overlap stay invalid in the result.</p>
+        <p class="workspace-help">Choose a <strong>Reference</strong> and a <strong>Target</strong> image HDU below, or load the example pair. Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS, and both must use the same units. Pixels that are NaN, BLANK or outside the overlap stay invalid in the result.</p>
         <div class="tm-actions">
           <button class="workspace-button workspace-button--primary" type="button" disabled data-id-example>Load SPHEREx example pair</button>
           <button class="workspace-button" type="button" aria-disabled="true" data-id-swap>Swap reference and target</button>
@@ -79,31 +80,34 @@
         <p class="workspace-help" data-id-settings-note></p>
       </section>
 
-      <section class="workspace-panel id-result" aria-labelledby="id-result-title" aria-live="polite">
+      <section class="workspace-panel id-result" aria-labelledby="id-result-title" aria-live="polite" data-pdf-section>
         <h2 id="id-result-title">Result</h2>
         <p class="id-sign" data-id-sign>Δ = target − reference</p>
         <p class="tm-pair__verdict" data-id-verdict>Load a reference and a target image to compute the difference.</p>
         <ul class="tm-notes" data-id-notes hidden></ul>
-        <dl class="workspace-facts tm-checks" data-id-summary hidden>
-          <div><dt>Observations</dt><dd data-id-fact="observations">—</dd></div>
-          <div><dt>Method</dt><dd data-id-fact="method">—</dd></div>
-          <div><dt>Resampling</dt><dd data-id-fact="resampling">—</dd></div>
-          <div><dt>Valid pixels</dt><dd data-id-fact="valid">—</dd></div>
-          <div><dt>Unit of Δ</dt><dd data-id-fact="unit">—</dd></div>
-          <div><dt>Variance and SNR</dt><dd data-id-fact="variance">—</dd></div>
-          <div><dt>Background</dt><dd data-id-fact="background">—</dd></div>
-          <div><dt>PSF matching</dt><dd data-id-fact="psf">—</dd></div>
-        </dl>
-        <div class="tm-table-wrap" data-id-conditions hidden>
-          <table class="tm-table">
-            <caption>Observing conditions, reference and target</caption>
-            <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Target</th><th scope="col">Match</th></tr></thead>
-            <tbody data-id-conditions-body></tbody>
-          </table>
-        </div>
+        <details class="workspace-disclosure" hidden>
+          <summary>Comparison details</summary>
+          <dl class="workspace-facts tm-checks" data-id-summary hidden>
+            <div><dt>Observations</dt><dd data-id-fact="observations">—</dd></div>
+            <div><dt>Method</dt><dd data-id-fact="method">—</dd></div>
+            <div><dt>Resampling</dt><dd data-id-fact="resampling">—</dd></div>
+            <div><dt>Valid pixels</dt><dd data-id-fact="valid">—</dd></div>
+            <div><dt>Unit of Δ</dt><dd data-id-fact="unit">—</dd></div>
+            <div><dt>Variance and SNR</dt><dd data-id-fact="variance">—</dd></div>
+            <div><dt>Background</dt><dd data-id-fact="background">—</dd></div>
+            <div><dt>PSF matching</dt><dd data-id-fact="psf">—</dd></div>
+          </dl>
+          <div class="tm-table-wrap" data-id-conditions hidden>
+            <table class="tm-table">
+              <caption>Observing conditions, reference and target</caption>
+              <thead><tr><th scope="col">Condition</th><th scope="col">Reference</th><th scope="col">Target</th><th scope="col">Match</th></tr></thead>
+              <tbody data-id-conditions-body></tbody>
+            </table>
+          </div>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-display" aria-labelledby="id-display-title">
+      <section class="workspace-panel tm-display" aria-labelledby="id-display-title" data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="id-display-title">Images</h2>
           <button class="workspace-button" type="button" aria-disabled="true" data-id-fit>Fit all views</button>
@@ -143,7 +147,7 @@
         <p class="tm-live" role="status" aria-live="polite" data-id-live></p>
       </section>
 
-      <section class="workspace-panel tm-mark id-pixel" aria-labelledby="id-pixel-title">
+      <section class="workspace-panel tm-mark id-pixel" aria-labelledby="id-pixel-title" data-pdf-section>
         <h2 id="id-pixel-title">Selected pixel</h2>
         <p class="workspace-help" data-id-pixel-note>Select a pixel in any of the three images, or enter its position below. Pixel positions are FITS pixel numbers on the reference grid, where the first pixel is (1, 1).</p>
         <div class="id-pixel__inputs">
@@ -168,27 +172,30 @@
 
       <section class="workspace-panel id-export" aria-labelledby="id-export-title">
         <h2 id="id-export-title">Hand-off</h2>
-        <p class="workspace-help">Download the result as a FITS file: a <strong>DIFFERENCE</strong> image on the reference grid with the reference WCS, <strong>BUNIT</strong> and the direction (<strong>DIFFDIR</strong>), both observation IDs, a <strong>MASK</strong> image (0 valid, 1 invalid) and, when both images have variance, a <strong>VARIANCE</strong> image. Invalid pixels are NaN. The same result (aligned images, difference, overlap mask, WCS, unit and both observation IDs) is what Motion Detector will reuse.</p>
         <div class="tm-actions">
           <button class="workspace-button" type="button" aria-disabled="true" data-id-download>Download difference FITS</button>
         </div>
         <p class="workspace-status" role="status" data-id-export-status></p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">Download the result as a FITS file: a <strong>DIFFERENCE</strong> image on the reference grid with the reference WCS, <strong>BUNIT</strong> and the direction (<strong>DIFFDIR</strong>), both observation IDs, a <strong>MASK</strong> image (0 valid, 1 invalid) and, when both images have variance, a <strong>VARIANCE</strong> image. Invalid pixels are NaN. The same result (aligned images, difference, overlap mask, WCS, unit and both observation IDs) is what Motion Detector will reuse.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="id-note-title">
-        <h2 id="id-note-title">How the difference is computed</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="id-note-title">
+        <summary id="id-note-title">How the difference is computed</summary>
         <p class="workspace-help"><strong>Δ = target − reference</strong> for pixels that are valid in both images; a positive value means the target is brighter. Pixel values come from the calibrated data (<strong>BSCALE</strong> and <strong>BZERO</strong> applied once, <strong>BLANK</strong> and NaN invalid). A value of zero is valid.</p>
         <p class="workspace-help"><strong>Same sky</strong> is decided from the WCS of each image; equal array sizes alone are never enough. On one verified pixel grid (every sample pixel at the same sky position within 0.01 pixel) the arrays are subtracted as they are, a <strong>pixel difference</strong>. On different grids the target is reprojected onto the reference grid by bilinear interpolation (the method of reproject_interp with order bilinear), and pixels the target does not cover, or whose interpolation touches an invalid pixel, are invalid. Real exposures taken on different dates sit about half a pixel apart, so this matters. Interpolation smooths the target and correlates its noise.</p>
         <p class="workspace-help"><strong>Variance</strong> is combined as Var(Δ) = Var(target) + Var(reference) only when both files have a VARIANCE image in matching units, assuming independent errors; for a reprojected target the weights are squared and summed, and neighbouring pixels remain correlated. Otherwise the SNR stays empty. <strong>Units</strong> must match; only Jy prefixes such as kJy/sr and MJy/sr are converted. No PSF matching is applied, and background correction is off unless you choose it. Residuals from background, PSF and pixel-scale differences can look like real changes, and the scientific meaning of a difference depends on the band, the calibration and the alignment quality.</p>
         <p class="workspace-help">FLAGS and other mask images are not interpreted; only NaN and BLANK pixels are excluded.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
 
     <template data-id-slot-template>
-      <section class="workspace-panel tm-slot" data-id-slot>
+      <section class="workspace-panel tm-slot" data-id-slot data-pdf-section>
         <div class="tm-slot__head">
-          <h2 data-id-slot-title></h2>
+          <h2 data-id-slot-title data-pdf-heading></h2>
           <span class="tm-slot__badge" data-id-slot-badge></span>
         </div>
         <div class="tm-slot__inputs">

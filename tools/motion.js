@@ -1109,15 +1109,13 @@
     const outcomeNeedsAssume = state.series && state.series.entries.some((entry) => !entry.included && /BUNIT is missing/.test(entry.reason));
     el.assumeWrap.hidden = !(outcomeNeedsAssume || settings.assume);
     el.assume.checked = settings.assume;
-    const m = Motion.modeText[settings.mode];
-    el.settingsNote.textContent = "Peaks are found in Δ with the method “" + m + "”. A negative and a positive residual closer than " + settings.max + " pixels and at least " + settings.min + " pixels apart form a pair; a smaller separation looks like a registration or PSF residual of a static source, so a source that moves less than this is not found. " +
-      (settings.alignment === "require-same-grid" ? "No epoch is resampled: if an epoch is not on the reference pixel grid it is left out." : "An epoch on another grid is bilinearly reprojected onto the reference grid, which smooths it and correlates its noise.");
+    el.settingsNote.textContent = "Motion below the minimum separation may be missed.";
   }
 
   function renderResult() {
     const series = state.series;
     el.notes.replaceChildren();
-    el.summary.hidden = !series;
+    el.summary.closest("details").hidden = !series;
     const loaded = state.items.filter((item) => item.epoch).length;
     if (state.analysisError) {
       el.verdict.textContent = "No search was run.";
@@ -1133,11 +1131,10 @@
       if (state.resetNote) addItem(el.notes, state.resetNote, "tm-notes__info");
       return;
     }
-    const used = series.entries.filter((entry) => entry.included);
     const n = state.candidates.length;
     el.verdict.textContent = n
-      ? n + " candidate" + (n === 1 ? "" : "s") + " in " + used.length + " observation" + (used.length === 1 ? "" : "s") + ". A candidate is a pair of residuals in the difference images, not a confirmed moving object."
-      : "No candidate was found in " + used.length + " observation" + (used.length === 1 ? "" : "s") + " with these settings. That does not show that nothing moves: a source that moves less than the minimum separation, or faintly, would be missed.";
+      ? n === 1 ? "1 unconfirmed motion candidate." : n + " unconfirmed motion candidates."
+      : "No candidates found. Faint sources or motion below the minimum separation may be missed.";
     if (series.notes.length) for (const text of series.notes) addItem(el.notes, text, "tm-notes__warning");
     for (const entry of series.entries) if (!entry.included && !entry.isReference) addItem(el.notes, (entry.epoch.meta.obsId ?? entry.epoch.name) + " was left out: " + entry.reason, "tm-notes__warning");
     const seen = new Set();
@@ -1154,9 +1151,6 @@
     const times = series.entries.map((entry) => Motion.epochTime(entry.epoch)).filter(Boolean);
     if (times.length >= 2 && new Set(times.map((time) => time.scale)).size > 1) addItem(el.notes, "The observations use different time scales, so rates are not computed across them.", "tm-notes__warning");
     for (const text of state.resetNote ? [state.resetNote] : []) addItem(el.notes, text, "tm-notes__info");
-    const pairedInfo = series.counts;
-    if (pairedInfo.unpairedPositive + pairedInfo.unpairedNegative) addItem(el.notes, (pairedInfo.unpairedPositive + pairedInfo.unpairedNegative) + " residual(s) had no partner of the opposite sign (" + pairedInfo.unpairedPositive + " positive, " + pairedInfo.unpairedNegative + " negative). They are brightness changes, transients or artifacts, or a moving source whose partner lies outside the search radius or the valid area; they are not listed as candidates.", "tm-notes__info");
-    if (pairedInfo.rejected) addItem(el.notes, pairedInfo.rejected + " residual pair(s) were rejected as residuals of static sources (registration, PSF or brightness changes; the reason for each is kept with the epoch, and the counts are in the “Difference with the reference” column).", "tm-notes__info");
     el.notes.hidden = !el.notes.children.length;
 
     const s = series.settings;
@@ -1206,7 +1200,7 @@
     }
     el.candidatesNote.textContent = list.length
       ? "Select a candidate to inspect its positions and show it on the images. Review it against the original images before keeping it."
-      : "No candidate was found. You can still mark a source by hand with “New candidate”.";
+      : "";
     const rows = list.map((candidate) => {
       const summary = trackSummary(candidate);
       const row = document.createElement("tr");

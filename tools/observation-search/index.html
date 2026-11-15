@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../../tools/observation.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/observation-csv.js" defer></script>
     <script src="../../tools/observation.js" defer></script>
   </head>
@@ -33,7 +34,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-results-list] .observation-row">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Observation</p>
         <h1 data-workspace-title>Observation Search</h1>
@@ -45,7 +46,7 @@
           <h2>Search parameters</h2>
           <fieldset>
             <legend>Data release</legend>
-            <p class="workspace-help">Each release is its own IRSA collection, and the same observation can appear in several with different processing. DR1 is the default. QR2 is archived and may return no rows.</p>
+            <p class="workspace-help">Processing can differ between releases.</p>
             <div class="observation-fields observation-fields--release">
               <label>SPHEREx release
                 <select name="release" data-observation-release>
@@ -89,11 +90,6 @@
         </form>
         <aside class="workspace-panel observation-query" aria-labelledby="query-title">
           <h2 id="query-title">IRSA query</h2>
-          <dl class="workspace-facts">
-            <div><dt>Collection</dt><dd data-query-collection>SPHEREx DR1 (spherex_dr1)</dd></div>
-            <div><dt>Service</dt><dd>Simple Image Access (SIA 2)</dd></div>
-            <div><dt>Result format</dt><dd>CSV · up to 2000 records</dd></div>
-          </dl>
           <p class="workspace-help" data-query-empty>Prepare a search to generate a link to the archive results.</p>
           <div class="observation-query__result" data-query-result hidden>
             <p class="workspace-help" data-query-summary></p>
@@ -103,28 +99,36 @@
             </a>
           </div>
           <div class="observation-import">
-            <h3>Import IRSA CSV</h3>
-            <p class="workspace-help">IRSA does not let this page read its response, so save the CSV from the archive link above and choose the file here.</p>
+            <h3 data-pdf-heading>Import IRSA CSV</h3>
+            <p class="workspace-help">Save the CSV from IRSA, then choose it here.</p>
             <label class="fits-file">
               <span>Choose the saved CSV file</span>
               <input type="file" accept=".csv,text/csv" disabled data-observation-import>
             </label>
             <p class="workspace-status" role="status" data-import-status></p>
           </div>
-          <a class="workspace-source" href="https://irsa.ipac.caltech.edu/ibe/sia.html">IRSA SIA documentation</a>
+          <details class="workspace-disclosure">
+            <summary>Archive query details</summary>
+            <dl class="workspace-facts">
+              <div><dt>Collection</dt><dd data-query-collection>SPHEREx DR1 (spherex_dr1)</dd></div>
+              <div><dt>Service</dt><dd>Simple Image Access (SIA 2)</dd></div>
+              <div><dt>Result format</dt><dd>CSV · up to 2000 records</dd></div>
+            </dl>
+            <a class="workspace-source" href="https://irsa.ipac.caltech.edu/ibe/sia.html">IRSA SIA documentation</a>
+          </details>
         </aside>
 
-        <section class="workspace-panel observation-results" aria-labelledby="results-title" data-results hidden>
+        <section class="workspace-panel observation-results" aria-labelledby="results-title" data-results hidden data-pdf-section>
           <h2 id="results-title">Archive results</h2>
           <p class="workspace-status" role="status" data-results-status></p>
-          <div data-results-notes></div>
+          <div data-results-notes data-pdf-text></div>
           <details class="observation-skipped" data-results-skipped hidden>
             <summary></summary>
             <ul data-results-skipped-list></ul>
           </details>
           <fieldset class="observation-cutout" data-cutout>
             <legend>Cutout <small>ICRS · decimal degrees</small></legend>
-            <p class="workspace-help">Each cutout is centered here and cut by IRSA from the full spectral image, so the download stays small.</p>
+            <p class="workspace-help">Choose the center and size of the FITS cutout.</p>
             <div class="observation-fields observation-fields--position">
               <label>Center RA (°)<input name="cutoutRa" type="number" inputmode="decimal" min="0" max="360" step="any"></label>
               <label>Center Dec (°)<input name="cutoutDec" type="number" inputmode="decimal" min="-90" max="90" step="any"></label>

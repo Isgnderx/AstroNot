@@ -11,14 +11,22 @@
 
 .sky-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 22.5rem);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--workspace-gap);
 }
 
 .sky-side { display: grid; gap: var(--workspace-gap); min-inline-size: 0; }
-.sky-note { margin-block-start: var(--workspace-gap); }
 .sky-note .workspace-help:first-of-type { margin-block-start: 0.5rem; max-inline-size: 75ch; }
+
+@media (width > 750px) {
+  .sky-main {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 22.5rem);
+    grid-template-rows: auto 1fr;
+  }
+
+  .sky-side { grid-row: span 2; }
+}
 
 .sky-display__bar {
   display: flex;
@@ -98,7 +106,7 @@
 .sky-hdu { margin-block-start: 0.75rem; }
 
 @media (max-width: 750px) {
-  .sky-source__row, .sky-main { grid-template-columns: minmax(0, 1fr); }
+  .sky-source__row { grid-template-columns: minmax(0, 1fr); }
   .sky-viewport { block-size: clamp(15rem, 52svh, 30rem); }
   .sky-toolbar .workspace-button { flex: 1 1 auto; }
 }

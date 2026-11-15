@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/mosaic.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/wasm.js" defer></script>
     <script src="../../tools/wasm/reproject.wasm.js" defer></script>
@@ -40,7 +41,7 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-mb-inputs-body] tr[data-state=ready]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Data Processing</p>
         <h1 data-workspace-title>Mosaic Builder</h1>
@@ -48,7 +49,7 @@
       </header>
 
       <section class="workspace-panel tm-source" aria-labelledby="mb-source-title">
-        <h2 id="mb-source-title">Input images</h2>
+        <h2 id="mb-source-title" data-pdf-heading>Input images</h2>
         <p class="workspace-help">Choose <strong>two or more</strong> FITS files, or load the example pair. Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS and a surface-brightness unit such as <strong>MJy/sr</strong>; all must be in the same unit (Jy prefixes such as kJy/sr are converted) and the same band. Choosing the same file and HDU again does not add it a second time; images with identical pixel values are refused as duplicates.</p>
         <div class="tm-actions">
           <label class="tm-file mb-add">
@@ -61,7 +62,7 @@
         <p class="workspace-status" role="status" data-mb-status></p>
       </section>
 
-      <section class="workspace-panel mb-inputs" aria-labelledby="mb-inputs-title">
+      <section class="workspace-panel mb-inputs" aria-labelledby="mb-inputs-title" data-pdf-section>
         <h2 id="mb-inputs-title">Selected inputs</h2>
         <p class="workspace-help" data-mb-inputs-empty>No input yet. Add at least two overlapping or adjacent images.</p>
         <div class="tm-table-wrap" data-mb-inputs-wrap hidden>
@@ -105,21 +106,24 @@
         <p class="workspace-help" data-mb-settings-note></p>
       </section>
 
-      <section class="workspace-panel mb-plan" aria-labelledby="mb-plan-title" aria-live="polite">
+      <section class="workspace-panel mb-plan" aria-labelledby="mb-plan-title" aria-live="polite" data-pdf-section>
         <h2 id="mb-plan-title">Output grid and checks</h2>
         <p class="tm-pair__verdict" data-mb-verdict>Add two or more input images to plan the mosaic.</p>
         <ul class="tm-notes" data-mb-notes hidden></ul>
         <div class="tm-actions" data-mb-suggest hidden></div>
-        <dl class="workspace-facts tm-checks" data-mb-plan-facts hidden>
-          <div><dt>Output grid</dt><dd data-mb-fact="grid">—</dd></div>
-          <div><dt>Pixel scale</dt><dd data-mb-fact="scale">—</dd></div>
-          <div><dt>Centre (ICRS)</dt><dd data-mb-fact="center">—</dd></div>
-          <div><dt>Unit</dt><dd data-mb-fact="unit">—</dd></div>
-          <div><dt>Spectral band</dt><dd data-mb-fact="band">—</dd></div>
-          <div><dt>Combination</dt><dd data-mb-fact="combine">—</dd></div>
-          <div><dt>Resampling</dt><dd data-mb-fact="resampling">—</dd></div>
-          <div><dt>Memory estimate</dt><dd data-mb-fact="memory">—</dd></div>
-        </dl>
+        <details class="workspace-disclosure" hidden>
+          <summary>Plan details</summary>
+          <dl class="workspace-facts tm-checks" data-mb-plan-facts>
+            <div><dt>Output grid</dt><dd data-mb-fact="grid">—</dd></div>
+            <div><dt>Pixel scale</dt><dd data-mb-fact="scale">—</dd></div>
+            <div><dt>Centre (ICRS)</dt><dd data-mb-fact="center">—</dd></div>
+            <div><dt>Unit</dt><dd data-mb-fact="unit">—</dd></div>
+            <div><dt>Spectral band</dt><dd data-mb-fact="band">—</dd></div>
+            <div><dt>Combination</dt><dd data-mb-fact="combine">—</dd></div>
+            <div><dt>Resampling</dt><dd data-mb-fact="resampling">—</dd></div>
+            <div><dt>Memory estimate</dt><dd data-mb-fact="memory">—</dd></div>
+          </dl>
+        </details>
         <div class="tm-actions">
           <button class="workspace-button workspace-button--primary" type="button" aria-disabled="true" data-mb-build>Build mosaic</button>
           <button class="workspace-button" type="button" hidden data-mb-cancel>Cancel</button>
@@ -145,7 +149,7 @@
         </div>
       </section>
 
-      <section class="workspace-panel tm-display" aria-labelledby="mb-display-title">
+      <section class="workspace-panel tm-display" aria-labelledby="mb-display-title" data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="mb-display-title">Mosaic and coverage</h2>
           <button class="workspace-button" type="button" aria-disabled="true" data-mb-fit>Fit all views</button>
@@ -174,7 +178,7 @@
         <p class="tm-live" role="status" aria-live="polite" data-mb-live></p>
       </section>
 
-      <section class="workspace-panel tm-mark mb-pixel" aria-labelledby="mb-pixel-title">
+      <section class="workspace-panel tm-mark mb-pixel" aria-labelledby="mb-pixel-title" data-pdf-section>
         <h2 id="mb-pixel-title">Selected pixel</h2>
         <p class="workspace-help" data-mb-pixel-note>Build a mosaic first. Then select a pixel in either view, or enter its position below.</p>
         <div class="mb-pixel__inputs">
@@ -197,38 +201,44 @@
         </div>
       </section>
 
-      <section class="workspace-panel mb-result" aria-labelledby="mb-result-title" aria-live="polite">
+      <section class="workspace-panel mb-result" aria-labelledby="mb-result-title" aria-live="polite" data-pdf-section>
         <h2 id="mb-result-title">Result</h2>
         <p class="tm-pair__verdict" data-mb-result-verdict>No mosaic has been built yet.</p>
         <ul class="tm-notes" data-mb-result-notes hidden></ul>
-        <dl class="workspace-facts tm-checks" data-mb-result-facts hidden>
-          <div><dt>Valid pixels</dt><dd data-mb-result="valid">—</dd></div>
-          <div><dt>Coverage</dt><dd data-mb-result="coverage">—</dd></div>
-          <div><dt>Unit</dt><dd data-mb-result="unit">—</dd></div>
-          <div><dt>Weights</dt><dd data-mb-result="weights">—</dd></div>
-          <div><dt>Variance of the mosaic</dt><dd data-mb-result="variance">—</dd></div>
-          <div><dt>Wavelength range of the inputs</dt><dd data-mb-result="wavelength">—</dd></div>
-          <div><dt>Sources</dt><dd data-mb-result="sources">—</dd></div>
-        </dl>
+        <details class="workspace-disclosure" hidden>
+          <summary>Coverage and output details</summary>
+          <dl class="workspace-facts tm-checks" data-mb-result-facts>
+            <div><dt>Valid pixels</dt><dd data-mb-result="valid">—</dd></div>
+            <div><dt>Coverage</dt><dd data-mb-result="coverage">—</dd></div>
+            <div><dt>Unit</dt><dd data-mb-result="unit">—</dd></div>
+            <div><dt>Weights</dt><dd data-mb-result="weights">—</dd></div>
+            <div><dt>Variance of the mosaic</dt><dd data-mb-result="variance">—</dd></div>
+            <div><dt>Wavelength range of the inputs</dt><dd data-mb-result="wavelength">—</dd></div>
+            <div><dt>Sources</dt><dd data-mb-result="sources">—</dd></div>
+          </dl>
+        </details>
       </section>
 
       <section class="workspace-panel mb-export" aria-labelledby="mb-export-title">
         <h2 id="mb-export-title">Hand-off</h2>
-        <p class="workspace-help">Download the mosaic as a FITS file: the primary HDU is the <strong>MOSAIC</strong> image (float64, NaN where invalid) with the output WCS, <strong>BUNIT</strong>, the combination mode, the resampling and every source file, observation ID and HDU (keywords and HISTORY). Extensions: <strong>MASK</strong> (0 valid, 1 invalid), <strong>COVERAGE</strong> (number of inputs with a valid value) and, when every input has variance, <strong>VARIANCE</strong>. The file opens in the FITS Viewer and in other FITS readers.</p>
         <div class="tm-actions">
           <button class="workspace-button" type="button" aria-disabled="true" data-mb-download>Download mosaic FITS</button>
         </div>
         <p class="workspace-status" role="status" data-mb-export-status></p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">Download the mosaic as a FITS file: the primary HDU is the <strong>MOSAIC</strong> image (float64, NaN where invalid) with the output WCS, <strong>BUNIT</strong>, the combination mode, the resampling and every source file, observation ID and HDU (keywords and HISTORY). Extensions: <strong>MASK</strong> (0 valid, 1 invalid), <strong>COVERAGE</strong> (number of inputs with a valid value) and, when every input has variance, <strong>VARIANCE</strong>. The file opens in the FITS Viewer and in other FITS readers.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="mb-note-title">
-        <h2 id="mb-note-title">How the mosaic is built</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="mb-note-title">
+        <summary id="mb-note-title">How the mosaic is built</summary>
         <p class="workspace-help"><strong>Same physical quantity.</strong> Every input must have the same <strong>BUNIT</strong>, or differ only by a Jy prefix (kJy/sr and MJy/sr), which is converted with the factor shown. Values are treated as <strong>surface brightness</strong> (MJy/sr, per steradian or per angular area): they are interpolated and averaged, never summed, so the unit and the scale stay physical. Flux per pixel (Jy/pixel, counts, DN, electrons) and Jy/beam are refused, because resampling them needs an area or beam scaling that this tool does not do.</p>
         <p class="workspace-help"><strong>Same band.</strong> SPHEREx cutouts carry a per-pixel wavelength table. Mosaic Builder evaluates the wavelength of two inputs at the same sky positions, not just from the file name or detector number, and refuses inputs whose wavelengths differ by more than one bandwidth. Files with a FILTER or BAND keyword must agree on it. Without either, the spectral coverage cannot be checked and this is said so.</p>
         <p class="workspace-help"><strong>Output grid.</strong> By default the grid is a north-up TAN projection centred on the union of the input footprints, with the finest input pixel scale (you can set a scale and a size). Alternatively the WCS of one input can be reused, which keeps that input unresampled where it lies on the grid. Footprints are projected through each WCS, so the 0°/360° boundary, rotated inputs and different pixel scales are handled. The size and a memory estimate are checked before anything is allocated; if a limit is exceeded, a coarser scale or a smaller central field is offered.</p>
         <p class="workspace-help"><strong>Resampling.</strong> Each input is resampled by bilinear interpolation at the output pixel centres through both WCS (the sampling of reproject_interp with order bilinear). This smooths the input and correlates the noise of neighbouring pixels. The four neighbouring input pixel centres must lie inside the input, so the outermost half pixel of an input is not used, and a pixel next to a NaN or masked pixel is invalid. When output pixels are more than 1.25 times larger than input pixels, several bilinear samples inside each output pixel are averaged so that fine images are not aliased.</p>
         <p class="workspace-help"><strong>Combination.</strong> <em>Mean</em> averages the valid inputs at each pixel with equal weights. <em>Inverse-variance</em> weights each input by 1 / variance of the reprojected VARIANCE image and needs a variance in matching units in every input; a pixel whose variance is missing, zero or negative is left out of that average. A pixel is valid where at least one input contributes; the coverage map counts the contributing inputs, and pixels covered by none stay NaN. Only NaN and BLANK pixels are invalid in an input; FLAGS and other mask images are not interpreted. Residual background, calibration and PSF differences between exposures are not matched, so seams and steps can appear where the coverage changes.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
 

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../../tools/motion.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/wcs.js" defer></script>
     <script src="../../tools/wasm.js" defer></script>
     <script src="../../tools/wasm/reproject.wasm.js" defer></script>
@@ -41,16 +42,16 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-mo-epochs] input[type=radio]:not(:disabled)">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Analysis</p>
         <h1 data-workspace-title>Motion Detector</h1>
         <p class="workspace-description" data-workspace-description>Track position changes in asteroids, comets, and nearby stars across epochs.</p>
       </header>
 
-      <section class="workspace-panel tm-source" aria-labelledby="mo-source-title">
-        <h2 id="mo-source-title">Observations of one field</h2>
-        <p class="workspace-help"><strong>This tool finds candidates. It does not confirm a moving object.</strong> Load two or more FITS observations of the same field (three or more are better: they give a fitted rate and its residuals). Files are read on this device. Each must be an uncompressed two-dimensional image with a TAN or TAN-SIP WCS in ICRS and a known <strong>BUNIT</strong>, and all must use the same units. One observation is the <strong>reference</strong>; every other one is subtracted from it, <strong>Δ = epoch − reference</strong>, and the tool pairs a negative residual (where the reference has flux the epoch lacks) with a positive one (where the epoch has flux the reference lacks). Residual pairs also come from variable stars, imperfect alignment, PSF and background differences and artifacts, so every candidate needs a look at the original images.</p>
+      <section class="workspace-panel tm-source" aria-labelledby="mo-source-title" data-pdf-section>
+        <h2 id="mo-source-title" data-pdf-heading>Observations of one field</h2>
+        <p class="workspace-help">Load two or more uncompressed 2D FITS images of the same field with TAN or TAN-SIP coordinates in ICRS and matching units (<strong>BUNIT</strong>). Use three or more observations to fit a motion rate and see its residuals.</p>
         <div class="tm-actions">
           <label class="tm-file">
             <input class="tm-file__input" type="file" multiple accept=".fits,.fit,.fts,application/fits,image/fits" disabled data-mo-files>
@@ -110,21 +111,24 @@
         <p class="workspace-help" data-mo-settings-note></p>
       </section>
 
-      <section class="workspace-panel mo-result" aria-labelledby="mo-result-title" aria-live="polite">
+      <section class="workspace-panel mo-result" aria-labelledby="mo-result-title" aria-live="polite" data-pdf-section>
         <h2 id="mo-result-title">Search result</h2>
         <p class="tm-pair__verdict" data-mo-verdict>Load at least two observations of the same field to search for candidates.</p>
         <ul class="tm-notes" data-mo-notes hidden></ul>
-        <dl class="workspace-facts tm-checks" data-mo-summary hidden>
-          <div><dt>Reference</dt><dd data-mo-fact="reference">—</dd></div>
-          <div><dt>Difference</dt><dd data-mo-fact="difference">—</dd></div>
-          <div><dt>Threshold</dt><dd data-mo-fact="threshold">—</dd></div>
-          <div><dt>Residual pairs</dt><dd data-mo-fact="pairs">—</dd></div>
-          <div><dt>Not examined</dt><dd data-mo-fact="excluded">—</dd></div>
-          <div><dt>Pixel scale</dt><dd data-mo-fact="scale">—</dd></div>
-        </dl>
+        <details class="workspace-disclosure" hidden>
+          <summary>Search details</summary>
+          <dl class="workspace-facts tm-checks" data-mo-summary>
+            <div><dt>Reference</dt><dd data-mo-fact="reference">—</dd></div>
+            <div><dt>Difference</dt><dd data-mo-fact="difference">—</dd></div>
+            <div><dt>Threshold</dt><dd data-mo-fact="threshold">—</dd></div>
+            <div><dt>Residual pairs</dt><dd data-mo-fact="pairs">—</dd></div>
+            <div><dt>Not examined</dt><dd data-mo-fact="excluded">—</dd></div>
+            <div><dt>Pixel scale</dt><dd data-mo-fact="scale">—</dd></div>
+          </dl>
+        </details>
       </section>
 
-      <section class="workspace-panel mo-candidates" aria-labelledby="mo-candidates-title">
+      <section class="workspace-panel mo-candidates" aria-labelledby="mo-candidates-title" data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="mo-candidates-title">Candidates</h2>
           <button class="workspace-button" type="button" aria-disabled="true" data-mo-new>New candidate (mark by hand)</button>
@@ -151,7 +155,7 @@
         </div>
       </section>
 
-      <section class="workspace-panel mo-detail" aria-labelledby="mo-detail-title" data-mo-detail hidden>
+      <section class="workspace-panel mo-detail" aria-labelledby="mo-detail-title" data-mo-detail hidden data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="mo-detail-title" data-mo-detail-title>Candidate</h2>
           <div class="tm-segment" role="group" aria-label="Review this candidate">
@@ -160,7 +164,7 @@
             <button class="workspace-button" type="button" aria-pressed="false" data-mo-review="candidate">Reset to candidate</button>
           </div>
         </div>
-        <p class="workspace-help"><strong>Candidate, not a detection.</strong> <span data-mo-detail-origin></span> The review choice changes only the status; it never changes a measured position, time or ID.</p>
+        <p class="workspace-help"><span data-mo-detail-origin></span> Review changes only the candidate’s status.</p>
         <ul class="tm-notes" data-mo-detail-notes hidden></ul>
         <div class="tm-table-wrap">
           <table class="tm-table mo-positions">
@@ -196,7 +200,7 @@
         </figure>
       </section>
 
-      <section class="workspace-panel tm-display" aria-labelledby="mo-display-title">
+      <section class="workspace-panel tm-display" aria-labelledby="mo-display-title" data-pdf-section>
         <div class="tm-display__bar">
           <h2 id="mo-display-title">Images</h2>
           <button class="workspace-button" type="button" aria-disabled="true" data-mo-fit>Fit all views</button>
@@ -235,19 +239,22 @@
 
       <section class="workspace-panel mo-export" aria-labelledby="mo-export-title">
         <h2 id="mo-export-title">Export</h2>
-        <p class="workspace-help">Download every candidate as CSV: one row per position with the candidate ID, review status, observation ID, file name and HDU, observation time (UTC, MJD and its source), reference-grid pixel, ICRS RA and Dec, the pixel in the epoch's own file, east and north offsets, fit residual, displacement, rate (arcsec/hour and arcsec/day), position angle, the reason a rate is empty, the difference direction and the detection method. Empty cells mean unavailable. Dismissed candidates are included with their status.</p>
         <div class="tm-actions">
           <button class="workspace-button" type="button" aria-disabled="true" data-mo-download>Download candidates (CSV)</button>
         </div>
         <p class="workspace-status" role="status" data-mo-export-status></p>
+        <details class="workspace-disclosure">
+          <summary>Export details</summary>
+          <p class="workspace-help">Download every candidate as CSV: one row per position with the candidate ID, review status, observation ID, file name and HDU, observation time (UTC, MJD and its source), reference-grid pixel, ICRS RA and Dec, the pixel in the epoch's own file, east and north offsets, fit residual, displacement, rate (arcsec/hour and arcsec/day), position angle, the reason a rate is empty, the difference direction and the detection method. Empty cells mean unavailable. Dismissed candidates are included with their status.</p>
+        </details>
       </section>
 
-      <section class="workspace-panel tm-note" aria-labelledby="mo-note-title">
-        <h2 id="mo-note-title">How candidates are found, and what they are not</h2>
+      <details class="workspace-panel tm-note workspace-disclosure" aria-labelledby="mo-note-title">
+        <summary id="mo-note-title">How candidates are found, and what they are not</summary>
         <p class="workspace-help"><strong>Δ = epoch − reference</strong> is computed by the Image Differencing code for pixels valid in both images, after the units, the sky overlap and the pixel grid are checked from the WCS (equal array sizes alone are never enough). Epochs on another grid are reprojected onto the reference grid by bilinear interpolation, which smooths them and correlates their noise. No PSF matching or background correction is applied.</p>
         <p class="workspace-help"><strong>Residuals.</strong> Local maxima and minima of Δ above the chosen threshold are listed. The threshold method is named in the result. Peaks within two pixels of the image edge, of a NaN or masked pixel or of the area the epoch does not cover are not examined. A positive and a negative residual closer than the search radius and farther apart than the minimum separation form a pair. A pair is dropped when both original images are bright at its midpoint (a shifted static star) and unpaired residuals (brightness changes, transients) are counted but never called moving. Sources that move less than about the minimum separation, or whose lobes overlap a bright neighbour, are not found.</p>
         <p class="workspace-help"><strong>Positions and rates.</strong> A candidate keeps one position per epoch on the reference grid, measured as a centroid in the original image (or marked by you). RA and Dec come from the reference WCS, the position in each epoch's file from that epoch's WCS. Displacement is the great-circle separation in arcsec and the position angle is measured from north through east. Two positions give an end-to-end rate; three or more give a straight-line least-squares fit in east and north against time, with residuals and a formal rate uncertainty. Position errors are not propagated, and motion that is not along a straight line at constant speed is not modelled. If a time is missing or two times are equal, the rate is left empty and the reason is shown; you can type a UTC time for an observation whose header has none, and it is labelled as entered manually.</p>
-      </section>
+      </details>
       <noscript><p class="workspace-status">Enable JavaScript to use this tool.</p></noscript>
     </main>
 

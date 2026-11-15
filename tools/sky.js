@@ -430,7 +430,7 @@
       fillInformation(hdu, index);
       setOut("wcs", wcs.ok ? wcs.wcs.summary : "Unavailable");
       out.wcsStatus.textContent = wcs.ok
-        ? "Sky coordinates come from the image WCS: " + wcs.wcs.summary + "." + (wcs.wcs.notes.length ? " " + wcs.wcs.notes.join(" ") : "")
+        ? wcs.wcs.notes.join(" ")
         : "RA, Dec and field of view are unavailable: " + wcs.reason;
       fit();
       empty.hidden = true;

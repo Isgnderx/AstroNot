@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../../tools/observation.css">
     <script src="../../routes.js" defer></script>
     <script src="../../assets/i18n/site-language.js" defer></script>
+    <script src="../../tools/pdf-report.js" defer></script>
     <script src="../../tools/observation-csv.js" defer></script>
     <script src="../../tools/fits.js" defer></script>
     <script src="../../tools/observation-handoff.js" defer></script>
@@ -34,15 +35,15 @@
       </div>
     </header>
 
-    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1">
+    <main class="workspace-frame workspace" id="workspace-main" tabindex="-1" data-pdf-ready="[data-fits-metadata]">
       <header class="workspace-heading">
         <p class="workspace-category" data-workspace-category>Data Processing</p>
         <h1 data-workspace-title>FITS Viewer</h1>
         <p class="workspace-description" data-workspace-description>Inspect FITS images, header cards, and Header Data Units in your browser.</p>
       </header>
       <div class="fits-layout">
-        <section class="workspace-panel fits-controls">
-          <h2>Image file</h2>
+        <section class="workspace-panel fits-controls" data-pdf-section>
+          <h2 data-pdf-heading>Image file</h2>
           <div class="fits-handoff" data-fits-handoff hidden>
             <h3>Selected observation</h3>
             <p class="workspace-help" data-handoff-note></p>
@@ -60,7 +61,7 @@
           <p class="workspace-status" role="status" data-fits-status></p>
         </section>
 
-        <figure class="workspace-panel fits-display">
+        <figure class="workspace-panel fits-display" data-pdf-section>
           <div class="fits-display__bar">
             <h2>Image preview</h2>
             <label data-fits-zoom-label hidden>Zoom
@@ -82,9 +83,9 @@
           <figcaption class="fits-caption" data-fits-caption hidden></figcaption>
         </figure>
 
-        <section class="workspace-panel fits-metadata" data-fits-metadata hidden>
+        <section class="workspace-panel fits-metadata" data-fits-metadata hidden data-pdf-section>
           <h2>File metadata</h2>
-          <p class="fits-filename" data-fits-filename></p>
+          <p class="fits-filename" data-fits-filename data-pdf-text></p>
           <label>Header Data Unit<select data-fits-hdu></select></label>
           <dl class="workspace-facts" data-fits-facts></dl>
           <details>

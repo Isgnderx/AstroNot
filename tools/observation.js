@@ -207,13 +207,9 @@ function setupObservationSearch() {
     const footprintRow = document.createElement("div");
     footprintRow.append(text("dt", "Cutout footprint check"), footprint);
     facts.append(
-      fact("Observation ID", row.obsId),
       fact("Data release", releaseLabel),
-      fact("Detector", row.detector ? String(row.detector) : ""),
       fact("Start", start),
       fact("End", irsaMjdToUtc(row.end)),
-      fact("Wavelength coverage", wavelength),
-      fact("Product", row.format ? row.format + (size ? " · full file " + size : "") : ""),
       footprintRow,
     );
 
@@ -266,12 +262,12 @@ function setupObservationSearch() {
     if (rows.length === 0) {
       resultsStatus.textContent = total === 0
         ? irsaEmptyMessage(preparedRelease)
-        : "No usable observations in " + fileName + ". Every row was skipped.";
+        : "No usable observations in " + fileName + ".";
     } else {
       // Name the collection, not the release in the URL, so a deep-field file does not read as a wide-survey one.
       const labels = [...new Set(rows.map(observationCollectionLabel))].join(", ");
       resultsStatus.textContent = rows.length + (rows.length === 1 ? " observation" : " observations") + " from " + fileName +
-        " (" + labels + "). Open a row to download its FITS file.";
+        " (" + labels + ").";
     }
     if (total >= irsaMaxRecords) {
       resultsNotes.append(text("p", "The generated search asks IRSA for at most " + irsaMaxRecords +
@@ -309,7 +305,7 @@ function setupObservationSearch() {
       return;
     }
     showResults(parsed, file.name);
-    setImportStatus(parsed.rows.length === 0 ? "Import finished with no usable observations." : "Imported " + parsed.rows.length + " of " + parsed.total + " rows.");
+    setImportStatus("");
   }
 
   form.addEventListener("input", resetQuery);
@@ -327,7 +323,7 @@ function setupObservationSearch() {
       cutout.dec.value = dec;
       empty.hidden = true;
       result.hidden = false;
-      status.textContent = "Search prepared. Open the archive link, save the CSV, then import it below.";
+      status.textContent = "Search prepared.";
     } catch (error) {
       status.setAttribute("data-error", "");
       status.textContent = error.message;
@@ -338,6 +334,10 @@ function setupObservationSearch() {
     if (importInput.files[0]) importResults(importInput.files[0]);
   });
   cutoutBox.addEventListener("input", () => rowViews.forEach(refreshRow));
+  window.addEventListener("astronot-languagechange", () => {
+    rowViews.forEach(refreshRow);
+    if (!handoff.hidden && preparedPosition) handoff.href = observationForcedPhotometryUrl(preparedPosition);
+  });
 
   example.addEventListener("click", () => {
     form.reset();
