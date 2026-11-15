@@ -581,9 +581,11 @@
     m -= d * 1440;
     const h = Math.floor(m / 60);
     m -= h * 60;
-    if (d > 0) return sign + d + " d " + h + " h";
-    if (h > 0) return sign + h + " h " + m + " min";
-    return sign + m + " min";
+    // Whole words, not "d" or "h" alone: the language catalogs match these as templates, and a
+    // template needs a fixed part of at least four letters (assets/i18n/site-language.js).
+    if (d > 0) return sign + d + (d === 1 ? " day " : " days ") + h + " h";
+    if (h > 0) return sign + h + (h === 1 ? " hour " : " hours ") + m + " min";
+    return sign + m + (m === 1 ? " minute" : " minutes");
   }
 
   const api = {

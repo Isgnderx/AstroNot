@@ -235,32 +235,21 @@ is gone, the git history and this file are the record.
   serve.mjs (/api/sia), tools/registry.js (description/steps), assets/i18n/az.js (66 messages +
   33 templates, additions only), README.md, TODO.md, this file.
 - node --test: 392 tests, 386 pass, 0 fail, 6 skipped (in an environment with astropy+reproject).
-
-6.4 Constellation Finder: all 88 constellations + "Your zodiac sign" (15 Nov 2026, commits 3033a69, ab575a4)
-- The public Constellation Finder (`/tools/constellation-finder`) now knows all 88 IAU constellations: official
-  J2000 boundaries and label points from d3-celestial (BSD-3; inputs + PROVENANCE under tests/data/constellations/),
-  names in six languages (az hand-written in scripts/constellations-extra.json), stick figures for the 13 zodiac
-  constellations + the six classics, Yale star membership. Generated data file: assets/tools/constellations.js
-  (`node scripts/make-constellations.mjs`).
-- New DOM-free module tools/public-zodiac.js: Sun longitude (Meeus ch. 25), tropical sign, point-in-constellation
-  (RA wrap, polar rings), Sun's constellation and date ranges, star membership, birth-instant parsing.
-- "Your zodiac sign" panel: birth date (+ optional time and UTC offset) → astrological sign AND the constellation
-  the Sun was actually in (Ophiuchus included), notes on precession / boundary proximity, "Show on the sky".
-- Tests: tests/public-zodiac.test.mjs, tests/constellations.test.mjs (dense IAU cross-check: 0.05° zodiac / 0.5° poles).
-  Browser-checked headless in en and az, phone width OK. Design and plan docs under docs/superpowers/ (the owner
-  chose direct implementation for this one, no subagents).
-
-6.5 Hidden presentation page (15 Nov 2026)
-- `/presentation/` (presentation/index.html + presentation.css + presentation.js) is the 7-slide NASA Space Apps
-  pitch deck built to the owner's brief (Title · Challenge · Solution & how it works · Rust + WebAssembly · Impact ·
-  Team · Next steps), English, with speaker notes per slide (N key or the Notes button opens a drawer; print shows
-  them under each slide). Keyboard/click navigation, F for full screen, URL hash per slide. It reuses the site's own
-  sphere renderer (tools/public-scenes.js) for rotating 3D Saturn and Mars (Solar System Scope textures, CC BY 4.0),
-  the supplied Rust/WebAssembly logos and a real SPHEREx cutout GIF (presentation/*.png, *.gif), real product
-  screenshots and the team portraits. Two bracketed placeholders remain for the owner: [CHALLENGE NAME] on slide 1
-  and [PUBLIC WEBSITE URL] on slide 7. The page is linked from nowhere (`noindex`) and reachable only by typing the
-  URL; "presentation" is in `publicDirectories` (and `.gif` in `contentTypes`) so serve.mjs and the publish package
-  include it. Azerbaijani entries for its text are in az.js; other languages fall back to English.
+- Translations (15 Nov 2026, Claude, after the owner committed 6.3 and merged cahid_front):
+  the Time Machine page (both tabs) is translated in all five catalogs the same way 28ac63d did it for
+  the other tools — new messages at the top of the messages object, new templates at the top of the
+  templates object. Keys were found by rendering the page in English (examples, paging, play, the
+  no-search-service fallback, bad input, the files tab) and checking each string with
+  AstroNotLanguage.translate in every language; all pass except IDs, dates and units.
+  * time-sequence.js formatElapsed now writes "177 days 17 h", "1 day 2 h", "6 hours 0 min",
+    "3 minutes": site-language.js ignores templates whose longest fixed part is under four letters, so
+    "{} d {} h" and "{} h {} min" can never match (the "{} h {} min" keys already in az/ru/tr are dead).
+  * pair.js's "18 d 9 h after the reference" is untouched; it is covered by whole-sentence templates
+    ("The comparison was observed {} d {} h after the reference." etc.).
+  * New "Blink is unavailable: {}" templates: before them the generic "{} image{}, {}" template
+    matched that sentence and produced nonsense.
+  * Fixed three existing values used on the page: tr "Reference" (was "İpuç"), ru "Reference" (was
+    "Ссылка"), zh "Comparison" (was "较量"); tr "{} μm (bandwidth {} μm)" (was "{0} m").
 
 7. STATE AT THE TIME OF WRITING AND HOW TO CONTINUE
 ---------------------------------------------------
@@ -284,7 +273,8 @@ is gone, the git history and this file are the record.
     246/352 BD+17 4708 points (all of detectors 1–2), so the cue says little for bright stars.
     Options: keep and reword the legend; or hollow = FIT_ERROR/near-saturation bits only.
   * The Spectrum Lab CSV's obs_id column holds lvf_id (EXPIDN), not the IRSA obs_id.
-  * tr/ru/es/zh strings for the new tool (and re-translation of those catalogs generally).
+  * tr/ru/es/zh strings for Forced Spectrophotometry were added in 28ac63d; the rest of those
+    catalogs is still machine-quality.
   * Observation Search could build IRSA-format cutouts locally from S3 (spxphot `search
     --download cutout`); the IRSA cutout service is unreliable.
   * Sersic (galaxy) mode is shipped "indicative only", as in spxphot (fluxes ~4 % high vs IRSA).
